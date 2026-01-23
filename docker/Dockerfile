@@ -28,4 +28,4 @@ USER mcpwner
 # Set PYTHONPATH so imports work correctly
 ENV PYTHONPATH=/app
 
-CMD ["python", "src/api/server.py"]
+CMD ["python", "src/server.py"]

@@ -1,13 +1,11 @@
 """Health check tool."""
 
 import os
-from fastmcp import tool
 from tools.codeql_manager import CodeQLManager
 
 codeql_manager = CodeQLManager()
 
 
-@tool()
 def health_check() -> dict:
     """
     Check CodeQL availability and version.

@@ -1,6 +1,5 @@
 """Create CodeQL database tool."""
 
-from fastmcp import tool
 from workspace.manager import WorkspaceManager
 from tools.codeql_manager import CodeQLManager
 
@@ -8,7 +7,6 @@ workspace_manager = WorkspaceManager()
 codeql_manager = CodeQLManager()
 
 
-@tool()
 def create_codeql_database(workspace_id: str, language: str = None) -> dict:
     """
     Create CodeQL database for workspace.

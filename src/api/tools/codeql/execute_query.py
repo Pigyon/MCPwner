@@ -1,9 +1,6 @@
 """Execute CodeQL query tool."""
 
-from fastmcp import tool
 
-
-@tool()
 def execute_query(
     workspace_id: str,
     database_id: str,

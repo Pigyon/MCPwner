@@ -1,12 +1,10 @@
 """List databases tool."""
 
-from fastmcp import tool
 from workspace.manager import WorkspaceManager
 
 workspace_manager = WorkspaceManager()
 
 
-@tool()
 def list_databases(workspace_id: str) -> list:
     """
     List databases for a workspace.

@@ -1,12 +1,10 @@
 """Cleanup workspace tool."""
 
-from fastmcp import tool
 from workspace.manager import WorkspaceManager
 
 workspace_manager = WorkspaceManager()
 
 
-@tool()
 def cleanup_workspace(workspace_id: str) -> dict:
     """
     Manually cleanup a workspace.

@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-Enhanced MCP server with FastMCP 3.0.
-Uses FileSystemProvider for hot reload and modular tool organization.
+Supports STDIO and SSE transports with namespaced tools.
 """
 
 import sys
-import os
 from fastmcp import FastMCP
-from fastmcp.providers import FileSystemProvider
 from config.config import load_config, ConfigError
+from config.transport import get_transport_config
+from api.router import router as api_router
 
 # Load configuration
 try:
@@ -21,65 +20,21 @@ except ConfigError as e:
 # Initialize main server
 mcp = FastMCP("MCPwner")
 
-# Add FileSystemProviders with namespacing for each domain
-# Hot reload enabled for development
-print("Loading tools from filesystem...", file=sys.stderr)
+# Register tools using main API router
+print("Loading tools...", file=sys.stderr)
 
-# Health tools (no namespace - global)
-health_provider = FileSystemProvider(
-    "src/api/tools/health",
-    reload=True
-)
-mcp.add_provider(health_provider)
+mcp.include_router(api_router)
 
-# Workspace tools (with namespace)
-workspace_provider = FileSystemProvider(
-    "src/api/tools/workspace",
-    reload=True
-)
-mcp.add_provider(workspace_provider, namespace="workspace")
-
-# CodeQL tools (with namespace)
-codeql_provider = FileSystemProvider(
-    "src/api/tools/codeql",
-    reload=True
-)
-mcp.add_provider(codeql_provider, namespace="codeql")
-
-print("✓ All tools loaded with hot reload enabled", file=sys.stderr)
-
-
-# ============================================================================
-# TRANSPORT CONFIGURATION
-# ============================================================================
-
-def get_transport_config():
-    """Determine transport configuration from environment and config file."""
-    transport = os.environ.get("MCP_TRANSPORT", "stdio").lower()
-    
-    config_data = {
-        "transport": transport,
-        "host": "0.0.0.0",
-        "port": 13370
-    }
-    
-    # Load from config file if available
-    if transport == "sse":
-        server_config = config.get("server", {})
-        config_data["host"] = server_config.get("host", "0.0.0.0")
-        config_data["port"] = server_config.get("port", 13370)
-    
-    return config_data
+print("✓ All tools loaded", file=sys.stderr)
 
 
 def run_server():
     """Run the MCP server with appropriate transport."""
-    transport_config = get_transport_config()
+    transport_config = get_transport_config(config)
     transport = transport_config["transport"]
     
-    print(f"\nStarting MCPwner MCP server (FastMCP 3.0)...", file=sys.stderr)
+    print(f"\nStarting MCPwner MCP server...", file=sys.stderr)
     print(f"Transport: {transport}", file=sys.stderr)
-    print(f"Hot reload: enabled", file=sys.stderr)
     
     if transport == "sse":
         host = transport_config["host"]

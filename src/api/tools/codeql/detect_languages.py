@@ -1,6 +1,5 @@
 """Detect languages tool."""
 
-from fastmcp import tool
 from workspace.manager import WorkspaceManager
 from tools.codeql_manager import CodeQLManager
 
@@ -8,7 +7,6 @@ workspace_manager = WorkspaceManager()
 codeql_manager = CodeQLManager()
 
 
-@tool()
 def detect_languages(workspace_id: str) -> dict:
     """
     Detect programming languages in a workspace.

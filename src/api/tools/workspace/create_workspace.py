@@ -1,13 +1,11 @@
 """Create workspace tool."""
 
 import sys
-from fastmcp import tool
 from workspace.manager import WorkspaceManager
 
 workspace_manager = WorkspaceManager()
 
 
-@tool()
 def create_workspace(source_type: str, source: str) -> dict:
     """
     Create workspace from GitHub repo or local directory.
