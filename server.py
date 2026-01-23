@@ -1,6 +1,16 @@
 from fastmcp import FastMCP
 from typing import Dict, List, Any
 import uuid
+import sys
+from config import load_config, ConfigError
+
+# Load configuration on startup
+try:
+    config = load_config()
+    print(f"Configuration loaded successfully from config.yaml", file=sys.stderr)
+except ConfigError as e:
+    print(f"Configuration error: {e}", file=sys.stderr)
+    sys.exit(1)
 
 # Initialize FastMCP server
 mcp = FastMCP("MCPwner")

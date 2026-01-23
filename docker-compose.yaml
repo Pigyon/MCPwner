@@ -13,6 +13,7 @@ services:
     volumes:
       - workspaces:/workspaces
       - logs:/var/log/mcpwner
+      - ./config.yaml:/app/config.yaml:ro
     tmpfs:
       - /tmp:noexec,nosuid,size=1g
     networks:
