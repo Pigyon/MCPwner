@@ -71,9 +71,13 @@ def cleanup_workspace(workspace_id: str) -> Dict[str, str]:
     Returns:
         Dictionary with cleanup status
     """
-    return {
-        "status": "cleaned"
-    }
+    try:
+        return workspace_manager.cleanup_workspace(workspace_id)
+    except ValueError as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
 
 
 @mcp.tool()

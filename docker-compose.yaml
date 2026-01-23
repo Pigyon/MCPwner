@@ -14,6 +14,8 @@ services:
       - workspaces:/workspaces
       - logs:/var/log/mcpwner
       - ./config.yaml:/app/config.yaml:ro
+      # Local directory mounts can be added dynamically:
+      # - /path/to/local/dir:/workspaces/{workspace_id}/source:ro
     tmpfs:
       - /tmp:noexec,nosuid,size=1g
     networks:
@@ -32,6 +34,8 @@ services:
       - no-new-privileges:true
     volumes:
       - workspaces:/workspaces
+      # Local directory mounts can be added dynamically:
+      # - /path/to/local/dir:/workspaces/{workspace_id}/source:ro
     tmpfs:
       - /tmp:noexec,nosuid,size=2g
     networks:

@@ -6,9 +6,12 @@ retrieving, and deleting workspaces with UUID-based identification.
 """
 
 import uuid
+import shutil
+from pathlib import Path
 from typing import Dict, List, Any, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from .repository import clone_repository, RepositoryError
+from .local_mount import setup_local_mount, LocalMountError
 
 
 class WorkspaceManager:
@@ -44,9 +47,12 @@ class WorkspaceManager:
                 - source: Source location
                 - created_at: ISO 8601 timestamp
                 - path: Absolute path to workspace (for github source_type)
+                - local_path: Original local path (for local source_type)
+                - mount_path: Container mount path (for local source_type)
                 
         Raises:
             RepositoryError: If GitHub cloning fails
+            LocalMountError: If local path validation fails
         """
         workspace_id = str(uuid.uuid4())
         created_at = datetime.utcnow().isoformat() + "Z"
@@ -65,6 +71,17 @@ class WorkspaceManager:
                 workspace_metadata["path"] = repo_path
             except RepositoryError as e:
                 # Don't store workspace if clone fails
+                raise
+        
+        # Setup local mount if source type is local
+        elif source_type == "local":
+            try:
+                mount_info = setup_local_mount(source, workspace_id, base_path)
+                workspace_metadata["local_path"] = mount_info["local_path"]
+                workspace_metadata["mount_path"] = mount_info["mount_path"]
+                workspace_metadata["path"] = mount_info["local_path"]  # For compatibility
+            except LocalMountError as e:
+                # Don't store workspace if validation fails
                 raise
         
         self._workspaces[workspace_id] = workspace_metadata
@@ -110,3 +127,112 @@ class WorkspaceManager:
             del self._workspaces[workspace_id]
             return True
         return False
+    
+    def cleanup_workspace(
+        self,
+        workspace_id: str,
+        base_path: str = "/workspaces"
+    ) -> Dict[str, Any]:
+        """
+        Cleanup workspace by deleting its directory.
+        
+        Removes the workspace directory from disk. Skips cleanup for local
+        mounts to preserve user data.
+        
+        Args:
+            workspace_id: UUID of the workspace to cleanup
+            base_path: Base directory for workspaces (default: /workspaces)
+            
+        Returns:
+            Dictionary containing:
+                - workspace_id: Workspace identifier
+                - status: "cleaned" or "skipped"
+                - reason: Explanation if skipped
+                
+        Raises:
+            ValueError: If workspace not found
+        """
+        workspace = self.get_workspace(workspace_id)
+        if not workspace:
+            raise ValueError(f"Workspace not found: {workspace_id}")
+        
+        # Skip cleanup for local mounts
+        if workspace["source_type"] == "local":
+            return {
+                "workspace_id": workspace_id,
+                "status": "skipped",
+                "reason": "Local mount - preserving user data"
+            }
+        
+        # Delete workspace directory for GitHub clones
+        workspace_dir = Path(base_path) / workspace_id
+        if workspace_dir.exists():
+            shutil.rmtree(workspace_dir)
+        
+        # Remove from registry
+        self.delete_workspace(workspace_id)
+        
+        return {
+            "workspace_id": workspace_id,
+            "status": "cleaned",
+            "reason": "GitHub clone removed"
+        }
+    
+    def cleanup_old_workspaces(
+        self,
+        base_path: str = "/workspaces",
+        max_age_hours: int = 24
+    ) -> Dict[str, Any]:
+        """
+        Cleanup old GitHub cloned workspaces.
+        
+        Removes cloned repositories older than the specified age.
+        Preserves local mounts regardless of age.
+        
+        Args:
+            base_path: Base directory for workspaces (default: /workspaces)
+            max_age_hours: Maximum age in hours (default: 24)
+            
+        Returns:
+            Dictionary containing:
+                - cleaned: List of cleaned workspace IDs
+                - skipped: List of skipped workspace IDs
+                - total_cleaned: Count of cleaned workspaces
+                - total_skipped: Count of skipped workspaces
+        """
+        now = datetime.utcnow()
+        cutoff_time = now - timedelta(hours=max_age_hours)
+        
+        cleaned = []
+        skipped = []
+        
+        # Iterate over copy of workspace IDs to allow modification during iteration
+        for workspace_id in list(self._workspaces.keys()):
+            workspace = self._workspaces[workspace_id]
+            
+            # Skip local mounts
+            if workspace["source_type"] == "local":
+                skipped.append(workspace_id)
+                continue
+            
+            # Parse creation timestamp
+            created_at = datetime.fromisoformat(workspace["created_at"].rstrip("Z"))
+            
+            # Cleanup if older than cutoff
+            if created_at < cutoff_time:
+                try:
+                    result = self.cleanup_workspace(workspace_id, base_path)
+                    if result["status"] == "cleaned":
+                        cleaned.append(workspace_id)
+                    else:
+                        skipped.append(workspace_id)
+                except Exception as e:
+                    # Log error but continue with other workspaces
+                    skipped.append(workspace_id)
+        
+        return {
+            "cleaned": cleaned,
+            "skipped": skipped,
+            "total_cleaned": len(cleaned),
+            "total_skipped": len(skipped)
+        }
