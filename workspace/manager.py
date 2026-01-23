@@ -25,6 +25,8 @@ class WorkspaceManager:
     def __init__(self):
         """Initialize the WorkspaceManager with an empty workspace registry."""
         self._workspaces: Dict[str, Dict[str, Any]] = {}
+        self._databases: Dict[str, List[Dict[str, Any]]] = {}  # workspace_id -> list of databases
+        self.max_databases_per_workspace = 10
     
     def create_workspace(
         self,
@@ -85,6 +87,7 @@ class WorkspaceManager:
                 raise
         
         self._workspaces[workspace_id] = workspace_metadata
+        self._databases[workspace_id] = []  # Initialize empty database list
         
         return workspace_metadata
     
@@ -125,6 +128,9 @@ class WorkspaceManager:
         """
         if workspace_id in self._workspaces:
             del self._workspaces[workspace_id]
+            # Also delete associated databases
+            if workspace_id in self._databases:
+                del self._databases[workspace_id]
             return True
         return False
     
@@ -236,3 +242,76 @@ class WorkspaceManager:
             "total_cleaned": len(cleaned),
             "total_skipped": len(skipped)
         }
+
+    def add_database(
+        self,
+        workspace_id: str,
+        database_metadata: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Add a database to a workspace.
+        
+        Args:
+            workspace_id: UUID of the workspace
+            database_metadata: Database metadata dictionary
+            
+        Returns:
+            Database metadata
+            
+        Raises:
+            ValueError: If workspace not found or database limit exceeded
+        """
+        if workspace_id not in self._workspaces:
+            raise ValueError(f"Workspace not found: {workspace_id}")
+        
+        if workspace_id not in self._databases:
+            self._databases[workspace_id] = []
+        
+        # Check database limit
+        if len(self._databases[workspace_id]) >= self.max_databases_per_workspace:
+            raise ValueError(
+                f"Database limit exceeded: maximum {self.max_databases_per_workspace} "
+                f"databases per workspace"
+            )
+        
+        self._databases[workspace_id].append(database_metadata)
+        return database_metadata
+    
+    def list_databases(self, workspace_id: str) -> List[Dict[str, Any]]:
+        """
+        List all databases for a workspace.
+        
+        Args:
+            workspace_id: UUID of the workspace
+            
+        Returns:
+            List of database metadata dictionaries
+            
+        Raises:
+            ValueError: If workspace not found
+        """
+        if workspace_id not in self._workspaces:
+            raise ValueError(f"Workspace not found: {workspace_id}")
+        
+        return self._databases.get(workspace_id, [])
+    
+    def get_database(
+        self,
+        workspace_id: str,
+        database_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get a specific database by ID.
+        
+        Args:
+            workspace_id: UUID of the workspace
+            database_id: ID of the database
+            
+        Returns:
+            Database metadata if found, None otherwise
+        """
+        databases = self._databases.get(workspace_id, [])
+        for db in databases:
+            if db.get("database_id") == database_id:
+                return db
+        return None
