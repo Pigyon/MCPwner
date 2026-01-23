@@ -3,6 +3,7 @@ from typing import Dict, List, Any
 import uuid
 import sys
 from config import load_config, ConfigError
+from workspace.manager import WorkspaceManager
 
 # Load configuration on startup
 try:
@@ -14,6 +15,9 @@ except ConfigError as e:
 
 # Initialize FastMCP server
 mcp = FastMCP("MCPwner")
+
+# Initialize WorkspaceManager
+workspace_manager = WorkspaceManager()
 
 
 @mcp.tool()
@@ -40,13 +44,9 @@ def create_workspace(source_type: str, source: str) -> Dict[str, str]:
         source: GitHub URL or local directory path
         
     Returns:
-        Dictionary with workspace_id, source_type, and source
+        Dictionary with workspace_id, source_type, source, and created_at
     """
-    return {
-        "workspace_id": f"mock-{uuid.uuid4()}",
-        "source_type": source_type,
-        "source": source
-    }
+    return workspace_manager.create_workspace(source_type, source)
 
 
 @mcp.tool()
@@ -57,7 +57,7 @@ def list_workspaces() -> List[Dict[str, Any]]:
     Returns:
         Array of workspace metadata
     """
-    return []
+    return workspace_manager.list_workspaces()
 
 
 @mcp.tool()
