@@ -52,11 +52,16 @@ def _validate_config(config: Dict[str, Any]) -> None:
     Raises:
         ConfigError: If configuration is invalid
     """
-    required_sections = ["workspace", "resources", "timeouts", "rate_limits", "security", "logging"]
+    required_sections = ["server", "workspace", "resources", "timeouts", "rate_limits", "security", "logging"]
     
     for section in required_sections:
         if section not in config:
             raise ConfigError(f"Missing required configuration section: {section}")
+    
+    # Validate server settings
+    server = config["server"]
+    _validate_positive_int(server, "port", "server")
+    _validate_string(server, "host", "server")
     
     # Validate workspace settings
     workspace = config["workspace"]

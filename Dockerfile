@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+# Install git for repository cloning
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user
 RUN useradd -m -u 1000 -s /bin/bash mcpwner
 

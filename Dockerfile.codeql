@@ -1,0 +1,26 @@
+FROM mcr.microsoft.com/cstsectools/codeql-container@sha256:0fd52101e30652e0998be85f6e09ac59534c6f40cebb670acd77b78869c45bc2
+
+# Run as root for installation
+USER root
+
+# Install Python and Flask for the HTTP service
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip curl && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /service
+
+# Copy service files
+COPY codeql_requirements.txt .
+RUN pip3 install --no-cache-dir -r codeql_requirements.txt
+
+COPY codeql_service.py .
+
+# Expose service port
+EXPOSE 8080
+
+# Override the base image's entrypoint to avoid startup script issues
+ENTRYPOINT []
+
+# Run the Flask service as root (docker-compose will handle user if needed)
+CMD ["python3", "codeql_service.py"]

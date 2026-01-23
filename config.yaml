@@ -1,6 +1,27 @@
 # MCPwner Configuration Example
 # Copy this file to config.yaml and adjust settings as needed
 
+# MCP Transport Configuration
+transport:
+  # Transport type: stdio (default) or sse
+  # stdio: For local usage with Claude Desktop, Cline, etc.
+  #        Containers spawn on-demand via docker run
+  # sse:   For deployed/remote usage with web clients
+  #        Runs persistent HTTP server
+  type: "stdio"
+
+# Server settings
+server:
+  # Port for MCP SSE transport
+  port: 13370
+  # Host to bind to (0.0.0.0 for all interfaces)
+  host: "0.0.0.0"
+
+# CodeQL Service
+codeql:
+  # CodeQL service URL (internal Docker network)
+  service_url: "http://codeql:8080"
+
 # Workspace settings
 workspace:
   # Base directory for all workspaces
