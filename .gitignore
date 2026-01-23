@@ -1,0 +1,21 @@
+# Byte-code files
+*.pyc
+__pycache__/
+
+# Built artifacts
+.Python
+build/
+dist/
+develop-eggs/
+eggs/
+*.egg-info/
+*.egg/
+
+# Environments
+.env
+.venv/
+env/
+venv/
+
+# Editor/IDE-specific files
+.vscode/
