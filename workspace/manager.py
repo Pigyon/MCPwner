@@ -8,6 +8,7 @@ retrieving, and deleting workspaces with UUID-based identification.
 import uuid
 from typing import Dict, List, Any, Optional
 from datetime import datetime
+from .repository import clone_repository, RepositoryError
 
 
 class WorkspaceManager:
@@ -25,7 +26,8 @@ class WorkspaceManager:
     def create_workspace(
         self,
         source_type: str,
-        source: str
+        source: str,
+        base_path: str = "/workspaces"
     ) -> Dict[str, str]:
         """
         Create a new workspace with a unique UUID4 identifier.
@@ -33,6 +35,7 @@ class WorkspaceManager:
         Args:
             source_type: Type of source ("github" or "local")
             source: GitHub URL or local directory path
+            base_path: Base directory for workspaces (default: /workspaces)
             
         Returns:
             Dictionary containing:
@@ -40,6 +43,10 @@ class WorkspaceManager:
                 - source_type: Type of source
                 - source: Source location
                 - created_at: ISO 8601 timestamp
+                - path: Absolute path to workspace (for github source_type)
+                
+        Raises:
+            RepositoryError: If GitHub cloning fails
         """
         workspace_id = str(uuid.uuid4())
         created_at = datetime.utcnow().isoformat() + "Z"
@@ -50,6 +57,15 @@ class WorkspaceManager:
             "source": source,
             "created_at": created_at
         }
+        
+        # Clone repository if source type is GitHub
+        if source_type == "github":
+            try:
+                repo_path = clone_repository(source, workspace_id, base_path)
+                workspace_metadata["path"] = repo_path
+            except RepositoryError as e:
+                # Don't store workspace if clone fails
+                raise
         
         self._workspaces[workspace_id] = workspace_metadata
         
