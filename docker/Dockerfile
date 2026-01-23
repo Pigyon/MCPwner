@@ -8,12 +8,15 @@ RUN useradd -m -u 1000 -s /bin/bash mcpwner
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Copy requirements first for better caching
+COPY config/requirements.txt .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copy source code
+COPY src/ ./src/
+COPY config/config.yaml ./config/
 
 # Create necessary directories
 RUN mkdir -p /var/log/mcpwner && \
@@ -22,4 +25,7 @@ RUN mkdir -p /var/log/mcpwner && \
 # Switch to non-root user
 USER mcpwner
 
-CMD ["python", "server.py"]
+# Set PYTHONPATH so imports work correctly
+ENV PYTHONPATH=/app
+
+CMD ["python", "src/api/server.py"]

@@ -9,7 +9,7 @@ class ConfigError(Exception):
     pass
 
 
-def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
+def load_config(config_path: str = "config/config.yaml") -> Dict[str, Any]:
     """
     Load and validate configuration from YAML file.
     

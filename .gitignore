@@ -17,6 +17,10 @@ eggs/
 env/
 venv/
 
+# Configuration (keep examples)
+config/config.yaml
+!config/.env.example
+
 # Editor/IDE-specific files
 .vscode/
 

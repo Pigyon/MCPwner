@@ -1,6 +1,8 @@
 services:
   mcpwner:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
     container_name: mcpwner-server
     user: "1000:1000"
     stdin_open: true
@@ -15,7 +17,7 @@ services:
     volumes:
       - workspaces:/workspaces
       - logs:/var/log/mcpwner
-      - ./config.yaml:/app/config.yaml:ro
+      - ./config/config.yaml:/app/config/config.yaml:ro
       # Local directory mounts can be added dynamically:
       # - /path/to/local/dir:/workspaces/{workspace_id}/source:ro
     tmpfs:
@@ -34,7 +36,7 @@ services:
     # and get new digest with: docker inspect mcr.microsoft.com/cstsectools/codeql-container:latest
     build:
       context: .
-      dockerfile: Dockerfile.codeql
+      dockerfile: docker/Dockerfile.codeql
     container_name: codeql-executor
     user: "0:0"  # Run as root for package installation and service
     read_only: false
