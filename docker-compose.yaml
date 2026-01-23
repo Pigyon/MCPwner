@@ -1,0 +1,49 @@
+services:
+  mcpwner:
+    build: .
+    container_name: mcpwner-server
+    user: "1000:1000"
+    stdin_open: true
+    tty: true
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+      - logs:/var/log/mcpwner
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-internal
+
+  codeql:
+    # Using digest for reproducibility (equivalent to latest as of 2026-01-23)
+    # To update: docker pull mcr.microsoft.com/cstsectools/codeql-container:latest
+    # and get new digest with: docker inspect mcr.microsoft.com/cstsectools/codeql-container:latest
+    image: mcr.microsoft.com/cstsectools/codeql-container@sha256:0fd52101e30652e0998be85f6e09ac59534c6f40cebb670acd77b78869c45bc2
+    container_name: codeql-executor
+    read_only: false
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=2g
+    networks:
+      - mcpwner-internal
+    entrypoint: ["/bin/bash", "-c", "tail -f /dev/null"]
+
+volumes:
+  workspaces:
+    driver: local
+  logs:
+    driver: local
+
+networks:
+  mcpwner-internal:
+    driver: bridge
+    internal: true
