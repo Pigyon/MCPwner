@@ -10,6 +10,8 @@ from api.tools.codeql.extract_code_context import extract_code_context
 from api.tools.codeql.get_function_context import get_function_context
 from api.tools.codeql.get_callers import get_callers
 from api.tools.codeql.get_callees import get_callees
+from api.tools.codeql.search_functions import search_functions
+from api.tools.codeql.list_functions import list_functions
 
 router = MCPRouter(prefix="codeql")
 
@@ -22,3 +24,5 @@ router.tool()(extract_code_context)
 router.tool()(get_function_context)
 router.tool()(get_callers)
 router.tool()(get_callees)
+router.tool()(search_functions)
+router.tool()(list_functions)
