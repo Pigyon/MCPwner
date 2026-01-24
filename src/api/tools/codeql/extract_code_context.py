@@ -1,11 +1,7 @@
 """Extract code context tool."""
 
-from workspace.manager import WorkspaceManager
-from context.extractor import extract_functions, extract_call_graph
-from context.sqlite.queries import get_database_stats
+from deps import get_context_service, get_workspace_service
 from pathlib import Path
-
-workspace_manager = WorkspaceManager()
 
 
 def extract_code_context(
@@ -26,68 +22,26 @@ def extract_code_context(
     """
     try:
         # Validate workspace
-        workspace = workspace_manager.get_workspace(workspace_id)
-        if not workspace:
+        workspace_service = get_workspace_service()
+        workspace = workspace_service.get_workspace(workspace_id)
+        
+        # Extract language from database_id (format: workspace_id-language)
+        language = database_id.split('-')[-1] if '-' in database_id else None
+        if not language:
             return {
                 "status": "error",
-                "error": f"Workspace not found: {workspace_id}"
+                "error": "Invalid database_id format. Expected: workspace_id-language"
             }
         
-        # Get database metadata
-        database = workspace_manager.get_database(workspace_id, database_id)
-        if not database:
-            return {
-                "status": "error",
-                "error": f"Database not found: {database_id}"
-            }
-        
-        language = database.get("language")
-        db_path = database.get("path")
-        
-        if not db_path:
-            return {
-                "status": "error",
-                "error": "Database path not found in metadata"
-            }
-        
-        # Context database path
-        context_db_path = f"/workspaces/{workspace_id}/context.db"
-        
-        # Extract functions
-        function_result = extract_functions(
-            database_path=db_path,
-            context_db_path=context_db_path,
+        # Use context service
+        context_service = get_context_service()
+        result = context_service.extract_context(
+            workspace_id=workspace_id,
             language=language,
-            codeql_bin="codeql"
+            extract_call_graph=extract_call_graph_flag
         )
         
-        if function_result["status"] != "success":
-            return function_result
-        
-        # Extract call graph if requested
-        call_graph_result = None
-        if extract_call_graph_flag:
-            call_graph_result = extract_call_graph(
-                database_path=db_path,
-                context_db_path=context_db_path,
-                language=language,
-                codeql_bin="codeql"
-            )
-        
-        # Get database statistics
-        stats = get_database_stats(context_db_path)
-        
-        return {
-            "status": "success",
-            "workspace_id": workspace_id,
-            "database_id": database_id,
-            "context_db_path": context_db_path,
-            "functions_extracted": function_result.get("functions_extracted", 0),
-            "function_extraction_time": function_result.get("duration_seconds", 0),
-            "call_relationships_extracted": call_graph_result.get("relationships_extracted", 0) if call_graph_result else 0,
-            "call_graph_extraction_time": call_graph_result.get("duration_seconds", 0) if call_graph_result else 0,
-            "statistics": stats
-        }
+        return result
         
     except Exception as e:
         return {

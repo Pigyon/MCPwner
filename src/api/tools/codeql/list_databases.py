@@ -1,8 +1,6 @@
 """List databases tool."""
 
-from workspace.manager import WorkspaceManager
-
-workspace_manager = WorkspaceManager()
+from deps import get_codeql_service
 
 
 def list_databases(workspace_id: str) -> list:
@@ -16,7 +14,8 @@ def list_databases(workspace_id: str) -> list:
         Array of database metadata
     """
     try:
-        return workspace_manager.list_databases(workspace_id)
+        service = get_codeql_service()
+        return service.list_databases(workspace_id)
     except ValueError as e:
         return [{
             "status": "error",

@@ -1,10 +1,8 @@
 """Get function context tool."""
 
-from workspace.manager import WorkspaceManager
-from context.sqlite.queries import get_function, get_function_by_location
+from deps import get_workspace_service
+from context.sqlite.context_repository import SQLiteContextRepository
 from pathlib import Path
-
-workspace_manager = WorkspaceManager()
 
 
 def get_function_context(
@@ -27,12 +25,8 @@ def get_function_context(
     """
     try:
         # Validate workspace
-        workspace = workspace_manager.get_workspace(workspace_id)
-        if not workspace:
-            return {
-                "status": "error",
-                "error": f"Workspace not found: {workspace_id}"
-            }
+        workspace_service = get_workspace_service()
+        workspace = workspace_service.get_workspace(workspace_id)
         
         # Context database path
         context_db_path = f"/workspaces/{workspace_id}/context.db"
@@ -43,11 +37,14 @@ def get_function_context(
                 "error": "Context database not found. Run extract_code_context first."
             }
         
+        # Get repository
+        repo = SQLiteContextRepository(context_db_path)
+        
         # Get function by location or name
         if line is not None and file:
-            function = get_function_by_location(context_db_path, file, line)
+            function = repo.code_elements.get_by_location(file, line)
         elif function_name:
-            function = get_function(context_db_path, function_name, file)
+            function = repo.code_elements.get_by_name(function_name, file)
         else:
             return {
                 "status": "error",
@@ -63,13 +60,13 @@ def get_function_context(
         return {
             "status": "success",
             "function": {
-                "name": function["name"],
-                "qualified_name": function["qualified_name"],
-                "file": function["file"],
-                "start_line": function["start_line"],
-                "end_line": function["end_line"],
-                "code": function["code"],
-                "language": function["language"]
+                "name": function.name,
+                "qualified_name": function.qualified_name,
+                "file": function.file,
+                "start_line": function.start_line,
+                "end_line": function.end_line,
+                "code": function.code,
+                "language": function.language
             }
         }
         

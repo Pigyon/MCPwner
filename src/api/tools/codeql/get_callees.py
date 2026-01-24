@@ -1,10 +1,8 @@
 """Get function callees tool."""
 
-from workspace.manager import WorkspaceManager
-from context.sqlite.queries import get_callees as lookup_callees
+from deps import get_workspace_service
+from context.sqlite.context_repository import SQLiteContextRepository
 from pathlib import Path
-
-workspace_manager = WorkspaceManager()
 
 
 def get_callees(
@@ -25,12 +23,8 @@ def get_callees(
     """
     try:
         # Validate workspace
-        workspace = workspace_manager.get_workspace(workspace_id)
-        if not workspace:
-            return {
-                "status": "error",
-                "error": f"Workspace not found: {workspace_id}"
-            }
+        workspace_service = get_workspace_service()
+        workspace = workspace_service.get_workspace(workspace_id)
         
         # Context database path
         context_db_path = f"/workspaces/{workspace_id}/context.db"
@@ -41,8 +35,9 @@ def get_callees(
                 "error": "Context database not found. Run extract_code_context first."
             }
         
-        # Get callees
-        callees = lookup_callees(context_db_path, function_name, file)
+        # Get repository and callees
+        repo = SQLiteContextRepository(context_db_path)
+        callees = repo.call_graph.get_callees_by_name(function_name, file)
         
         return {
             "status": "success",
@@ -51,12 +46,12 @@ def get_callees(
             "callee_count": len(callees),
             "callees": [
                 {
-                    "name": callee["name"],
-                    "qualified_name": callee["qualified_name"],
-                    "file": callee["file"],
-                    "start_line": callee["start_line"],
-                    "end_line": callee["end_line"],
-                    "language": callee["language"]
+                    "name": callee.name,
+                    "qualified_name": callee.qualified_name,
+                    "file": callee.file,
+                    "start_line": callee.start_line,
+                    "end_line": callee.end_line,
+                    "language": callee.language
                 }
                 for callee in callees
             ]

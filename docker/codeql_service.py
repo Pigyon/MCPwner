@@ -1,6 +1,19 @@
+# TODO: this will need to be moved later to a father directoy with other future services
+
 """
-CodeQL HTTP service that runs inside the codeql-executor container.
-Provides REST API for CodeQL operations.
+CodeQL HTTP Service - Infrastructure Component
+
+This Flask service runs INSIDE the codeql-executor container as a separate microservice.
+It provides a REST API for CodeQL operations (database creation, query execution).
+
+Architecture:
+- Location: docker/codeql_service.py (infrastructure, not business logic)
+- Container: codeql-executor (separate from mcpwner-server)
+- Communication: HTTP API on port 8080
+- Called by: src/clients/codeql.py (CodeQLClient)
+
+This is NOT part of the MCP server's service layer (src/services/).
+It's a standalone HTTP service that wraps CodeQL CLI operations.
 """
 
 from flask import Flask, request, jsonify

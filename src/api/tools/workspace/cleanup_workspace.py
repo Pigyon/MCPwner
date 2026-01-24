@@ -1,8 +1,6 @@
 """Cleanup workspace tool."""
 
-from workspace.manager import WorkspaceManager
-
-workspace_manager = WorkspaceManager()
+from deps import get_workspace_service
 
 
 def cleanup_workspace(workspace_id: str) -> dict:
@@ -16,7 +14,8 @@ def cleanup_workspace(workspace_id: str) -> dict:
         Dictionary with cleanup status
     """
     try:
-        return workspace_manager.cleanup_workspace(workspace_id)
+        service = get_workspace_service()
+        return service.cleanup_workspace(workspace_id)
     except ValueError as e:
         return {
             "status": "error",

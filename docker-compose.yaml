@@ -1,3 +1,5 @@
+# TODO: there are some problems here like running as root in the container, will need to add security hardening
+
 services:
   mcpwner:
     build:

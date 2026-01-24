@@ -1,8 +1,6 @@
 """List workspaces tool."""
 
-from workspace.manager import WorkspaceManager
-
-workspace_manager = WorkspaceManager()
+from deps import get_workspace_service
 
 
 def list_workspaces() -> list:
@@ -12,4 +10,5 @@ def list_workspaces() -> list:
     Returns:
         Array of workspace metadata
     """
-    return workspace_manager.list_workspaces()
+    service = get_workspace_service()
+    return service.list_workspaces()

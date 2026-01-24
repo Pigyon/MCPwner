@@ -1,10 +1,8 @@
 """Get function callers tool."""
 
-from workspace.manager import WorkspaceManager
-from context.sqlite.queries import get_callers as lookup_callers
+from deps import get_workspace_service
+from context.sqlite.context_repository import SQLiteContextRepository
 from pathlib import Path
-
-workspace_manager = WorkspaceManager()
 
 
 def get_callers(
@@ -25,12 +23,8 @@ def get_callers(
     """
     try:
         # Validate workspace
-        workspace = workspace_manager.get_workspace(workspace_id)
-        if not workspace:
-            return {
-                "status": "error",
-                "error": f"Workspace not found: {workspace_id}"
-            }
+        workspace_service = get_workspace_service()
+        workspace = workspace_service.get_workspace(workspace_id)
         
         # Context database path
         context_db_path = f"/workspaces/{workspace_id}/context.db"
@@ -41,8 +35,9 @@ def get_callers(
                 "error": "Context database not found. Run extract_code_context first."
             }
         
-        # Get callers
-        callers = lookup_callers(context_db_path, function_name, file)
+        # Get repository and callers
+        repo = SQLiteContextRepository(context_db_path)
+        callers = repo.call_graph.get_callers_by_name(function_name, file)
         
         return {
             "status": "success",
@@ -51,12 +46,12 @@ def get_callers(
             "caller_count": len(callers),
             "callers": [
                 {
-                    "name": caller["name"],
-                    "qualified_name": caller["qualified_name"],
-                    "file": caller["file"],
-                    "start_line": caller["start_line"],
-                    "end_line": caller["end_line"],
-                    "language": caller["language"]
+                    "name": caller.name,
+                    "qualified_name": caller.qualified_name,
+                    "file": caller.file,
+                    "start_line": caller.start_line,
+                    "end_line": caller.end_line,
+                    "language": caller.language
                 }
                 for caller in callers
             ]

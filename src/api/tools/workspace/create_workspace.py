@@ -1,9 +1,7 @@
 """Create workspace tool."""
 
 import sys
-from workspace.manager import WorkspaceManager
-
-workspace_manager = WorkspaceManager()
+from deps import get_workspace_service
 
 
 def create_workspace(source_type: str, source: str) -> dict:
@@ -18,6 +16,7 @@ def create_workspace(source_type: str, source: str) -> dict:
         Dictionary with workspace_id, source_type, source, and created_at
     """
     print(f"[MCP SERVER] create_workspace called: type={source_type}, source={source}", file=sys.stderr)
-    result = workspace_manager.create_workspace(source_type, source)
+    service = get_workspace_service()
+    result = service.create_workspace(source_type, source)
     print(f"[MCP SERVER] Workspace created: {result['workspace_id']}", file=sys.stderr)
     return result

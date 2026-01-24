@@ -2,3 +2,4 @@ fastmcp==2.14.0
 pyyaml==6.0
 gitpython==3.1.43
 requests==2.32.0
+pydantic>=2.0

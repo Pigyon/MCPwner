@@ -6,10 +6,8 @@ import tempfile
 import time
 from pathlib import Path
 from typing import Dict, Any, List
-from workspace.manager import WorkspaceManager
-from context.sqlite.queries import get_function_by_location
-
-workspace_manager = WorkspaceManager()
+from deps import get_codeql_service, get_workspace_service
+from context.sqlite.context_repository import SQLiteContextRepository
 
 
 def execute_query(
@@ -34,15 +32,14 @@ def execute_query(
     """
     try:
         # Validate workspace
-        workspace = workspace_manager.get_workspace(workspace_id)
-        if not workspace:
-            return {
-                "status": "error",
-                "error": f"Workspace not found: {workspace_id}"
-            }
+        workspace_service = get_workspace_service()
+        workspace = workspace_service.get_workspace(workspace_id)
         
-        # Get database metadata
-        database = workspace_manager.get_database(workspace_id, database_id)
+        # Get database metadata from CodeQL service
+        codeql_service = get_codeql_service()
+        databases = codeql_service.list_databases(workspace_id)
+        database = next((db for db in databases if db.get("database_id") == database_id), None)
+        
         if not database:
             return {
                 "status": "error",
@@ -233,20 +230,22 @@ def enrich_findings_with_context(
     Returns:
         Enriched findings list
     """
+    repo = SQLiteContextRepository(context_db_path)
+    
     for finding in findings:
         file = finding.get("file")
         line = finding.get("start_line")
         
         if file and line:
             try:
-                function = get_function_by_location(context_db_path, file, line)
+                function = repo.code_elements.get_by_location(file, line)
                 if function:
                     finding["function_context"] = {
-                        "name": function["name"],
-                        "qualified_name": function["qualified_name"],
-                        "start_line": function["start_line"],
-                        "end_line": function["end_line"],
-                        "code": function["code"]
+                        "name": function.name,
+                        "qualified_name": function.qualified_name,
+                        "start_line": function.start_line,
+                        "end_line": function.end_line,
+                        "code": function.code
                     }
             except Exception:
                 # Skip context enrichment on error

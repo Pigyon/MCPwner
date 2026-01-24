@@ -14,7 +14,7 @@ WORKDIR /service
 COPY config/codeql_requirements.txt .
 RUN pip3 install --no-cache-dir -r codeql_requirements.txt
 
-COPY src/services/codeql_service.py .
+COPY docker/codeql_service.py .
 
 # Expose service port
 EXPOSE 8080
