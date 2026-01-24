@@ -140,33 +140,35 @@ def get_bandit_service():
 
 def get_gosec_service():
     """Get Gosec service singleton."""
-    global _gosec_service
+    global _gosec_service, _gosec_client
     if _gosec_service is None:
-        # TODO: Implement GosecService and GosecClient
-        # from services.gosec import GosecService
-        # from clients.gosec import GosecClient
-        # config = get_config()
-        # _gosec_service = GosecService(
-        #     get_workspace_repository(),
-        #     GosecClient(config.get("gosec", {}).get("service_url", "http://gosec:8084"))
-        # )
-        raise NotImplementedError("Gosec service not yet implemented")
+        if _gosec_client is None:
+            config = get_config()
+            gosec_url = config.get("gosec", {}).get("service_url", "http://gosec:8084")
+            from clients.gosec import GosecClient
+
+            _gosec_client = GosecClient(gosec_url)
+
+        from services.gosec import GosecService
+
+        _gosec_service = GosecService(get_workspace_repository(), _gosec_client)
     return _gosec_service
 
 
 def get_brakeman_service():
     """Get Brakeman service singleton."""
-    global _brakeman_service
+    global _brakeman_service, _brakeman_client
     if _brakeman_service is None:
-        # TODO: Implement BrakemanService and BrakemanClient
-        # from services.brakeman import BrakemanService
-        # from clients.brakeman import BrakemanClient
-        # config = get_config()
-        # _brakeman_service = BrakemanService(
-        #     get_workspace_repository(),
-        #     BrakemanClient(config.get("brakeman", {}).get("service_url", "http://brakeman:8085"))
-        # )
-        raise NotImplementedError("Brakeman service not yet implemented")
+        if _brakeman_client is None:
+            config = get_config()
+            brakeman_url = config.get("brakeman", {}).get("service_url", "http://brakeman:8085")
+            from clients.brakeman import BrakemanClient
+
+            _brakeman_client = BrakemanClient(brakeman_url)
+
+        from services.brakeman import BrakemanService
+
+        _brakeman_service = BrakemanService(get_workspace_repository(), _brakeman_client)
     return _brakeman_service
 
 
