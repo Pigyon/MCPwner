@@ -9,6 +9,14 @@ def list_tools() -> dict:
         Dictionary with available and planned tools
     """
     return {
-        "available": ["codeql"],
-        "planned": ["semgrep", "owasp-zap"]
+        "available": [
+            "codeql",
+            "semgrep",
+            "bandit",
+            "gosec",
+            "brakeman",
+            "pmd",
+            "psalm"
+        ],
+        "planned": ["owasp-zap"]
     }

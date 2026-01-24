@@ -1,0 +1,18 @@
+FROM semgrep/semgrep:latest
+
+# Switch to root for installation
+USER root
+
+# Install Python Flask and curl for the HTTP service
+RUN pip install --no-cache-dir flask requests
+
+WORKDIR /service
+
+# Copy service files
+COPY docker/semgrep_service.py .
+
+# Expose service port
+EXPOSE 8082
+
+# Run the Flask service
+CMD ["python", "semgrep_service.py"]

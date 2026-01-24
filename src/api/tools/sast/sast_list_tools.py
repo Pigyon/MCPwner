@@ -1,0 +1,98 @@
+"""SAST tool discovery MCP tool."""
+
+from typing import Optional
+from deps import get_linguist_service
+
+
+# Tool metadata with language support
+SAST_TOOLS = {
+    "semgrep": {
+        "name": "Semgrep",
+        "description": "Multi-language SAST tool for security and code quality",
+        "languages": [
+            "python", "javascript", "typescript", "java", "go", 
+            "ruby", "php", "c", "cpp", "csharp", "kotlin", "rust"
+        ],
+        "category": "sast"
+    },
+    "bandit": {
+        "name": "Bandit",
+        "description": "Python-specific security linter",
+        "languages": ["python"],
+        "category": "sast"
+    },
+    "gosec": {
+        "name": "Gosec",
+        "description": "Go security checker",
+        "languages": ["go"],
+        "category": "sast"
+    },
+    "brakeman": {
+        "name": "Brakeman",
+        "description": "Ruby on Rails security scanner",
+        "languages": ["ruby"],
+        "category": "sast"
+    },
+    "pmd": {
+        "name": "PMD",
+        "description": "Multi-language code analyzer",
+        "languages": ["java", "javascript", "apex", "visualforce"],
+        "category": "sast"
+    },
+    "psalm": {
+        "name": "Psalm",
+        "description": "PHP static analysis tool",
+        "languages": ["php"],
+        "category": "sast"
+    } # will extend this in the future with more tools
+}
+
+
+def sast_list_tools(
+    workspace_id: Optional[str] = None,
+    show_all: bool = False
+) -> dict:
+    """
+    List available SAST tools with language compatibility.
+    
+    Args:
+        workspace_id: Optional workspace ID to filter tools by detected languages
+        show_all: If True, show all tools regardless of workspace languages
+        
+    Returns:
+        Dictionary with available tools and their metadata
+    """
+    try:
+        # If show_all or no workspace_id, return all tools
+        if show_all or not workspace_id:
+            return {
+                "tools": SAST_TOOLS,
+                "filtered": False
+            }
+        
+        # Detect languages in workspace
+        linguist_service = get_linguist_service()
+        detected_languages = linguist_service.detect_languages(
+            workspace_id, 
+            filter_codeql=False
+        )
+        
+        # Filter tools by language compatibility
+        compatible_tools = {}
+        for tool_id, tool_info in SAST_TOOLS.items():
+            tool_languages = set(tool_info["languages"])
+            if tool_languages.intersection(detected_languages):
+                compatible_tools[tool_id] = tool_info
+        
+        return {
+            "workspace_id": workspace_id,
+            "detected_languages": detected_languages,
+            "tools": compatible_tools,
+            "filtered": True
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }

@@ -7,9 +7,11 @@ from config.config import load_config
 from repositories.workspace import WorkspaceRepository
 from clients.codeql import CodeQLClient
 from clients.linguist import LinguistClient
+from clients.semgrep import SemgrepClient
 from services.workspace import WorkspaceService
 from services.codeql import CodeQLService
 from services.linguist import LinguistService
+from services.semgrep import SemgrepService
 from services.context import ContextService
 
 # Global instances
@@ -21,6 +23,20 @@ _workspace_service = None
 _codeql_service = None
 _linguist_service = None
 _context_service = None
+
+# SAST tool instances
+_semgrep_client = None
+_semgrep_service = None
+_bandit_client = None
+_bandit_service = None
+_gosec_client = None
+_gosec_service = None
+_brakeman_client = None
+_brakeman_service = None
+_pmd_client = None
+_pmd_service = None
+_psalm_client = None
+_psalm_service = None
 
 
 def get_config():
@@ -98,10 +114,111 @@ def get_context_service():
     return _context_service
 
 
+# SAST Service Getters
+
+def get_semgrep_service():
+    """Get Semgrep service singleton."""
+    global _semgrep_service, _semgrep_client
+    if _semgrep_service is None:
+        if _semgrep_client is None:
+            config = get_config()
+            semgrep_url = config.get("semgrep", {}).get("service_url", "http://semgrep:8082")
+            _semgrep_client = SemgrepClient(semgrep_url)
+        
+        _semgrep_service = SemgrepService(
+            get_workspace_repository(),
+            _semgrep_client
+        )
+    return _semgrep_service
+
+
+def get_bandit_service():
+    """Get Bandit service singleton."""
+    global _bandit_service
+    if _bandit_service is None:
+        # TODO: Implement BanditService and BanditClient
+        # from services.bandit import BanditService
+        # from clients.bandit import BanditClient
+        # config = get_config()
+        # _bandit_service = BanditService(
+        #     get_workspace_repository(),
+        #     BanditClient(config.get("bandit", {}).get("service_url", "http://bandit:8083"))
+        # )
+        raise NotImplementedError("Bandit service not yet implemented")
+    return _bandit_service
+
+
+def get_gosec_service():
+    """Get Gosec service singleton."""
+    global _gosec_service
+    if _gosec_service is None:
+        # TODO: Implement GosecService and GosecClient
+        # from services.gosec import GosecService
+        # from clients.gosec import GosecClient
+        # config = get_config()
+        # _gosec_service = GosecService(
+        #     get_workspace_repository(),
+        #     GosecClient(config.get("gosec", {}).get("service_url", "http://gosec:8084"))
+        # )
+        raise NotImplementedError("Gosec service not yet implemented")
+    return _gosec_service
+
+
+def get_brakeman_service():
+    """Get Brakeman service singleton."""
+    global _brakeman_service
+    if _brakeman_service is None:
+        # TODO: Implement BrakemanService and BrakemanClient
+        # from services.brakeman import BrakemanService
+        # from clients.brakeman import BrakemanClient
+        # config = get_config()
+        # _brakeman_service = BrakemanService(
+        #     get_workspace_repository(),
+        #     BrakemanClient(config.get("brakeman", {}).get("service_url", "http://brakeman:8085"))
+        # )
+        raise NotImplementedError("Brakeman service not yet implemented")
+    return _brakeman_service
+
+
+def get_pmd_service():
+    """Get PMD service singleton."""
+    global _pmd_service
+    if _pmd_service is None:
+        # TODO: Implement PMDService and PMDClient
+        # from services.pmd import PMDService
+        # from clients.pmd import PMDClient
+        # config = get_config()
+        # _pmd_service = PMDService(
+        #     get_workspace_repository(),
+        #     PMDClient(config.get("pmd", {}).get("service_url", "http://pmd:8086"))
+        # )
+        raise NotImplementedError("PMD service not yet implemented")
+    return _pmd_service
+
+
+def get_psalm_service():
+    """Get Psalm service singleton."""
+    global _psalm_service
+    if _psalm_service is None:
+        # TODO: Implement PsalmService and PsalmClient
+        # from services.psalm import PsalmService
+        # from clients.psalm import PsalmClient
+        # config = get_config()
+        # _psalm_service = PsalmService(
+        #     get_workspace_repository(),
+        #     PsalmClient(config.get("psalm", {}).get("service_url", "http://psalm:8087"))
+        # )
+        raise NotImplementedError("Psalm service not yet implemented")
+    return _psalm_service
+
+
 def reset_dependencies():
     """Reset all dependencies (useful for testing)."""
     global _config, _workspace_repository, _codeql_client, _linguist_client
     global _workspace_service, _codeql_service, _linguist_service, _context_service
+    global _semgrep_client, _semgrep_service, _bandit_client, _bandit_service
+    global _gosec_client, _gosec_service, _brakeman_client, _brakeman_service
+    global _pmd_client, _pmd_service, _psalm_client, _psalm_service
     
     _config = None
     _workspace_repository = None
@@ -111,3 +228,17 @@ def reset_dependencies():
     _codeql_service = None
     _linguist_service = None
     _context_service = None
+    
+    # Reset SAST tool instances
+    _semgrep_client = None
+    _semgrep_service = None
+    _bandit_client = None
+    _bandit_service = None
+    _gosec_client = None
+    _gosec_service = None
+    _brakeman_client = None
+    _brakeman_service = None
+    _pmd_client = None
+    _pmd_service = None
+    _psalm_client = None
+    _psalm_service = None
