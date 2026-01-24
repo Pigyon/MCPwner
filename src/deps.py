@@ -191,17 +191,18 @@ def get_pmd_service():
 
 def get_psalm_service():
     """Get Psalm service singleton."""
-    global _psalm_service
+    global _psalm_service, _psalm_client
     if _psalm_service is None:
-        # TODO: Implement PsalmService and PsalmClient
-        # from services.psalm import PsalmService
-        # from clients.psalm import PsalmClient
-        # config = get_config()
-        # _psalm_service = PsalmService(
-        #     get_workspace_repository(),
-        #     PsalmClient(config.get("psalm", {}).get("service_url", "http://psalm:8087"))
-        # )
-        raise NotImplementedError("Psalm service not yet implemented")
+        if _psalm_client is None:
+            config = get_config()
+            psalm_url = config.get("psalm", {}).get("service_url", "http://psalm:8087")
+            from clients.psalm import PsalmClient
+
+            _psalm_client = PsalmClient(psalm_url)
+
+        from services.psalm import PsalmService
+
+        _psalm_service = PsalmService(get_workspace_repository(), _psalm_client)
     return _psalm_service
 
 

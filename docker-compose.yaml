@@ -35,6 +35,7 @@ services:
       - GOSEC_SERVICE_URL=http://gosec:8084
       - BRAKEMAN_SERVICE_URL=http://brakeman:8085
       - PMD_SERVICE_URL=http://pmd:8086
+      - PSALM_SERVICE_URL=http://psalm:8087
     depends_on:
       - codeql
       - linguist
@@ -43,6 +44,7 @@ services:
       - gosec
       - brakeman
       - pmd
+      - psalm
 
   mcpwner-sse:
     build:
@@ -74,6 +76,7 @@ services:
       - GOSEC_SERVICE_URL=http://gosec:8084
       - BRAKEMAN_SERVICE_URL=http://brakeman:8085
       - PMD_SERVICE_URL=http://pmd:8086
+      - PSALM_SERVICE_URL=http://psalm:8087
     depends_on:
       - codeql
       - linguist
@@ -81,6 +84,8 @@ services:
       - bandit
       - gosec
       - brakeman
+      - pmd
+      - psalm
       - pmd
     command: ["python", "/app/src/server.py"]
 
@@ -266,6 +271,32 @@ services:
       - mcpwner-internal
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  psalm:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.psalm
+    container_name: psalm-scanner
+    user: "0:0"  # Run as root for psalm execution
+    read_only: false
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8087:8087"
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]
       interval: 30s
       timeout: 10s
       retries: 3
