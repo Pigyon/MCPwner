@@ -1,0 +1,21 @@
+FROM crazymax/linguist:latest
+
+# Switch to root for installation
+USER root
+
+# Install Python and Flask for the HTTP service
+RUN apk add --no-cache python3 py3-pip py3-flask curl
+
+WORKDIR /service
+
+# Copy service files
+COPY docker/linguist_service.py .
+
+# Expose service port
+EXPOSE 8081
+
+# Override the base image's entrypoint
+ENTRYPOINT []
+
+# Run the Flask service
+CMD ["python3", "linguist_service.py"]

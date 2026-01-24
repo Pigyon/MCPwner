@@ -1,6 +1,6 @@
 """Detect languages tool."""
 
-from deps import get_codeql_service
+from deps import get_linguist_service
 
 
 def detect_languages(workspace_id: str) -> dict:
@@ -14,7 +14,7 @@ def detect_languages(workspace_id: str) -> dict:
         Dictionary with detected languages list
     """
     try:
-        service = get_codeql_service()
+        service = get_linguist_service()
         languages = service.detect_languages(workspace_id)
         
         return {

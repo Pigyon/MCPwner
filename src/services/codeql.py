@@ -34,42 +34,6 @@ class CodeQLService:
         self.repository = repository
         self.codeql_client = codeql_client
     
-    def detect_languages(self, workspace_id: str) -> List[str]:
-        """
-        Detect programming languages in a workspace by scanning file extensions.
-        
-        Args:
-            workspace_id: UUID of the workspace
-            
-        Returns:
-            List of detected language names (e.g., ["python", "javascript"])
-        """
-        workspace = self.repository.find_by_id(workspace_id)
-        if not workspace:
-            raise ValueError(f"Workspace not found: {workspace_id}")
-        
-        workspace_path = workspace.path or workspace.local_path
-        if not workspace_path:
-            raise ValueError(f"No source path for workspace: {workspace_id}")
-        
-        workspace_dir = Path(workspace_path)
-        if not workspace_dir.exists():
-            return []
-        
-        detected = set()
-        
-        # Scan all files in workspace
-        for file_path in workspace_dir.rglob("*"):
-            if file_path.is_file():
-                suffix = file_path.suffix.lower()
-                
-                # Check against language extensions
-                for language, extensions in self.LANGUAGE_EXTENSIONS.items():
-                    if suffix in extensions:
-                        detected.add(language)
-        
-        return sorted(list(detected))
-    
     def create_database(
         self,
         workspace_id: str,
@@ -85,9 +49,11 @@ class CodeQLService:
         if not source_path:
             raise ValueError(f"No source path for workspace: {workspace_id}")
         
-        # Auto-detect language if not provided
+        # Auto-detect language if not provided - import here to avoid circular dependency
         if not language:
-            detected_languages = self.detect_languages(workspace_id)
+            from deps import get_linguist_service
+            linguist_service = get_linguist_service()
+            detected_languages = linguist_service.detect_languages(workspace_id)
             if not detected_languages:
                 raise ValueError("No supported languages detected in workspace")
             language = detected_languages[0]
