@@ -123,17 +123,18 @@ def get_semgrep_service():
 
 def get_bandit_service():
     """Get Bandit service singleton."""
-    global _bandit_service
+    global _bandit_service, _bandit_client
     if _bandit_service is None:
-        # TODO: Implement BanditService and BanditClient
-        # from services.bandit import BanditService
-        # from clients.bandit import BanditClient
-        # config = get_config()
-        # _bandit_service = BanditService(
-        #     get_workspace_repository(),
-        #     BanditClient(config.get("bandit", {}).get("service_url", "http://bandit:8083"))
-        # )
-        raise NotImplementedError("Bandit service not yet implemented")
+        if _bandit_client is None:
+            config = get_config()
+            bandit_url = config.get("bandit", {}).get("service_url", "http://bandit:8083")
+            from clients.bandit import BanditClient
+
+            _bandit_client = BanditClient(bandit_url)
+
+        from services.bandit import BanditService
+
+        _bandit_service = BanditService(get_workspace_repository(), _bandit_client)
     return _bandit_service
 
 
