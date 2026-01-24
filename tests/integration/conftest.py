@@ -18,6 +18,8 @@ def docker_compose_up():
         ("CodeQL", 8080, "/health"),
         ("Linguist", 8081, "/health"),
         ("Semgrep", 8082, "/health"),
+        ("Bandit", 8083, "/health"),
+        ("Gosec", 8084, "/health"),
     ]
 
     for service_name, port, endpoint in services:

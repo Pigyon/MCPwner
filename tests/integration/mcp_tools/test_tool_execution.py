@@ -30,6 +30,8 @@ async def create_mcp_client():
             "CODEQL_SERVICE_URL": "http://localhost:8080",
             "LINGUIST_SERVICE_URL": "http://localhost:8081",
             "SEMGREP_SERVICE_URL": "http://localhost:8082",
+            "BANDIT_SERVICE_URL": "http://localhost:8083",
+            "GOSEC_SERVICE_URL": "http://localhost:8084",
         },
     )
 

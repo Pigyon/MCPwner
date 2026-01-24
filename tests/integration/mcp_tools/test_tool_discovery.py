@@ -30,6 +30,8 @@ async def create_mcp_client():
             "CODEQL_SERVICE_URL": "http://localhost:8080",
             "LINGUIST_SERVICE_URL": "http://localhost:8081",
             "SEMGREP_SERVICE_URL": "http://localhost:8082",
+            "BANDIT_SERVICE_URL": "http://localhost:8083",
+            "GOSEC_SERVICE_URL": "http://localhost:8084",
         },
     )
 
@@ -74,8 +76,14 @@ async def test_all_tools_discoverable(docker_compose_up):
             "codeql_get_callees",
             "codeql_search_functions",
             "codeql_list_functions",
-            # SAST tools (no prefix)
+            # SAST tools (sast_ prefix)
             "sast_list_tools",
+            "sast_semgrep_scan",
+            "sast_semgrep_get_report",
+            "sast_bandit_scan",
+            "sast_bandit_get_report",
+            "sast_gosec_scan",
+            "sast_gosec_get_report",
         ]
 
         # Verify ALL expected tools are present
