@@ -8,8 +8,10 @@ repos:
         args:
           - --fix
           - --exit-non-zero-on-fix
+        exclude: '^\.vulture_whitelist\.py$'
       - id: ruff-format
         name: Format code with ruff
+        exclude: '^\.vulture_whitelist\.py$'
 
   # Dead Code Detection
   - repo: https://github.com/jendrikseipp/vulture
