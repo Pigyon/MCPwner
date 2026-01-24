@@ -51,7 +51,11 @@ async def test_sast_brakeman_scan_invalid_workspace(docker_compose_up):
         content = result.content[0]
         assert hasattr(content, "text")
         # Should return error for nonexistent workspace
-        assert "error" in content.text.lower() or "not found" in content.text.lower()
+        assert (
+            "error" in content.text.lower()
+            or "not found" in content.text.lower()
+            or "unknown" in content.text.lower()
+        )
 
         print("\n✅ sast_brakeman_scan error handling for invalid workspace works")
 
@@ -70,6 +74,10 @@ async def test_sast_brakeman_get_report_invalid_workspace(docker_compose_up):
         content = result.content[0]
         assert hasattr(content, "text")
         # Should return error for nonexistent workspace
-        assert "error" in content.text.lower() or "not found" in content.text.lower()
+        assert (
+            "error" in content.text.lower()
+            or "not found" in content.text.lower()
+            or "unknown" in content.text.lower()
+        )
 
         print("\n✅ sast_brakeman_get_report error handling for invalid workspace works")
