@@ -4,7 +4,6 @@ import sqlite3
 from pathlib import Path
 from typing import Optional
 
-
 # Schema version for migrations
 SCHEMA_VERSION = 1
 
@@ -58,30 +57,30 @@ CREATE INDEX IF NOT EXISTS idx_call_relationship ON call_graph(caller_id, callee
 def init_context_db(db_path: str) -> None:
     """
     Initialize context database with schema.
-    
+
     Args:
         db_path: Path to SQLite database file
-        
+
     Raises:
         sqlite3.Error: If database initialization fails
     """
     # Create parent directory if it doesn't exist
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Connect and create schema
     conn = sqlite3.connect(db_path)
     try:
         cursor = conn.cursor()
-        
+
         # Execute schema creation
         cursor.executescript(SCHEMA_SQL)
-        
+
         # Insert schema version if not exists
         cursor.execute(
             "INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (?, datetime('now'))",
-            (SCHEMA_VERSION,)
+            (SCHEMA_VERSION,),
         )
-        
+
         conn.commit()
     finally:
         conn.close()
@@ -90,16 +89,16 @@ def init_context_db(db_path: str) -> None:
 def get_schema_version(db_path: str) -> Optional[int]:
     """
     Get current schema version from database.
-    
+
     Args:
         db_path: Path to SQLite database file
-        
+
     Returns:
         Schema version number or None if not found
     """
     if not Path(db_path).exists():
         return None
-    
+
     conn = sqlite3.connect(db_path)
     try:
         cursor = conn.cursor()

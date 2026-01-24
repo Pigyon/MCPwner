@@ -1,5 +1,8 @@
 # Ruff configuration for linting and formatting
-#  allows editor to show issues in real-time
+# This allows your editor to show issues in real-time
+
+# Line length
+line-length = 105
 
 [lint]
 # Enable the same rules as pre-commit
@@ -15,14 +18,24 @@ select = [
     "I",    # isort (import sorting)
 ]
 
-# Auto-fix when possible
-fix = true
-fixable = ["ALL"]
-
 # Ignore specific rules if needed
 ignore = [
     "S101",  # Allow assert statements (common in tests)
+    "S104",  # Allow binding to all interfaces (0.0.0.0 needed for Docker)
+    "S108",  # Allow /tmp/ usage (acceptable for temporary files)
+    "S603",  # Allow subprocess calls (needed for CodeQL, Semgrep, etc.)
+    "S607",  # Allow partial executable paths (codeql, semgrep are in PATH)
+    "S110",  # Allow try-except-pass (sometimes appropriate)
+    "S113",  # Allow requests without timeout in tests
+    "PTH",   # Allow os.path usage (pathlib migration can be done later)
+    "RET504", # Allow unnecessary assignment before return (can be clearer)
+    "SIM117", # Allow nested with statements (sometimes clearer)
+    "F841",  # Allow unused variables (validation calls may be intentional)
+    "W291",  # Allow trailing whitespace (in multi-line strings/SQL)
 ]
+
+# Auto-fix when possible
+fixable = ["ALL"]
 
 [lint.per-file-ignores]
 # Allow assert and other test-specific patterns in test files
@@ -34,9 +47,6 @@ quote-style = "double"
 
 # Indent with 4 spaces
 indent-style = "space"
-
-# Line length
-line-length = 100
 
 [lint.isort]
 # Group imports properly

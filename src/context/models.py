@@ -3,7 +3,6 @@
 Re-exports from main models module for backward compatibility.
 """
 
-from models import CodeElement, CallRelationship
+from models import CallRelationship, CodeElement
 
-__all__ = ['CodeElement', 'CallRelationship']
-
+__all__ = ["CodeElement", "CallRelationship"]

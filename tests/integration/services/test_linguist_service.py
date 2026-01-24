@@ -5,7 +5,7 @@ import requests
 
 class TestLinguistService:
     """Test Linguist FastAPI service."""
-    
+
     def test_health_endpoint(self, docker_compose_up):
         """Test Linguist health endpoint."""
         response = requests.get("http://localhost:8081/health")
@@ -13,7 +13,7 @@ class TestLinguistService:
         data = response.json()
         assert data["status"] == "healthy"
         assert data["service"] == "linguist"
-    
+
     def test_version_endpoint(self, docker_compose_up):
         """Test Linguist version endpoint."""
         response = requests.get("http://localhost:8081/version")

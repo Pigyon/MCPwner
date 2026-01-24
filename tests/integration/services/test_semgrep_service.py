@@ -5,7 +5,7 @@ import requests
 
 class TestSemgrepService:
     """Test Semgrep FastAPI service."""
-    
+
     def test_health_endpoint(self, docker_compose_up):
         """Test Semgrep health endpoint."""
         response = requests.get("http://localhost:8082/health")
@@ -13,7 +13,7 @@ class TestSemgrepService:
         data = response.json()
         assert data["status"] == "healthy"
         assert data["service"] == "semgrep"
-    
+
     def test_version_endpoint(self, docker_compose_up):
         """Test Semgrep version endpoint."""
         response = requests.get("http://localhost:8082/version")

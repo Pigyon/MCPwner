@@ -5,7 +5,7 @@ import requests
 
 class TestCodeQLService:
     """Test CodeQL FastAPI service."""
-    
+
     def test_health_endpoint(self, docker_compose_up):
         """Test CodeQL health endpoint."""
         response = requests.get("http://localhost:8080/health")

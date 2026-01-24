@@ -4,7 +4,7 @@
 def list_tools() -> dict:
     """
     List available and planned security tools.
-    
+
     Returns:
         Dictionary with available and planned tools
     """
@@ -16,7 +16,7 @@ def list_tools() -> dict:
             "gosec",
             "brakeman",
             "pmd",
-            "psalm"
+            "psalm",
         ],
-        "planned": ["owasp-zap"]
+        "planned": ["owasp-zap"],
     }

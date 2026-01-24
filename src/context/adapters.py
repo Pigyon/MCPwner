@@ -1,74 +1,74 @@
 """Language adapters for extracting code elements via CodeQL."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 
 class LanguageAdapter(ABC):
     """Base class for language-specific CodeQL adapters."""
-    
+
     @abstractmethod
     def get_functions_query(self) -> str:
         """
         Get CodeQL query string for extracting functions.
-        
+
         Returns:
             CodeQL query string
         """
         pass
-    
+
     @abstractmethod
     def get_call_graph_query(self) -> str:
         """
         Get CodeQL query string for extracting call relationships.
-        
+
         Returns:
             CodeQL query string
         """
         pass
-    
+
     def parse_function_result(self, row: List[str]) -> Dict[str, Any]:
         """
         Parse CSV row from CodeQL function query into standard dict.
-        
+
         Args:
             row: CSV row as list of strings
-            
+
         Returns:
             Dictionary with keys: name, qualified_name, file, start_line, end_line, code
         """
         # Default implementation - can be overridden by subclasses
         return {
-            'name': row[0] if len(row) > 0 else '',
-            'qualified_name': row[1] if len(row) > 1 else '',
-            'file': row[2] if len(row) > 2 else '',
-            'start_line': int(row[3]) if len(row) > 3 and row[3] else 0,
-            'end_line': int(row[4]) if len(row) > 4 and row[4] else 0,
-            'code': row[5] if len(row) > 5 else ''
+            "name": row[0] if len(row) > 0 else "",
+            "qualified_name": row[1] if len(row) > 1 else "",
+            "file": row[2] if len(row) > 2 else "",
+            "start_line": int(row[3]) if len(row) > 3 and row[3] else 0,
+            "end_line": int(row[4]) if len(row) > 4 and row[4] else 0,
+            "code": row[5] if len(row) > 5 else "",
         }
-    
+
     def parse_call_graph_result(self, row: List[str]) -> Dict[str, Any]:
         """
         Parse CSV row from CodeQL call graph query into standard dict.
-        
+
         Args:
             row: CSV row as list of strings
-            
+
         Returns:
             Dictionary with keys: caller_name, caller_file, callee_name, callee_file, call_line
         """
         return {
-            'caller_name': row[0] if len(row) > 0 else '',
-            'caller_file': row[1] if len(row) > 1 else '',
-            'callee_name': row[2] if len(row) > 2 else '',
-            'callee_file': row[3] if len(row) > 3 else '',
-            'call_line': int(row[4]) if len(row) > 4 and row[4] else None
+            "caller_name": row[0] if len(row) > 0 else "",
+            "caller_file": row[1] if len(row) > 1 else "",
+            "callee_name": row[2] if len(row) > 2 else "",
+            "callee_file": row[3] if len(row) > 3 else "",
+            "call_line": int(row[4]) if len(row) > 4 and row[4] else None,
         }
 
 
 class PythonAdapter(LanguageAdapter):
     """Adapter for Python language."""
-    
+
     def get_functions_query(self) -> str:
         return """
 import python
@@ -82,7 +82,7 @@ select
     f.getLocation().getEndLine() as end_line,
     f.toString() as code
 """
-    
+
     def get_call_graph_query(self) -> str:
         return """
 import python
@@ -102,7 +102,7 @@ select
 
 class CppAdapter(LanguageAdapter):
     """Adapter for C/C++ language."""
-    
+
     def get_functions_query(self) -> str:
         return """
 import cpp
@@ -116,7 +116,7 @@ select
     f.getLocation().getEndLine() as end_line,
     f.toString() as code
 """
-    
+
     def get_call_graph_query(self) -> str:
         return """
 import cpp
@@ -136,7 +136,7 @@ select
 
 class JavaAdapter(LanguageAdapter):
     """Adapter for Java language."""
-    
+
     def get_functions_query(self) -> str:
         return """
 import java
@@ -150,7 +150,7 @@ select
     m.getLocation().getEndLine() as end_line,
     m.toString() as code
 """
-    
+
     def get_call_graph_query(self) -> str:
         return """
 import java
@@ -170,7 +170,7 @@ select
 
 class JavaScriptAdapter(LanguageAdapter):
     """Adapter for JavaScript/TypeScript language."""
-    
+
     def get_functions_query(self) -> str:
         return """
 import javascript
@@ -184,7 +184,7 @@ select
     f.getLocation().getEndLine() as end_line,
     f.toString() as code
 """
-    
+
     def get_call_graph_query(self) -> str:
         return """
 import javascript
@@ -204,7 +204,7 @@ select
 
 class GoAdapter(LanguageAdapter):
     """Adapter for Go language."""
-    
+
     def get_functions_query(self) -> str:
         return """
 import go
@@ -218,7 +218,7 @@ select
     f.getLocation().getEndLine() as end_line,
     f.toString() as code
 """
-    
+
     def get_call_graph_query(self) -> str:
         return """
 import go
@@ -238,7 +238,7 @@ select
 
 class CSharpAdapter(LanguageAdapter):
     """Adapter for C# language."""
-    
+
     def get_functions_query(self) -> str:
         return """
 import csharp
@@ -252,7 +252,7 @@ select
     m.getLocation().getEndLine() as end_line,
     m.toString() as code
 """
-    
+
     def get_call_graph_query(self) -> str:
         return """
 import csharp
@@ -272,7 +272,7 @@ select
 
 class KotlinAdapter(LanguageAdapter):
     """Adapter for Kotlin language."""
-    
+
     def get_functions_query(self) -> str:
         # Kotlin uses Java adapter since it compiles to JVM bytecode
         return """
@@ -288,7 +288,7 @@ select
     m.getLocation().getEndLine() as end_line,
     m.toString() as code
 """
-    
+
     def get_call_graph_query(self) -> str:
         return """
 import java
@@ -309,7 +309,7 @@ select
 
 class RubyAdapter(LanguageAdapter):
     """Adapter for Ruby language."""
-    
+
     def get_functions_query(self) -> str:
         return """
 import ruby
@@ -323,7 +323,7 @@ select
     m.getLocation().getEndLine() as end_line,
     m.toString() as code
 """
-    
+
     def get_call_graph_query(self) -> str:
         return """
 import ruby
@@ -343,7 +343,7 @@ select
 
 class RustAdapter(LanguageAdapter):
     """Adapter for Rust language."""
-    
+
     def get_functions_query(self) -> str:
         return """
 import rust
@@ -357,7 +357,7 @@ select
     f.getLocation().getEndLine() as end_line,
     f.toString() as code
 """
-    
+
     def get_call_graph_query(self) -> str:
         return """
 import rust
@@ -377,7 +377,7 @@ select
 
 class SwiftAdapter(LanguageAdapter):
     """Adapter for Swift language."""
-    
+
     def get_functions_query(self) -> str:
         return """
 import swift
@@ -391,7 +391,7 @@ select
     f.getLocation().getEndLine() as end_line,
     f.toString() as code
 """
-    
+
     def get_call_graph_query(self) -> str:
         return """
 import swift
@@ -411,31 +411,31 @@ select
 
 # Registry mapping language names to adapter instances
 LANGUAGE_ADAPTERS: Dict[str, LanguageAdapter] = {
-    'python': PythonAdapter(),
-    'cpp': CppAdapter(),
-    'c': CppAdapter(),  # C uses same adapter as C++
-    'csharp': CSharpAdapter(),
-    'java': JavaAdapter(),
-    'kotlin': KotlinAdapter(),
-    'javascript': JavaScriptAdapter(),
-    'typescript': JavaScriptAdapter(),  # TypeScript uses same adapter
-    'go': GoAdapter(),
-    'ruby': RubyAdapter(),
-    'rust': RustAdapter(),
-    'swift': SwiftAdapter(),
+    "python": PythonAdapter(),
+    "cpp": CppAdapter(),
+    "c": CppAdapter(),  # C uses same adapter as C++
+    "csharp": CSharpAdapter(),
+    "java": JavaAdapter(),
+    "kotlin": KotlinAdapter(),
+    "javascript": JavaScriptAdapter(),
+    "typescript": JavaScriptAdapter(),  # TypeScript uses same adapter
+    "go": GoAdapter(),
+    "ruby": RubyAdapter(),
+    "rust": RustAdapter(),
+    "swift": SwiftAdapter(),
 }
 
 
 def get_adapter(language: str) -> LanguageAdapter:
     """
     Get language adapter for a given language.
-    
+
     Args:
         language: Programming language name
-        
+
     Returns:
         LanguageAdapter instance
-        
+
     Raises:
         ValueError: If language is not supported
     """
