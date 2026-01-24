@@ -152,6 +152,82 @@ def list_query_packs():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/query/execute', methods=['POST'])
+def execute_query():
+    """
+    Execute a CodeQL query.
+    
+    Expected JSON body:
+    {
+        "database_path": "/workspaces/uuid/databases/python",
+        "query_pack": "security-extended",
+        "query_name": "optional-specific-query",
+        "output_path": "/tmp/results.sarif"
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required = ["database_path", "query_pack", "output_path"]
+        for field in required:
+            if field not in data:
+                return jsonify({"error": f"Missing required field: {field}"}), 400
+        
+        database_path = data["database_path"]
+        query_pack = data["query_pack"]
+        output_path = data["output_path"]
+        query_name = data.get("query_name")
+        
+        # Validate database exists
+        if not Path(database_path).exists():
+            return jsonify({"error": f"Database not found: {database_path}"}), 400
+        
+        # Build CodeQL command
+        cmd = [
+            "codeql", "database", "analyze",
+            database_path,
+            f"codeql/{query_pack}",
+            "--format=sarif-latest",
+            f"--output={output_path}",
+            "--sarif-add-snippets"
+        ]
+        
+        if query_name:
+            cmd.append(f"--query={query_name}")
+        
+        logger.info(f"Executing query: {' '.join(cmd)}")
+        
+        # Execute CodeQL command
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=600  # 10 minute timeout
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"Query execution failed: {result.stderr}")
+            return jsonify({
+                "error": "Query execution failed",
+                "details": result.stderr
+            }), 500
+        
+        # Return success response
+        return jsonify({
+            "status": "success",
+            "output_path": output_path,
+            "stdout": result.stdout
+        }), 200
+        
+    except subprocess.TimeoutExpired:
+        logger.error("Query execution timed out")
+        return jsonify({"error": "Query execution timed out after 10 minutes"}), 500
+    except Exception as e:
+        logger.error(f"Query execution error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
     # Run on all interfaces so it's accessible from other containers
     app.run(host='0.0.0.0', port=8080, debug=False)

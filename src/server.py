@@ -23,7 +23,8 @@ mcp = FastMCP("MCPwner")
 # Register tools using main API router
 print("Loading tools...", file=sys.stderr)
 
-mcp.include_router(api_router)
+# Register all tools from the router
+api_router.register_tools(mcp)
 
 print("✓ All tools loaded", file=sys.stderr)
 

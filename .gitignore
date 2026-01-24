@@ -24,12 +24,4 @@ config/config.yaml
 # Editor/IDE-specific files
 .vscode/
 
-# Kiro user-specific settings (environment-specific)
-.kiro/settings/mcp.json
-.kiro/settings/settings.json
-.kiro/cache/
-.kiro/logs/
-
-# Keep Kiro shared project configuration
-!.kiro/steering/
-!.kiro/settings/mcp.example.json
+*.md
