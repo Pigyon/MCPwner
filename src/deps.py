@@ -174,17 +174,18 @@ def get_brakeman_service():
 
 def get_pmd_service():
     """Get PMD service singleton."""
-    global _pmd_service
+    global _pmd_service, _pmd_client
     if _pmd_service is None:
-        # TODO: Implement PMDService and PMDClient
-        # from services.pmd import PMDService
-        # from clients.pmd import PMDClient
-        # config = get_config()
-        # _pmd_service = PMDService(
-        #     get_workspace_repository(),
-        #     PMDClient(config.get("pmd", {}).get("service_url", "http://pmd:8086"))
-        # )
-        raise NotImplementedError("PMD service not yet implemented")
+        if _pmd_client is None:
+            config = get_config()
+            pmd_url = config.get("pmd", {}).get("service_url", "http://pmd:8086")
+            from clients.pmd import PMDClient
+
+            _pmd_client = PMDClient(pmd_url)
+
+        from services.pmd import PMDService
+
+        _pmd_service = PMDService(get_workspace_repository(), _pmd_client)
     return _pmd_service
 
 

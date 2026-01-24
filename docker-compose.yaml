@@ -34,6 +34,7 @@ services:
       - BANDIT_SERVICE_URL=http://bandit:8083
       - GOSEC_SERVICE_URL=http://gosec:8084
       - BRAKEMAN_SERVICE_URL=http://brakeman:8085
+      - PMD_SERVICE_URL=http://pmd:8086
     depends_on:
       - codeql
       - linguist
@@ -41,6 +42,7 @@ services:
       - bandit
       - gosec
       - brakeman
+      - pmd
 
   mcpwner-sse:
     build:
@@ -71,6 +73,7 @@ services:
       - BANDIT_SERVICE_URL=http://bandit:8083
       - GOSEC_SERVICE_URL=http://gosec:8084
       - BRAKEMAN_SERVICE_URL=http://brakeman:8085
+      - PMD_SERVICE_URL=http://pmd:8086
     depends_on:
       - codeql
       - linguist
@@ -78,6 +81,7 @@ services:
       - bandit
       - gosec
       - brakeman
+      - pmd
     command: ["python", "/app/src/server.py"]
 
   codeql:
@@ -236,6 +240,32 @@ services:
       - mcpwner-internal
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8085/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  pmd:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.pmd
+    container_name: pmd-scanner
+    user: "0:0"  # Run as root for pmd execution
+    read_only: false
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8086:8086"
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
       interval: 30s
       timeout: 10s
       retries: 3

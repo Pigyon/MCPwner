@@ -8,6 +8,8 @@ from api.tools.sast.sast_brakeman_scan import sast_brakeman_scan
 from api.tools.sast.sast_gosec_get_report import sast_gosec_get_report
 from api.tools.sast.sast_gosec_scan import sast_gosec_scan
 from api.tools.sast.sast_list_tools import sast_list_tools
+from api.tools.sast.sast_pmd_get_report import sast_pmd_get_report
+from api.tools.sast.sast_pmd_scan import sast_pmd_scan
 from api.tools.sast.sast_semgrep_get_report import sast_semgrep_get_report
 from api.tools.sast.sast_semgrep_scan import sast_semgrep_scan
 
@@ -22,3 +24,5 @@ router.tool()(sast_gosec_scan)
 router.tool()(sast_gosec_get_report)
 router.tool()(sast_brakeman_scan)
 router.tool()(sast_brakeman_get_report)
+router.tool()(sast_pmd_scan)
+router.tool()(sast_pmd_get_report)

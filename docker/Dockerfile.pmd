@@ -1,0 +1,20 @@
+FROM pmd/pmd:latest
+
+# Switch to root for installation
+USER root
+
+# Install Python, pip, FastAPI and uvicorn for the HTTP service
+# PMD image is based on Alpine Linux
+RUN apk add --no-cache python3 py3-pip && \
+    python3 -m pip install --break-system-packages --no-cache-dir fastapi uvicorn
+
+WORKDIR /service
+
+# Copy service files
+COPY docker/pmd_service.py .
+
+# Expose service port
+EXPOSE 8086
+
+# Run the FastAPI service with uvicorn
+CMD ["python3", "-m", "uvicorn", "pmd_service:app", "--host", "0.0.0.0", "--port", "8086"]
