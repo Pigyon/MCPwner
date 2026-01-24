@@ -4,15 +4,18 @@ Supports STDIO and SSE transports with namespaced tools.
 """
 
 import sys
+import os
 from fastmcp import FastMCP
+
 from config.config import load_config, ConfigError
 from config.transport import get_transport_config
 from api.router import router as api_router
 
 # Load configuration
 try:
-    config = load_config("config/config.yaml")
-    print(f"Configuration loaded successfully from config/config.yaml", file=sys.stderr)
+    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "config.yaml")
+    config = load_config(config_path)
+    print(f"Configuration loaded successfully from {config_path}", file=sys.stderr)
 except ConfigError as e:
     print(f"Configuration error: {e}", file=sys.stderr)
     sys.exit(1)
