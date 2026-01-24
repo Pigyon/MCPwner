@@ -1,22 +1,46 @@
 """HTTP service wrapper for Semgrep SAST tool."""
 
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import subprocess
 import json
 import os
 from pathlib import Path
 from datetime import datetime
+from typing import Optional, Dict, Any, List
 
-app = Flask(__name__)
+app = FastAPI(title="Semgrep Service", version="1.0.0")
 
 
-@app.route('/health', methods=['GET'])
+# Request/Response Models
+class ScanConfig(BaseModel):
+    rules: Optional[List[str]] = None
+    exclude: Optional[List[str]] = None
+
+
+class ScanRequest(BaseModel):
+    workspace_path: str
+    scan_path: Optional[str] = "."
+    config: Optional[Dict[str, Any]] = None
+
+
+class HealthResponse(BaseModel):
+    status: str
+    service: str
+
+
+class VersionResponse(BaseModel):
+    version: str
+    status: str
+
+
+@app.get('/health', response_model=HealthResponse)
 def health():
     """Health check endpoint."""
-    return jsonify({"status": "healthy", "service": "semgrep"})
+    return {"status": "healthy", "service": "semgrep"}
 
 
-@app.route('/version', methods=['GET'])
+@app.get('/version', response_model=VersionResponse)
 def version():
     """Get Semgrep version."""
     try:
@@ -28,65 +52,35 @@ def version():
             check=True
         )
         
-        return jsonify({
+        return {
             "version": result.stdout.strip(),
             "status": "success"
-        })
+        }
         
     except Exception as e:
-        return jsonify({
-            "status": "error",
-            "error": str(e)
-        }), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.route('/scan', methods=['POST'])
-def scan():
+@app.post('/scan')
+def scan(request: ScanRequest):
     """
     Execute Semgrep scan on a workspace.
     
-    Request JSON:
-    {
-        "workspace_path": "/workspaces/{workspace_id}/source",
-        "scan_path": "optional/relative/path",  # Optional
-        "config": {                              # Optional
-            "rules": ["p/security-audit"],
-            "exclude": ["tests/"]
-        }
-    }
-    
-    Response JSON:
-    {
-        "status": "success",
-        "output_path": "/workspaces/{workspace_id}/reports/sast/semgrep/{timestamp}.sarif",
-        "finding_count": 42,
-        "duration_seconds": 12.5
-    }
+    Returns scan results including finding count and report path.
     """
     try:
-        data = request.get_json()
-        workspace_path = data.get('workspace_path')
-        scan_path = data.get('scan_path', '.')
-        config = data.get('config', {})
-        
-        if not workspace_path:
-            return jsonify({
-                "status": "error",
-                "error": "Missing 'workspace_path' parameter"
-            }), 400
-        
         # Build full scan path
-        full_scan_path = Path(workspace_path) / scan_path
+        full_scan_path = Path(request.workspace_path) / request.scan_path
         
         if not full_scan_path.exists():
-            return jsonify({
-                "status": "error",
-                "error": f"Scan path does not exist: {full_scan_path}"
-            }), 404
+            raise HTTPException(
+                status_code=404,
+                detail=f"Scan path does not exist: {full_scan_path}"
+            )
         
         # Create output directory
         timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S-%f')[:-3] + 'Z'
-        workspace_base = Path(workspace_path).parent
+        workspace_base = Path(request.workspace_path).parent
         output_dir = workspace_base / 'reports' / 'sast' / 'semgrep'
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / f'{timestamp}.sarif'
@@ -95,6 +89,7 @@ def scan():
         cmd = ['semgrep', 'scan', '--sarif', '--output', str(output_path)]
         
         # Add config options
+        config = request.config or {}
         if 'rules' in config:
             for rule in config['rules']:
                 cmd.extend(['--config', rule])
@@ -123,12 +118,14 @@ def scan():
         # Semgrep returns non-zero exit codes when findings are found
         # Only treat it as error if the output file wasn't created
         if not output_path.exists():
-            return jsonify({
-                "status": "error",
-                "error": f"Semgrep scan failed: {result.stderr}",
-                "stdout": result.stdout,
-                "stderr": result.stderr
-            }), 500
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "error": f"Semgrep scan failed: {result.stderr}",
+                    "stdout": result.stdout,
+                    "stderr": result.stderr
+                }
+            )
         
         # Parse SARIF to count findings
         finding_count = 0
@@ -139,30 +136,29 @@ def scan():
                 len(run.get('results', [])) 
                 for run in sarif_data.get('runs', [])
             )
-        except Exception as e:
+        except Exception:
             # If we can't parse SARIF, still return success but with 0 findings
             pass
         
-        return jsonify({
+        return {
             "status": "success",
             "output_path": str(output_path),
             "finding_count": finding_count,
             "duration_seconds": duration
-        })
+        }
         
     except subprocess.TimeoutExpired:
-        return jsonify({
-            "status": "error",
-            "error": "Semgrep scan timed out"
-        }), 504
-        
+        raise HTTPException(
+            status_code=504,
+            detail="Semgrep scan timed out"
+        )
+    except HTTPException:
+        raise
     except Exception as e:
-        return jsonify({
-            "status": "error",
-            "error": str(e)
-        }), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == '__main__':
+    import uvicorn
     port = int(os.getenv('PORT', 8082))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    uvicorn.run(app, host='0.0.0.0', port=port)

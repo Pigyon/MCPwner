@@ -3,8 +3,8 @@ FROM semgrep/semgrep:latest
 # Switch to root for installation
 USER root
 
-# Install Python Flask and curl for the HTTP service
-RUN pip install --no-cache-dir flask requests
+# Install FastAPI and uvicorn for the HTTP service
+RUN python -m pip install --break-system-packages --no-cache-dir fastapi uvicorn
 
 WORKDIR /service
 
@@ -14,5 +14,5 @@ COPY docker/semgrep_service.py .
 # Expose service port
 EXPOSE 8082
 
-# Run the Flask service
-CMD ["python", "semgrep_service.py"]
+# Run the FastAPI service with uvicorn
+CMD ["python", "-m", "uvicorn", "semgrep_service:app", "--host", "0.0.0.0", "--port", "8082"]

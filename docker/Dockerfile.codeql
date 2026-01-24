@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/cstsectools/codeql-container@sha256:0fd52101e30652e0998be
 # Run as root for installation
 USER root
 
-# Install Python and Flask for the HTTP service
+# Install Python and FastAPI/uvicorn for the HTTP service
 RUN apt-get update && \
     apt-get install -y python3 python3-pip curl && \
     rm -rf /var/lib/apt/lists/*
@@ -22,5 +22,5 @@ EXPOSE 8080
 # Override the base image's entrypoint to avoid startup script issues
 ENTRYPOINT []
 
-# Run the Flask service as root (docker-compose will handle user if needed)
-CMD ["python3", "codeql_service.py"]
+# Run the FastAPI service with uvicorn
+CMD ["python3", "-m", "uvicorn", "codeql_service:app", "--host", "0.0.0.0", "--port", "8080"]

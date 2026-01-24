@@ -3,8 +3,9 @@ FROM crazymax/linguist:latest
 # Switch to root for installation
 USER root
 
-# Install Python and Flask for the HTTP service
-RUN apk add --no-cache python3 py3-pip py3-flask curl
+# Install Python and FastAPI/uvicorn for the HTTP service
+RUN apk add --no-cache python3 py3-pip curl && \
+    pip3 install --break-system-packages --no-cache-dir fastapi uvicorn
 
 WORKDIR /service
 
@@ -17,5 +18,5 @@ EXPOSE 8081
 # Override the base image's entrypoint
 ENTRYPOINT []
 
-# Run the Flask service
-CMD ["python3", "linguist_service.py"]
+# Run the FastAPI service with uvicorn
+CMD ["python3", "-m", "uvicorn", "linguist_service:app", "--host", "0.0.0.0", "--port", "8081"]

@@ -1,56 +1,54 @@
 """HTTP service wrapper for GitHub Linguist."""
 
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import subprocess
 import json
-import os
 from pathlib import Path
+from typing import Optional
 
-app = Flask(__name__)
+app = FastAPI(title="Linguist Service", version="1.0.0")
 
 
-@app.route('/health', methods=['GET'])
+# Request/Response Models
+class DetectLanguagesRequest(BaseModel):
+    path: str
+
+
+class HealthResponse(BaseModel):
+    status: str
+    service: str
+
+
+class VersionResponse(BaseModel):
+    version: str
+    status: str
+
+
+@app.get('/health', response_model=HealthResponse)
 def health():
     """Health check endpoint."""
-    return jsonify({"status": "healthy", "service": "linguist"})
+    return {"status": "healthy", "service": "linguist"}
 
 
-@app.route('/detect', methods=['POST'])
-def detect_languages():
+@app.post('/detect')
+def detect_languages(request: DetectLanguagesRequest):
     """
     Detect languages in a directory.
     
-    Request JSON:
-    {
-        "path": "/workspaces/workspace-id/source"
-    }
-    
-    Response JSON:
-    {
-        "languages": {...},
-        "status": "success"
-    }
+    Returns language breakdown and statistics.
     """
     try:
-        data = request.get_json()
-        workspace_path = data.get('path')
-        
-        if not workspace_path:
-            return jsonify({
-                "status": "error",
-                "error": "Missing 'path' parameter"
-            }), 400
-        
         # Validate path exists
-        if not Path(workspace_path).exists():
-            return jsonify({
-                "status": "error",
-                "error": f"Path does not exist: {workspace_path}"
-            }), 404
+        if not Path(request.path).exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Path does not exist: {request.path}"
+            )
         
         # Run linguist
         result = subprocess.run(
-            ["github-linguist", "--json", workspace_path],
+            ["github-linguist", "--json", request.path],
             capture_output=True,
             text=True,
             timeout=60,
@@ -60,37 +58,36 @@ def detect_languages():
         # Parse JSON output
         languages_data = json.loads(result.stdout)
         
-        return jsonify({
+        return {
             "status": "success",
             "languages": languages_data
-        })
+        }
         
     except subprocess.TimeoutExpired:
-        return jsonify({
-            "status": "error",
-            "error": "Linguist detection timed out"
-        }), 504
+        raise HTTPException(
+            status_code=504,
+            detail="Linguist detection timed out"
+        )
         
     except subprocess.CalledProcessError as e:
-        return jsonify({
-            "status": "error",
-            "error": f"Linguist execution failed: {e.stderr}"
-        }), 500
+        raise HTTPException(
+            status_code=500,
+            detail=f"Linguist execution failed: {e.stderr}"
+        )
         
     except json.JSONDecodeError as e:
-        return jsonify({
-            "status": "error",
-            "error": f"Failed to parse linguist output: {str(e)}"
-        }), 500
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse linguist output: {str(e)}"
+        )
         
+    except HTTPException:
+        raise
     except Exception as e:
-        return jsonify({
-            "status": "error",
-            "error": str(e)
-        }), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.route('/version', methods=['GET'])
+@app.get('/version', response_model=VersionResponse)
 def version():
     """Get linguist version."""
     try:
@@ -102,18 +99,17 @@ def version():
             check=True
         )
         
-        return jsonify({
+        return {
             "version": result.stdout.strip(),
             "status": "success"
-        })
+        }
         
     except Exception as e:
-        return jsonify({
-            "status": "error",
-            "error": str(e)
-        }), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == '__main__':
+    import uvicorn
+    import os
     port = int(os.getenv('PORT', 8081))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    uvicorn.run(app, host='0.0.0.0', port=port)
