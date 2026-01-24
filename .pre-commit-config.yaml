@@ -34,4 +34,4 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
-        stages: [manual, pre-push]
+        stages: [pre-push]  # Only run on push, not on every commit

@@ -1,0 +1,43 @@
+# Ruff configuration for linting and formatting
+#  allows editor to show issues in real-time
+
+[lint]
+# Enable the same rules as pre-commit
+select = [
+    "SIM",  # flake8-simplify: Simplify code patterns
+    "RET",  # flake8-return: Enforce consistent return statements
+    "C4",   # flake8-comprehensions: Improve comprehensions
+    "PTH",  # flake8-use-pathlib: Prefer pathlib over os.path
+    "S",    # bandit: Security issue detection
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort (import sorting)
+]
+
+# Auto-fix when possible
+fix = true
+fixable = ["ALL"]
+
+# Ignore specific rules if needed
+ignore = [
+    "S101",  # Allow assert statements (common in tests)
+]
+
+[lint.per-file-ignores]
+# Allow assert and other test-specific patterns in test files
+"tests/**/*.py" = ["S101", "S105", "S106"]
+
+[format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with 4 spaces
+indent-style = "space"
+
+# Line length
+line-length = 100
+
+[lint.isort]
+# Group imports properly
+known-first-party = ["src"]
