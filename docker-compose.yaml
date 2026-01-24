@@ -86,7 +86,6 @@ services:
       - brakeman
       - pmd
       - psalm
-      - pmd
     command: ["python", "/app/src/server.py"]
 
   codeql:

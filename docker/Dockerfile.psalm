@@ -1,12 +1,20 @@
-FROM vimeo/psalm:latest
+# Pin to PHP 8.2.27 (2024-01-24)
+FROM php:8.2-cli-alpine
 
-# Switch to root for installation
-USER root
+# Install Python, pip, FastAPI, uvicorn, and required dependencies for Psalm
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    git \
+    bash \
+    && python3 -m pip install --break-system-packages --no-cache-dir fastapi uvicorn
 
-# Install Python, pip, FastAPI and uvicorn for the HTTP service
-# Psalm image is based on Alpine Linux
-RUN apk add --no-cache python3 py3-pip && \
-    python3 -m pip install --break-system-packages --no-cache-dir fastapi uvicorn
+# Pin to Composer 2.8.4 (2024-01-24)
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Install Psalm globally
+RUN composer global require vimeo/psalm && \
+    ln -s /root/.composer/vendor/bin/psalm /usr/local/bin/psalm
 
 WORKDIR /service
 
