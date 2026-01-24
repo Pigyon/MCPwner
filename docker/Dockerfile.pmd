@@ -1,4 +1,4 @@
-FROM pmd/pmd:latest
+FROM pmdcode/pmd:latest
 
 # Switch to root for installation
 USER root
