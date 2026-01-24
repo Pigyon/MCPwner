@@ -14,34 +14,48 @@
 3. Install pre-commit hooks:
    ```bash
    pip install pre-commit
-   pre-commit install --hook-type pre-push
+   pre-commit install
    ```
 
 ### Pre-commit Hooks
 
-This project uses pre-commit to run tests before every push. The hooks are configured in `.pre-commit-config.yaml` and the test runner script is in `tests/hooks/run-tests.py`.
+This project uses pre-commit to maintain code quality and run tests. The hooks are configured in `.pre-commit-config.yaml`.
 
 **First time setup:**
 ```bash
 pip install pre-commit
-pre-commit install --hook-type pre-push
+pre-commit install
 ```
 
-**What it does:**
-- Runs all integration tests before `git push`
-- Blocks the push if tests fail
-- Works cross-platform (Linux, macOS, Windows)
-- Automatically detects your Python interpreter (python/python3/py)
+**What runs on every commit:**
+- **Ruff linter**: Checks code quality, simplifies patterns, enforces best practices
+- **Ruff formatter**: Auto-formats Python code
+- **Vulture**: Detects unused/dead code
+- **JSON/YAML validation**: Ensures config files are valid
+- **Git quality checks**: Detects merge conflicts, blocks large files, fixes whitespace
 
-**Manual test run:**
+**What runs on push:**
+- **Integration tests**: Full test suite (configured with `stages: [manual, pre-push]`)
+
+**Manual runs:**
 ```bash
+# Run all hooks on all files
+pre-commit run --all-files
+
+# Run only tests (pre-push stage)
 pre-commit run --hook-stage push --all-files
+
+# Run specific hook
+pre-commit run ruff-check --all-files
 ```
 
 **Bypass in emergencies:**
 ```bash
-git push --no-verify
+git commit --no-verify  # Skip commit hooks
+git push --no-verify    # Skip push hooks
 ```
+
+**Note:** Pre-commit automatically downloads and manages all tools (ruff, vulture, etc.) - you don't need to install them separately.
 
 ### Running Tests Manually
 

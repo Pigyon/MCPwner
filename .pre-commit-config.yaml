@@ -1,4 +1,30 @@
 repos:
+  # Code Quality
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.14  
+    hooks:
+      - id: ruff-check
+        name: Run ruff linter
+        args:
+          - --select=SIM  # flake8-simplify: Simplify code patterns (e.g., use context managers, simplify boolean expressions)
+          - --select=RET  # flake8-return: Enforce consistent return statements (e.g., unnecessary variable assignment before return)
+          - --select=C4   # flake8-comprehensions: Improve list/dict/set comprehensions (e.g., unnecessary list() calls)
+          - --select=PTH  # flake8-use-pathlib: Prefer pathlib over os.path for file operations
+          - --select=S    # bandit: Security issue detection
+          - --fix
+          - --exit-non-zero-on-fix
+      - id: ruff-format
+        name: Format code with ruff
+
+  # Dead Code Detection
+  - repo: https://github.com/jendrikseipp/vulture
+    rev: v2.14  
+    hooks:
+      - id: vulture
+        name: Find dead code with vulture
+        # Detects unused functions, classes, variables, imports, and attributes
+
+  # Tests
   - repo: local
     hooks:
       - id: pytest
