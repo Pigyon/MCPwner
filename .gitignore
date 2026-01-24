@@ -24,4 +24,7 @@ config/config.yaml
 # Editor/IDE-specific files
 .vscode/
 
+# Documentation
 *.md
+!CONTRIBUTING.md
+!README.md

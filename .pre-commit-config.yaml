@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run pytest tests
+        entry: tests/hooks/run-tests.py
+        language: script
+        pass_filenames: false
+        always_run: true
+        stages: [manual, pre-push]
