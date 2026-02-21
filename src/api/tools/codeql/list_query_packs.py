@@ -1,8 +1,9 @@
 """List query packs tool."""
 
 import logging
-import subprocess
 from typing import Any, Dict, List, Optional
+
+from deps import get_codeql_service
 
 logger = logging.getLogger(__name__)
 
@@ -24,31 +25,15 @@ def list_query_packs(language: Optional[str] = None) -> dict:
         list_query_packs(language="python")
     """
     try:
-        # Try to resolve query packs using CodeQL CLI
-        cmd = ["codeql", "resolve", "queries"]
+        codeql_service = get_codeql_service()
+        result = codeql_service.list_query_packs()
+        
+        # The result from service is already structured
+        return result
 
-        # Add language-specific pack if provided
-        if language:
-            cmd.append(f"codeql/{language}-queries")
-        else:
-            # Query common language packs
-            cmd.append("codeql/*-queries")
-
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-
-        # Parse output to extract pack information
-        packs = _parse_query_packs(result.stdout, language)
-
-        return {"status": "success", "language": language, "packs": packs}
-
-    except subprocess.TimeoutExpired:
-        logger.warning("Query pack listing timed out, returning defaults")
-        return _get_default_packs(language)
-    except FileNotFoundError:
-        logger.warning("CodeQL CLI not found, returning defaults")
-        return _get_default_packs(language)
     except Exception as e:
         logger.error(f"Error listing query packs: {e}")
+        # Fallback to defaults if service call fails
         return _get_default_packs(language)
 
 
