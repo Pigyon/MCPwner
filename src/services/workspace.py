@@ -42,9 +42,25 @@ class WorkspaceService:
         elif source_type == "local":
             try:
                 mount_info = setup_local_mount(source, workspace.workspace_id, base_path)
-                workspace.local_path = mount_info["local_path"]
-                workspace.mount_path = mount_info["mount_path"]
-                workspace.path = mount_info["local_path"]
+                
+                # Copy local source to shared workspace directory
+                # This ensures all containers (CodeQL, SAST) can access the files
+                destination_path = mount_info["mount_path"]
+                source_path = mount_info["local_path"]
+                
+                if Path(destination_path).exists():
+                    shutil.rmtree(destination_path)
+                    
+                # Ignore .git directory to save space and time
+                shutil.copytree(
+                    source_path, 
+                    destination_path,
+                    ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc")
+                )
+                
+                workspace.local_path = source_path
+                workspace.mount_path = destination_path
+                workspace.path = destination_path
                 self.repository.save(workspace)
             except LocalMountError:
                 raise
