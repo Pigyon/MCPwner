@@ -2,8 +2,6 @@
 
 import json
 import logging
-import subprocess
-import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, List
@@ -71,10 +69,10 @@ def execute_query(
 
         try:
             start_time = time.time()
-            
+
             # Execute via CodeQL Service (HTTP to codeql-executor)
             logger.info(f"Executing query pack {query_pack} via CodeQL service")
-            
+
             # The service call should handle the execution remotely
             # We pass the output_path where we expect the result to be written
             # Since both containers share /workspaces, the executor writes it there, and we read it here.

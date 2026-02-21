@@ -126,7 +126,7 @@ def create_database(request: CreateDatabaseRequest):
             text=True,
             timeout=600,  # 10 minute timeout
         )
-        
+
         if result.returncode != 0:
             logger.error(f"Database creation failed: {result.stderr}")
             logger.error(f"STDOUT: {result.stdout}")

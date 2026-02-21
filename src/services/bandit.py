@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from clients.bandit import BanditClient
-from config.languages import BANDIT_LANGUAGES
 from repositories.workspace import WorkspaceRepository
 
 

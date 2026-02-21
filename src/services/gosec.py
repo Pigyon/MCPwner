@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from clients.gosec import GosecClient
-from config.languages import GOSEC_LANGUAGES
 from repositories.workspace import WorkspaceRepository
 
 

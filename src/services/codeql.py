@@ -1,9 +1,9 @@
 """CodeQL service for business logic."""
 
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
-import logging
 
 from clients.codeql import CodeQLClient
 from config.languages import CODEQL_LANGUAGES

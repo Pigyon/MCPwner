@@ -1,7 +1,7 @@
 """CodeQL HTTP client for external service communication."""
 
-from typing import Any, Dict
 import logging
+from typing import Any, Dict
 
 import requests
 

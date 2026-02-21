@@ -3,30 +3,29 @@
 Supports STDIO and SSE transports with namespaced tools.
 """
 
+import logging
 import os
 import sys
-import logging
-import traceback
 
 from fastmcp import FastMCP
 
 # Load configuration first
 try:
-    from config.config import ConfigError, load_config
+    from config.config import load_config
     from config.logging import setup_logging
     from config.transport import get_transport_config
-    
+
     config_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "config",
         "config.yaml",
     )
     config = load_config(config_path)
-    
+
     # Setup logging
     setup_logging(config)
     logger = logging.getLogger(__name__)
-    
+
     logger.info(f"Configuration loaded successfully from {config_path}")
 except Exception as e:
     print(f"Configuration error: {e}", file=sys.stderr)
@@ -48,7 +47,7 @@ except Exception as e:
     logger.error(f"ERROR loading tools: {e}")
     logger.exception("Tool loading failed")
     # Don't exit, try to run anyway so we can see logs
-    
+
 
 def run_server():
     """Run the MCP server with appropriate transport."""

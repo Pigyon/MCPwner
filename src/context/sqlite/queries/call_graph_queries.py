@@ -1,6 +1,5 @@
 """SQL query builders for call graph operations."""
 
-from typing import Tuple, List, Any
 
 
 def build_insert_relationship_query() -> str:
