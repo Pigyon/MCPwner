@@ -117,8 +117,15 @@ class CodeQLService:
         if not output_path:
             output_path = f"/tmp/{workspace_id}_{database_id}_results.sarif"
 
+        resolved_pack = query_pack
+        if query_pack in ["security-extended", "security-and-quality", "code-scanning"]:
+            # Map generic alias to language-specific suite
+            # e.g. "security-extended" -> "codeql/python-queries:codeql-suites/python-security-extended.qls"
+            resolved_pack = f"codeql/{database.language}-queries:codeql-suites/{database.language}-{query_pack}.qls"
+            logger.info(f"Resolved query pack alias '{query_pack}' to '{resolved_pack}'")
+
         return self.codeql_client.execute_query(
-            database_path=database.path, query_pack=query_pack, output_path=output_path
+            database_path=database.path, query_pack=resolved_pack, output_path=output_path
         )
 
     def list_query_packs(self) -> Dict[str, Any]:
