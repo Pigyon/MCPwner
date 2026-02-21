@@ -1,0 +1,16 @@
+
+{
+  "mcpServers": {
+    "mcpwner": {
+      "command": "docker",
+      "args": [
+        "exec",
+        "-i",
+        "mcpwner-server",
+        "python",
+        "src/server.py"
+      ],
+      "env": {}
+    }
+  }
+}
