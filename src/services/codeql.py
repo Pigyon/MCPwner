@@ -3,10 +3,13 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
+import logging
 
 from clients.codeql import CodeQLClient
 from models import CodeQLDatabase
 from repositories.workspace import WorkspaceRepository
+
+logger = logging.getLogger(__name__)
 
 
 class CodeQLService:
@@ -70,6 +73,7 @@ class CodeQLService:
         except Exception as e:
             # Log warning but continue, as the directory might be created by the service
             # or volume permissions might prevent it here (though shared volume should allow it)
+            logger.warning(f"Failed to create database parent directory: {e}")
             pass
 
         try:
@@ -90,6 +94,8 @@ class CodeQLService:
             )
 
         except Exception as e:
+            logger.error(f"Failed to create CodeQL database: {e}")
+            logger.exception("CodeQL database creation error")
             database = CodeQLDatabase(
                 database_id=f"{workspace_id}-{language}",
                 workspace_id=workspace_id,

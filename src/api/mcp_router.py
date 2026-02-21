@@ -2,8 +2,11 @@
 
 from typing import Callable, List, Optional
 import sys
+import logging
 
 from fastmcp import FastMCP
+
+logger = logging.getLogger(__name__)
 
 
 class MCPRouter:
@@ -56,7 +59,7 @@ class MCPRouter:
             mcp: FastMCP instance
         """
         # Register own tools
-        print(f"Registering {len(self._tools)} tools for prefix '{self.prefix}'", file=sys.stderr)
+        logger.info(f"Registering {len(self._tools)} tools for prefix '{self.prefix}'")
         for tool_func in self._tools:
             original_name = tool_func.__name__
             
@@ -76,12 +79,12 @@ class MCPRouter:
             names_to_register = list(set(names_to_register))
 
             for name in names_to_register:
-                print(f"  Registering tool: {name}", file=sys.stderr)
+                logger.debug(f"  Registering tool: {name}")
                 try:
                     # Use the name argument to force the name
                     mcp.tool(name=name)(tool_func)
                 except Exception as e:
-                    print(f"  ERROR registering tool {name}: {e}", file=sys.stderr)
+                    logger.error(f"  ERROR registering tool {name}: {e}")
 
         # Register included routers' tools
         for router in self._routers:

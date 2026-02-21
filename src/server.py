@@ -5,6 +5,7 @@ Supports STDIO and SSE transports with namespaced tools.
 
 import os
 import sys
+import logging
 import traceback
 
 from fastmcp import FastMCP
@@ -12,6 +13,7 @@ from fastmcp import FastMCP
 # Load configuration first
 try:
     from config.config import ConfigError, load_config
+    from config.logging import setup_logging
     from config.transport import get_transport_config
     
     config_path = os.path.join(
@@ -20,7 +22,12 @@ try:
         "config.yaml",
     )
     config = load_config(config_path)
-    print(f"Configuration loaded successfully from {config_path}", file=sys.stderr)
+    
+    # Setup logging
+    setup_logging(config)
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"Configuration loaded successfully from {config_path}")
 except Exception as e:
     print(f"Configuration error: {e}", file=sys.stderr)
     sys.exit(1)
@@ -29,17 +36,17 @@ except Exception as e:
 mcp = FastMCP("MCPwner")
 
 # Register tools using main API router
-print("Loading tools...", file=sys.stderr)
+logger.info("Loading tools...")
 
 try:
     from api.router import router as api_router
     # Register all tools from the router
-    print("Registering tools from api_router...", file=sys.stderr)
+    logger.info("Registering tools from api_router...")
     api_router.register_tools(mcp)
-    print("All tools loaded", file=sys.stderr)
+    logger.info("All tools loaded")
 except Exception as e:
-    print(f"ERROR loading tools: {e}", file=sys.stderr)
-    traceback.print_exc(file=sys.stderr)
+    logger.error(f"ERROR loading tools: {e}")
+    logger.exception("Tool loading failed")
     # Don't exit, try to run anyway so we can see logs
     
 
@@ -48,28 +55,28 @@ def run_server():
     transport_config = get_transport_config(config)
     transport = transport_config["transport"]
 
-    print("\nStarting MCPwner MCP server...", file=sys.stderr)
-    print(f"Transport: {transport}", file=sys.stderr)
+    logger.info("Starting MCPwner MCP server...")
+    logger.info(f"Transport: {transport}")
 
     if transport == "sse":
         host = transport_config["host"]
         port = transport_config["port"]
-        print(f"SSE endpoint: http://{host}:{port}/sse", file=sys.stderr)
-        print(f"Health check: http://{host}:{port}/health", file=sys.stderr)
+        logger.info(f"SSE endpoint: http://{host}:{port}/sse")
+        logger.info(f"Health check: http://{host}:{port}/health")
 
         # Run with SSE transport
         mcp.run(transport="sse", host=host, port=port)
 
     elif transport == "stdio":
-        print("STDIO mode: Reading from stdin, writing to stdout", file=sys.stderr)
-        print("Compatible with: Claude Desktop, MCP CLI tools", file=sys.stderr)
+        logger.info("STDIO mode: Reading from stdin, writing to stdout")
+        logger.info("Compatible with: Claude Desktop, MCP CLI tools")
 
         # Run with STDIO transport (default)
         mcp.run()
 
     else:
-        print(f"ERROR: Unknown transport '{transport}'", file=sys.stderr)
-        print("Supported transports: stdio, sse", file=sys.stderr)
+        logger.error(f"ERROR: Unknown transport '{transport}'")
+        logger.error("Supported transports: stdio, sse")
         sys.exit(1)
 
 
@@ -77,9 +84,9 @@ if __name__ == "__main__":
     try:
         run_server()
     except KeyboardInterrupt:
-        print("\nShutting down gracefully...", file=sys.stderr)
+        logger.info("Shutting down gracefully...")
         sys.exit(0)
     except Exception as e:
-        print(f"FATAL ERROR: {e}", file=sys.stderr)
-        traceback.print_exc(file=sys.stderr)
+        logger.critical(f"FATAL ERROR: {e}")
+        logger.exception("Fatal error occurred")
         sys.exit(1)
