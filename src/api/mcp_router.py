@@ -1,8 +1,7 @@
 """MCPRouter wrapper for organizing tools into namespaced routers."""
 
-from typing import Callable, List, Optional
-import sys
 import logging
+from typing import Callable, List, Optional
 
 from fastmcp import FastMCP
 
@@ -62,19 +61,19 @@ class MCPRouter:
         logger.info(f"Registering {len(self._tools)} tools for prefix '{self.prefix}'")
         for tool_func in self._tools:
             original_name = tool_func.__name__
-            
+
             # Apply prefix if set
             names_to_register = []
             if self.prefix:
                 name_snake = f"{self.prefix}_{original_name}"
                 name_kebab = name_snake.replace("_", "-")
-                
+
                 names_to_register.extend([name_snake, name_kebab])
-            
+
             # ALWAYS register original name and its kebab variant
             names_to_register.append(original_name)
             names_to_register.append(original_name.replace("_", "-"))
-            
+
             # Remove duplicates
             names_to_register = list(set(names_to_register))
 

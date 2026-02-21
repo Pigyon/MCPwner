@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from clients.semgrep import SemgrepClient
-from config.languages import SEMGREP_LANGUAGES
 from repositories.workspace import WorkspaceRepository
 
 
