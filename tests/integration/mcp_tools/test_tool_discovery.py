@@ -60,22 +60,22 @@ async def test_all_tools_discoverable(docker_compose_up):
             # Health tools (no prefix)
             "health_check",
             "list_tools",
-            # Workspace tools (workspace_ prefix)
-            "workspace_create_workspace",
-            "workspace_list_workspaces",
-            "workspace_cleanup_workspace",
-            # CodeQL tools (codeql_ prefix)
-            "codeql_detect_languages",
-            "codeql_create_codeql_database",
-            "codeql_list_databases",
-            "codeql_execute_query",
-            "codeql_list_query_packs",
-            "codeql_extract_code_context",
-            "codeql_get_function_context",
-            "codeql_get_callers",
-            "codeql_get_callees",
-            "codeql_search_functions",
-            "codeql_list_functions",
+            # Workspace tools (workspace_ prefix removed)
+            "create_workspace",
+            "list_workspaces",
+            "cleanup_workspace",
+            # CodeQL tools (codeql_ prefix removed)
+            "detect_languages",
+            "create_codeql_database",
+            "list_databases",
+            "execute_query",
+            "list_query_packs",
+            "extract_code_context",
+            "get_function_context",
+            "get_callers",
+            "get_callees",
+            "search_functions",
+            "list_functions",
             # SAST tools (sast_ prefix)
             "sast_list_tools",
             "sast_semgrep_scan",

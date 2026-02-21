@@ -6,5 +6,5 @@ from api.tools.health.list_tools import list_tools
 
 router = MCPRouter()
 
-router.tool()(health_check)
 router.tool()(list_tools)
+router.tool()(health_check)

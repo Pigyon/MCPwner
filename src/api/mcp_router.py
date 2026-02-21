@@ -1,6 +1,7 @@
 """MCPRouter wrapper for organizing tools into namespaced routers."""
 
 from typing import Callable, List, Optional
+import sys
 
 from fastmcp import FastMCP
 
@@ -55,15 +56,32 @@ class MCPRouter:
             mcp: FastMCP instance
         """
         # Register own tools
+        print(f"Registering {len(self._tools)} tools for prefix '{self.prefix}'", file=sys.stderr)
         for tool_func in self._tools:
+            original_name = tool_func.__name__
+            
             # Apply prefix if set
+            names_to_register = []
             if self.prefix:
-                # Store original name
-                original_name = tool_func.__name__
-                # Create wrapper with prefixed name
-                tool_func.__name__ = f"{self.prefix}_{original_name}"
+                name_snake = f"{self.prefix}_{original_name}"
+                name_kebab = name_snake.replace("_", "-")
+                
+                names_to_register.extend([name_snake, name_kebab])
+            
+            # ALWAYS register original name and its kebab variant
+            names_to_register.append(original_name)
+            names_to_register.append(original_name.replace("_", "-"))
+            
+            # Remove duplicates
+            names_to_register = list(set(names_to_register))
 
-            mcp.tool()(tool_func)
+            for name in names_to_register:
+                print(f"  Registering tool: {name}", file=sys.stderr)
+                try:
+                    # Use the name argument to force the name
+                    mcp.tool(name=name)(tool_func)
+                except Exception as e:
+                    print(f"  ERROR registering tool {name}: {e}", file=sys.stderr)
 
         # Register included routers' tools
         for router in self._routers:
