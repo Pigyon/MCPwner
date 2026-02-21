@@ -4,26 +4,12 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from clients.linguist import LinguistClient
+from config.languages import CODEQL_LANGUAGES
 from repositories.workspace import WorkspaceRepository
 
 
 class LinguistService:
     """Service for language detection operations."""
-
-    # Supported CodeQL languages for filtering
-    CODEQL_SUPPORTED_LANGUAGES = {
-        "python",
-        "javascript",
-        "typescript",
-        "java",
-        "cpp",
-        "csharp",
-        "go",
-        "ruby",
-        "swift",
-        "kotlin",
-        "rust",
-    }
 
     def __init__(self, repository: WorkspaceRepository, linguist_client: LinguistClient = None):
         self.repository = repository
@@ -60,7 +46,7 @@ class LinguistService:
             # Filter to only CodeQL-supported languages if requested
             if filter_codeql:
                 detected_languages = [
-                    lang for lang in detected_languages if lang in self.CODEQL_SUPPORTED_LANGUAGES
+                    lang for lang in detected_languages if lang in CODEQL_LANGUAGES
                 ]
 
             return sorted(detected_languages)

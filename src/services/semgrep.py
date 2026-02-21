@@ -4,27 +4,12 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from clients.semgrep import SemgrepClient
+from config.languages import SEMGREP_LANGUAGES
 from repositories.workspace import WorkspaceRepository
 
 
 class SemgrepService:
     """Service for Semgrep SAST operations."""
-
-    # Supported languages for Semgrep
-    SUPPORTED_LANGUAGES = {
-        "python",
-        "javascript",
-        "typescript",
-        "java",
-        "go",
-        "ruby",
-        "php",
-        "c",
-        "cpp",
-        "csharp",
-        "kotlin",
-        "rust",
-    }
 
     def __init__(self, repository: WorkspaceRepository, semgrep_client: SemgrepClient):
         self.repository = repository

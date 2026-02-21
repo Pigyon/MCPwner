@@ -4,14 +4,12 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from clients.bandit import BanditClient
+from config.languages import BANDIT_LANGUAGES
 from repositories.workspace import WorkspaceRepository
 
 
 class BanditService:
     """Service for Bandit SAST operations."""
-
-    # Supported languages for Bandit (Python only)
-    SUPPORTED_LANGUAGES = {"python"}
 
     def __init__(self, repository: WorkspaceRepository, bandit_client: BanditClient):
         self.repository = repository
