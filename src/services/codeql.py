@@ -64,6 +64,14 @@ class CodeQLService:
 
         db_path = str(Path(base_path) / workspace_id / "databases" / language)
 
+        # Ensure database parent directory exists
+        try:
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            # Log warning but continue, as the directory might be created by the service
+            # or volume permissions might prevent it here (though shared volume should allow it)
+            pass
+
         try:
             result = self.codeql_client.create_database(
                 workspace_id=workspace_id,

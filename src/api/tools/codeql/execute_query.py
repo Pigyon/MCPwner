@@ -1,6 +1,7 @@
 """Execute CodeQL query tool with context enrichment."""
 
 import json
+import logging
 import subprocess
 import tempfile
 import time
@@ -9,6 +10,8 @@ from typing import Any, Dict, List
 
 from context.sqlite.context_repository import SQLiteContextRepository
 from deps import get_codeql_service, get_workspace_service
+
+logger = logging.getLogger(__name__)
 
 
 def execute_query(
@@ -54,55 +57,41 @@ def execute_query(
 
         # Handle custom query execution
         if query_type == "custom":
-            if not custom_query:
-                return {
-                    "status": "error",
-                    "error": "custom_query is required when query_type='custom'",
-                }
+            # For now, custom queries are not fully supported in remote execution mode
+            # unless we implement a way to send the query content to the executor
+            return {
+                "status": "error",
+                "error": "Custom queries are not currently supported in this environment configuration.",
+            }
 
-            return _execute_custom_query(
-                workspace_id=workspace_id,
-                database_id=database_id,
-                db_path=db_path,
-                custom_query=custom_query,
-                enrich_context=enrich_context,
-            )
-
-        # Create temporary SARIF output file
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".sarif", delete=False) as f:
-            sarif_output = f.name
+        # Create temporary SARIF output file path (in the shared workspace volume)
+        # We assume /workspaces is shared between mcpwner and codeql-executor
+        sarif_filename = f"{workspace_id}_{database_id}_{int(time.time())}.sarif"
+        sarif_output = f"/workspaces/{workspace_id}/{sarif_filename}"
 
         try:
-            # Build CodeQL analyze command
-            cmd = [
-                "codeql",
-                "database",
-                "analyze",
-                db_path,
-                f"codeql/{query_pack}",
-                "--format=sarif-latest",
-                f"--output={sarif_output}",
-                "--sarif-add-snippets",
-            ]
-
-            if query_name:
-                cmd.append(f"--query={query_name}")
-
-            # Execute with timeout
             start_time = time.time()
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=600,  # 10 minute timeout
+            
+            # Execute via CodeQL Service (HTTP to codeql-executor)
+            logger.info(f"Executing query pack {query_pack} via CodeQL service")
+            
+            # The service call should handle the execution remotely
+            # We pass the output_path where we expect the result to be written
+            # Since both containers share /workspaces, the executor writes it there, and we read it here.
+            codeql_service.execute_query(
+                workspace_id=workspace_id,
+                database_id=database_id,
+                query_pack=query_pack,
+                output_path=sarif_output
             )
 
             duration = time.time() - start_time
 
-            if result.returncode != 0:
+            # Check if output file exists
+            if not Path(sarif_output).exists():
                 return {
                     "status": "error",
-                    "error": f"Query execution failed: {result.stderr}",
+                    "error": f"SARIF output file was not created at {sarif_output}",
                     "duration_seconds": round(duration, 2),
                 }
 
@@ -143,12 +132,8 @@ def execute_query(
             # Cleanup temporary file
             Path(sarif_output).unlink(missing_ok=True)
 
-    except subprocess.TimeoutExpired:
-        return {
-            "status": "error",
-            "error": "Query execution timed out after 10 minutes",
-        }
     except Exception as e:
+        logger.error(f"Error executing query: {e}")
         return {"status": "error", "error": str(e)}
 
 
@@ -265,134 +250,6 @@ def enrich_findings_with_context(
                 pass
 
     return findings
-
-
-def _execute_custom_query(
-    workspace_id: str,
-    database_id: str,
-    db_path: str,
-    custom_query: str,
-    enrich_context: bool,
-) -> Dict[str, Any]:
-    """
-    Execute a custom CodeQL query.
-
-    Args:
-        workspace_id: Workspace ID
-        database_id: Database ID
-        db_path: Path to CodeQL database
-        custom_query: Custom query code
-        enrich_context: Whether to enrich with context
-
-    Returns:
-        Query results dictionary
-    """
-    # Write custom query to temporary file
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".ql", delete=False) as f:
-        query_file = f.name
-        f.write(custom_query)
-
-    # Create temporary output files
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".bqrs", delete=False) as f:
-        bqrs_output = f.name
-
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
-        csv_output = f.name
-
-    try:
-        start_time = time.time()
-
-        # Execute custom query
-        cmd = [
-            "codeql",
-            "query",
-            "run",
-            query_file,
-            "--database",
-            db_path,
-            "--output",
-            bqrs_output,
-            "--threads",
-            "0",  # Use all available threads
-        ]
-
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=600,  # 10 minute timeout
-        )
-
-        if result.returncode != 0:
-            return {
-                "status": "error",
-                "error": f"Custom query execution failed: {result.stderr}",
-                "duration_seconds": round(time.time() - start_time, 2),
-            }
-
-        # Decode results to CSV
-        decode_cmd = [
-            "codeql",
-            "bqrs",
-            "decode",
-            bqrs_output,
-            "--format=csv",
-            "--output",
-            csv_output,
-        ]
-
-        decode_result = subprocess.run(decode_cmd, capture_output=True, text=True, timeout=60)
-
-        if decode_result.returncode != 0:
-            return {
-                "status": "error",
-                "error": f"Failed to decode query results: {decode_result.stderr}",
-                "duration_seconds": round(time.time() - start_time, 2),
-            }
-
-        # Parse CSV results
-        findings = _parse_custom_query_csv(csv_output, workspace_id)
-
-        # Enrich with context if requested
-        if enrich_context:
-            context_db_path = f"/workspaces/{workspace_id}/context.db"
-            if Path(context_db_path).exists():
-                findings = enrich_findings_with_context(findings, context_db_path)
-
-        duration = time.time() - start_time
-
-        # Enforce 10MB result size limit
-        result_json = json.dumps(findings)
-        if len(result_json) > 10 * 1024 * 1024:
-            return {
-                "status": "error",
-                "error": "Results exceed 10MB size limit",
-                "finding_count": len(findings),
-                "duration_seconds": round(duration, 2),
-            }
-
-        return {
-            "status": "success",
-            "workspace_id": workspace_id,
-            "database_id": database_id,
-            "query_type": "custom",
-            "finding_count": len(findings),
-            "findings": findings,
-            "duration_seconds": round(duration, 2),
-        }
-
-    except subprocess.TimeoutExpired:
-        return {
-            "status": "error",
-            "error": "Custom query execution timed out after 10 minutes",
-        }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
-    finally:
-        # Cleanup temporary files
-        Path(query_file).unlink(missing_ok=True)
-        Path(bqrs_output).unlink(missing_ok=True)
-        Path(csv_output).unlink(missing_ok=True)
 
 
 def _parse_custom_query_csv(csv_path: str, workspace_id: str) -> List[Dict[str, Any]]:

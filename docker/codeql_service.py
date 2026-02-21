@@ -103,6 +103,20 @@ def create_database(request: CreateDatabaseRequest):
             "--overwrite",
         ]
 
+        # For interpreted languages (javascript, typescript, python, ruby), disable autobuild
+        # to avoid build failures in environments without build tools (npm, pip, etc.)
+        logger.info(f"Checking language: '{request.language}'")
+
+        if request.language.lower() in ["javascript", "typescript", "python", "ruby"]:
+            logger.info("Disabling autobuild for interpreted language")
+            cmd.append(f"--command={str(Path('/bin/true'))}")
+            cmd.append("--no-run-unnecessary-builds")
+        else:
+            logger.info(f"Language '{request.language}' not in interpreted list")
+
+        # Add verbosity to debug autobuild failures
+        # cmd.append("-v")
+
         logger.info(f"Creating database: {' '.join(cmd)}")
 
         # Execute CodeQL command
@@ -112,9 +126,10 @@ def create_database(request: CreateDatabaseRequest):
             text=True,
             timeout=600,  # 10 minute timeout
         )
-
+        
         if result.returncode != 0:
             logger.error(f"Database creation failed: {result.stderr}")
+            logger.error(f"STDOUT: {result.stdout}")
             raise HTTPException(
                 status_code=500,
                 detail={"error": "Database creation failed", "details": result.stderr},
@@ -172,13 +187,19 @@ def execute_query(request: ExecuteQueryRequest):
         if not Path(request.database_path).exists():
             raise HTTPException(status_code=400, detail=f"Database not found: {request.database_path}")
 
+        # Determine query specifier (pack or suite)
+        if request.query_pack.endswith(".qls"):
+            query_spec = request.query_pack
+        else:
+            query_spec = f"codeql/{request.query_pack}"
+
         # Build CodeQL command
         cmd = [
             "codeql",
             "database",
             "analyze",
             request.database_path,
-            f"codeql/{request.query_pack}",
+            query_spec,
             "--format=sarif-latest",
             f"--output={request.output_path}",
             "--sarif-add-snippets",
