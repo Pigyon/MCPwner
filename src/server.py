@@ -5,15 +5,15 @@ Supports STDIO and SSE transports with namespaced tools.
 
 import os
 import sys
+import traceback
 
 from fastmcp import FastMCP
 
-from api.router import router as api_router
-from config.config import ConfigError, load_config
-from config.transport import get_transport_config
-
-# Load configuration
+# Load configuration first
 try:
+    from config.config import ConfigError, load_config
+    from config.transport import get_transport_config
+    
     config_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "config",
@@ -21,7 +21,7 @@ try:
     )
     config = load_config(config_path)
     print(f"Configuration loaded successfully from {config_path}", file=sys.stderr)
-except ConfigError as e:
+except Exception as e:
     print(f"Configuration error: {e}", file=sys.stderr)
     sys.exit(1)
 
@@ -31,11 +31,17 @@ mcp = FastMCP("MCPwner")
 # Register tools using main API router
 print("Loading tools...", file=sys.stderr)
 
-# Register all tools from the router
-api_router.register_tools(mcp)
-
-print("✓ All tools loaded", file=sys.stderr)
-
+try:
+    from api.router import router as api_router
+    # Register all tools from the router
+    print("Registering tools from api_router...", file=sys.stderr)
+    api_router.register_tools(mcp)
+    print("All tools loaded", file=sys.stderr)
+except Exception as e:
+    print(f"ERROR loading tools: {e}", file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
+    # Don't exit, try to run anyway so we can see logs
+    
 
 def run_server():
     """Run the MCP server with appropriate transport."""
@@ -75,7 +81,5 @@ if __name__ == "__main__":
         sys.exit(0)
     except Exception as e:
         print(f"FATAL ERROR: {e}", file=sys.stderr)
-        import traceback
-
         traceback.print_exc(file=sys.stderr)
         sys.exit(1)
