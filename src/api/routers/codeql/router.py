@@ -13,7 +13,7 @@ from api.tools.codeql.get_callees import get_callees
 from api.tools.codeql.search_functions import search_functions
 from api.tools.codeql.list_functions import list_functions
 
-router = MCPRouter(prefix="codeql")
+router = MCPRouter(prefix=None)
 
 router.tool()(detect_languages)
 router.tool()(create_codeql_database)

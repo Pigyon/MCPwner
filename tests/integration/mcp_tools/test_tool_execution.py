@@ -72,7 +72,7 @@ async def test_list_tools_tool(docker_compose_up):
 async def test_workspace_list_workspaces_tool(docker_compose_up):
     """Test executing workspace_list_workspaces tool."""
     async with create_mcp_client() as session:
-        result = await session.call_tool("workspace_list_workspaces", arguments={})
+        result = await session.call_tool("list_workspaces", arguments={})
 
         assert result is not None
         assert result.isError is False
@@ -86,7 +86,7 @@ async def test_workspace_list_workspaces_tool(docker_compose_up):
 async def test_codeql_list_databases_tool(docker_compose_up):
     """Test executing codeql_list_databases tool."""
     async with create_mcp_client() as session:
-        result = await session.call_tool("codeql_list_databases", arguments={})
+        result = await session.call_tool("list_databases", arguments={})
 
         assert result is not None
         assert len(result.content) > 0
@@ -100,7 +100,7 @@ async def test_codeql_list_databases_tool(docker_compose_up):
 async def test_codeql_list_query_packs_tool(docker_compose_up):
     """Test executing codeql_list_query_packs tool."""
     async with create_mcp_client() as session:
-        result = await session.call_tool("codeql_list_query_packs", arguments={})
+        result = await session.call_tool("list_query_packs", arguments={})
 
         assert result is not None
         assert len(result.content) > 0
