@@ -59,9 +59,6 @@ def _validate_config(config: Dict[str, Any]) -> None:
         "server",
         "workspace",
         "resources",
-        "timeouts",
-        "rate_limits",
-        "security",
         "logging",
     ]
 
@@ -78,7 +75,6 @@ def _validate_config(config: Dict[str, Any]) -> None:
     workspace = config["workspace"]
     _validate_positive_int(workspace, "max_workspaces", "workspace")
     _validate_non_negative_int(workspace, "auto_cleanup_seconds", "workspace")
-    _validate_string(workspace, "base_path", "workspace")
 
     # Validate resource limits
     resources = config["resources"]
@@ -86,22 +82,6 @@ def _validate_config(config: Dict[str, Any]) -> None:
     _validate_positive_int(resources, "max_memory_mb", "resources")
     _validate_positive_int(resources, "max_cpu_cores", "resources")
 
-    # Validate timeouts
-    timeouts = config["timeouts"]
-    _validate_positive_int(timeouts, "database_creation", "timeouts")
-    _validate_positive_int(timeouts, "query_execution", "timeouts")
-    _validate_positive_int(timeouts, "workspace_creation", "timeouts")
-
-    # Validate rate limits
-    rate_limits = config["rate_limits"]
-    _validate_positive_int(rate_limits, "queries_per_minute", "rate_limits")
-    _validate_positive_int(rate_limits, "databases_per_hour", "rate_limits")
-
-    # Validate security settings
-    security = config["security"]
-    _validate_bool(security, "allow_custom_queries", "security")
-    _validate_list(security, "allowed_source_types", "security")
-    _validate_non_negative_int(security, "github_rate_limit", "security")
 
     # Validate logging settings
     logging = config["logging"]
