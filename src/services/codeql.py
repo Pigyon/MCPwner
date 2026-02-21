@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 import logging
 
 from clients.codeql import CodeQLClient
+from config.languages import CODEQL_LANGUAGES
 from models import CodeQLDatabase
 from repositories.workspace import WorkspaceRepository
 
@@ -14,21 +15,6 @@ logger = logging.getLogger(__name__)
 
 class CodeQLService:
     """Service for CodeQL operations."""
-
-    # Supported CodeQL languages with their file extensions
-    LANGUAGE_EXTENSIONS = {
-        "python": [".py"],
-        "javascript": [".js", ".jsx", ".mjs", ".cjs"],
-        "typescript": [".ts", ".tsx"],
-        "java": [".java"],
-        "cpp": [".cpp", ".cc", ".cxx", ".c", ".h", ".hpp"],
-        "csharp": [".cs"],
-        "go": [".go"],
-        "ruby": [".rb"],
-        "swift": [".swift"],
-        "kotlin": [".kt", ".kts"],
-        "rust": [".rs"],
-    }
 
     def __init__(self, repository: WorkspaceRepository, codeql_client: CodeQLClient):
         self.repository = repository
@@ -57,7 +43,7 @@ class CodeQLService:
             language = detected_languages[0]
 
         # Validate language
-        if language not in self.LANGUAGE_EXTENSIONS:
+        if language not in CODEQL_LANGUAGES:
             raise ValueError(f"Unsupported language: {language}")
 
         # Check database limit
