@@ -2,6 +2,7 @@
 
 import shutil
 import uuid
+import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List
@@ -10,6 +11,8 @@ from models import Workspace
 from repositories.workspace import WorkspaceRepository
 from workspace.local_mount import LocalMountError, setup_local_mount
 from workspace.repository import RepositoryError, clone_repository
+
+logger = logging.getLogger(__name__)
 
 
 class WorkspaceService:
@@ -22,6 +25,7 @@ class WorkspaceService:
         self, source_type: str, source: str, base_path: str = "/workspaces"
     ) -> Dict[str, Any]:
         """Create a new workspace."""
+        logger.info(f"Creating workspace from {source_type}: {source}")
         workspace = Workspace(
             workspace_id=str(uuid.uuid4()),
             source_type=source_type,
@@ -35,7 +39,9 @@ class WorkspaceService:
                 repo_path = clone_repository(source, workspace.workspace_id, base_path)
                 workspace.path = repo_path
                 self.repository.save(workspace)
-            except RepositoryError:
+                logger.info(f"Successfully cloned GitHub repo to {repo_path}")
+            except RepositoryError as e:
+                logger.error(f"Failed to clone repository: {e}")
                 raise
 
         # Handle local mount
@@ -47,6 +53,8 @@ class WorkspaceService:
                 # This ensures all containers (CodeQL, SAST) can access the files
                 destination_path = mount_info["mount_path"]
                 source_path = mount_info["local_path"]
+                
+                logger.info(f"Copying local files from {source_path} to {destination_path}")
                 
                 if Path(destination_path).exists():
                     shutil.rmtree(destination_path)
@@ -62,7 +70,9 @@ class WorkspaceService:
                 workspace.mount_path = destination_path
                 workspace.path = destination_path
                 self.repository.save(workspace)
-            except LocalMountError:
+                logger.info(f"Successfully set up local workspace at {destination_path}")
+            except LocalMountError as e:
+                logger.error(f"Failed to setup local mount: {e}")
                 raise
 
         return workspace.model_dump()
