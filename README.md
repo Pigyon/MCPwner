@@ -4,6 +4,8 @@
 
 MCPwner is a swiss knife Model Context Protocol for security researchers consolidating all secrets finding, infrastructure scanning, SAST, DAST, POC, and exploitation in a single place.
 
+This project is still work in progress.
+
 ## What tools are included?
 
 <div align="center">
@@ -55,35 +57,46 @@ MCPwner is a swiss knife Model Context Protocol for security researchers consoli
 
 ## How to use it?
 
-1. Setup config:
+1. **Setup config**:
+   ```bash
+   cp config/config.yaml.example config/config.yaml
+   ```
 
-```bash
-cp config/config.yaml.example config/config.yaml
-```
+2. **Run Services**:
+   ```bash
+   docker-compose up -d --build
+   ```
 
-2. run:
+3. **Configure your IDE/LLM**:
+   Add the following to your MCP configuration file (e.g., `mcp.json` for Cursor/Kiro/Claude Desktop or similar settings for other IDEs). This connects directly to the running Docker container.
 
-```bash
-sudo docker compose up
-```
+   ```json
+   {
+     "mcpServers": {
+       "mcpwner": {
+         "command": "docker",
+         "args": [
+           "exec",
+           "-i",
+           "mcpwner-server",
+           "python",
+           "src/server.py"
+         ],
+         "env": {}
+       }
+     }
+   }
+   ```
 
-3. Add `mcp.json` or configure your LLM to communicate with MCPwner or any other set up you use to connect MCP servers to your agent/s.
-
-```json
-{
-  "mcpServers": {
-    "mcpwner": {
-      "command": "docker",
-      "args": ["exec", "-i", "mcpwner-server", "python", "/app/src/server.py"],
-      "env": {
-        "MCP_TRANSPORT": "stdio"
-      }
-    }
-  }
-}
-```
-
-4. profit.
+4. **Scanning Local Projects**:
+   To scan projects on your host machine, mount them into the container via `docker-compose.yaml`:
+   ```yaml
+   services:
+     mcpwner:
+       volumes:
+         - /path/to/your/projects:/mnt/projects:ro
+   ```
+   Then use the `create_workspace` tool with `source_type="local"` and `source="/mnt/projects/my-project"`.
 
 ## Contributing
 
