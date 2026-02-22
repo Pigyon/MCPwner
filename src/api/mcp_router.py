@@ -57,33 +57,15 @@ class MCPRouter:
         Args:
             mcp: FastMCP instance
         """
-        # Register own tools
         logger.info(f"Registering {len(self._tools)} tools for prefix '{self.prefix}'")
         for tool_func in self._tools:
-            original_name = tool_func.__name__
-
-            # Apply prefix if set
-            names_to_register = []
-            if self.prefix:
-                name_snake = f"{self.prefix}_{original_name}"
-                name_kebab = name_snake.replace("_", "-")
-
-                names_to_register.extend([name_snake, name_kebab])
-
-            # ALWAYS register original name and its kebab variant
-            names_to_register.append(original_name)
-            names_to_register.append(original_name.replace("_", "-"))
-
-            # Remove duplicates
-            names_to_register = list(set(names_to_register))
-
-            for name in names_to_register:
-                logger.debug(f"  Registering tool: {name}")
-                try:
-                    # Use the name argument to force the name
-                    mcp.tool(name=name)(tool_func)
-                except Exception as e:
-                    logger.error(f"  ERROR registering tool {name}: {e}")
+            # Use prefixed name if prefix is set, otherwise use the function name as-is
+            name = f"{self.prefix}_{tool_func.__name__}" if self.prefix else tool_func.__name__
+            logger.debug(f"  Registering tool: {name}")
+            try:
+                mcp.tool(name=name)(tool_func)
+            except Exception as e:
+                logger.error(f"  ERROR registering tool {name}: {e}")
 
         # Register included routers' tools
         for router in self._routers:
