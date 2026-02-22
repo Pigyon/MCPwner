@@ -1,8 +1,11 @@
 """Bandit HTTP client for external service communication."""
 
+import logging
 from typing import Any, Dict, Optional
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 class BanditClient:
@@ -34,9 +37,22 @@ class BanditClient:
         if config:
             payload["config"] = config
 
-        response = requests.post(f"{self.service_url}/scan", json=payload, timeout=600)
-        response.raise_for_status()
-        return response.json()
+        logger.info(f"Sending scan request to {self.service_url}/scan with payload: {payload}")
+        try:
+            response = requests.post(f"{self.service_url}/scan", json=payload, timeout=600)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Cannot connect to Bandit service at {self.service_url}: {e}")
+            raise RuntimeError(
+                f"Cannot connect to Bandit service at {self.service_url}. "
+                "Is the bandit container running? Check with: docker ps | grep bandit"
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Bandit scan request failed: {e}")
+            if hasattr(e, "response") and e.response is not None:
+                logger.error(f"Response content: {e.response.text}")
+            raise
 
     def get_version(self) -> Dict[str, Any]:
         """Get Bandit version via HTTP."""
