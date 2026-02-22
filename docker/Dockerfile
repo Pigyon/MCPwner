@@ -26,6 +26,6 @@ RUN mkdir -p /var/log/mcpwner && \
 USER mcpwner
 
 # Set PYTHONPATH so imports work correctly
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app/src
 
 CMD ["python", "src/server.py"]
