@@ -1,45 +1,46 @@
 """
-Configuration for supported languages across different tools.
+Single source of truth for supported languages across all tools.
 """
 
 from typing import Dict, List, Set
 
 # CodeQL supported languages and their extensions
 CODEQL_LANGUAGES: Dict[str, List[str]] = {
-    "python": [".py"],
-    "javascript": [".js", ".jsx", ".mjs", ".cjs"],
-    "typescript": [".ts", ".tsx"],
-    "java": [".java"],
     "cpp": [".cpp", ".cc", ".cxx", ".c", ".h", ".hpp"],
     "csharp": [".cs"],
     "go": [".go"],
-    "ruby": [".rb"],
-    "swift": [".swift"],
+    "java": [".java"],
+    "javascript": [".js", ".jsx", ".mjs", ".cjs"],
     "kotlin": [".kt", ".kts"],
+    "python": [".py"],
+    "ruby": [".rb"],
     "rust": [".rs"],
+    "swift": [".swift"],
+    "typescript": [".ts", ".tsx"],
 }
 
-# Semgrep supported languages
-SEMGREP_LANGUAGES: Set[str] = {
-    "python",
-    "javascript",
-    "typescript",
-    "java",
-    "go",
-    "ruby",
-    "php",
+# SAST tool supported languages (kept in alphabetical order)
+SEMGREP_LANGUAGES: List[str] = [
     "c",
     "cpp",
     "csharp",
+    "go",
+    "java",
+    "javascript",
     "kotlin",
+    "php",
+    "python",
+    "ruby",
     "rust",
-}
+    "typescript",
+]
 
-# Gosec supported languages
-GOSEC_LANGUAGES: Set[str] = {"go"}
+BANDIT_LANGUAGES: List[str] = ["python"]
 
-# Brakeman supported languages
-BRAKEMAN_LANGUAGES: Set[str] = {"ruby"}
+GOSEC_LANGUAGES: List[str] = ["go"]
 
-# Bandit supported languages
-BANDIT_LANGUAGES: Set[str] = {"python"}
+BRAKEMAN_LANGUAGES: List[str] = ["ruby"]
+
+PMD_LANGUAGES: List[str] = ["apex", "java", "javascript", "visualforce"]
+
+PSALM_LANGUAGES: List[str] = ["php"]

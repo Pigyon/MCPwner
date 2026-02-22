@@ -1,14 +1,20 @@
 """Semgrep service for business logic."""
 
+import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from clients.semgrep import SemgrepClient
+from config.languages import SEMGREP_LANGUAGES
 from repositories.workspace import WorkspaceRepository
+
+logger = logging.getLogger(__name__)
 
 
 class SemgrepService:
     """Service for Semgrep SAST operations."""
+
+    SUPPORTED_LANGUAGES = SEMGREP_LANGUAGES
 
     def __init__(self, repository: WorkspaceRepository, semgrep_client: SemgrepClient):
         self.repository = repository
@@ -60,11 +66,15 @@ class SemgrepService:
 
         # Execute scan via client
         try:
+            logger.info(f"Executing Semgrep scan on workspace {workspace_id}, path: {workspace_path}")
             result = self.semgrep_client.scan(
                 workspace_path=workspace_path, scan_path=scan_path, config=config
             )
+            logger.info(f"Semgrep scan result: status={result.get('status')}, findings={result.get('finding_count', 'N/A')}")
             return result
         except Exception as e:
+            logger.error(f"Semgrep scan failed for workspace {workspace_id}: {e}")
+            logger.exception("Semgrep scan error details")
             return {
                 "status": "error",
                 "error": f"Semgrep scan failed: {e}",
