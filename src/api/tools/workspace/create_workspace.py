@@ -11,7 +11,9 @@ def create_workspace(source_type: str, source: str) -> dict:
 
     Args:
         source_type: "github" or "local"
-        source: GitHub URL or local directory path
+        source: For github: a GitHub URL or "owner/repo" shorthand (e.g. "octocat/Hello-World").
+                For local: an absolute path that exists inside the container
+                (requires a volume mount in docker-compose.yaml).
 
     Returns:
         Dictionary with workspace_id, source_type, source, and created_at
