@@ -4,11 +4,14 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from clients.brakeman import BrakemanClient
+from config.languages import BRAKEMAN_LANGUAGES
 from repositories.workspace import WorkspaceRepository
 
 
 class BrakemanService:
     """Service for Brakeman SAST operations."""
+
+    SUPPORTED_LANGUAGES = BRAKEMAN_LANGUAGES
 
     def __init__(self, repository: WorkspaceRepository, brakeman_client: BrakemanClient):
         self.repository = repository

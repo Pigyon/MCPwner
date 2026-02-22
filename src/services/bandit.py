@@ -1,14 +1,20 @@
 """Bandit service for business logic."""
 
+import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from clients.bandit import BanditClient
+from config.languages import BANDIT_LANGUAGES
 from repositories.workspace import WorkspaceRepository
+
+logger = logging.getLogger(__name__)
 
 
 class BanditService:
     """Service for Bandit SAST operations."""
+
+    SUPPORTED_LANGUAGES = BANDIT_LANGUAGES
 
     def __init__(self, repository: WorkspaceRepository, bandit_client: BanditClient):
         self.repository = repository
@@ -60,11 +66,15 @@ class BanditService:
 
         # Execute scan via client
         try:
+            logger.info(f"Executing Bandit scan on workspace {workspace_id}, path: {workspace_path}")
             result = self.bandit_client.scan(
                 workspace_path=workspace_path, scan_path=scan_path, config=config
             )
+            logger.info(f"Bandit scan result: status={result.get('status')}, findings={result.get('finding_count', 'N/A')}")
             return result
         except Exception as e:
+            logger.error(f"Bandit scan failed for workspace {workspace_id}: {e}")
+            logger.exception("Bandit scan error details")
             return {
                 "status": "error",
                 "error": f"Bandit scan failed: {e}",

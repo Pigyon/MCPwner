@@ -4,11 +4,14 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from clients.gosec import GosecClient
+from config.languages import GOSEC_LANGUAGES
 from repositories.workspace import WorkspaceRepository
 
 
 class GosecService:
     """Service for Gosec SAST operations."""
+
+    SUPPORTED_LANGUAGES = GOSEC_LANGUAGES
 
     def __init__(self, repository: WorkspaceRepository, gosec_client: GosecClient):
         self.repository = repository
