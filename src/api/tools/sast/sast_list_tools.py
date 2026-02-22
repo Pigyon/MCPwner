@@ -2,6 +2,14 @@
 
 from typing import Optional
 
+from config.languages import (
+    BANDIT_LANGUAGES,
+    BRAKEMAN_LANGUAGES,
+    GOSEC_LANGUAGES,
+    PMD_LANGUAGES,
+    PSALM_LANGUAGES,
+    SEMGREP_LANGUAGES,
+)
 from deps import get_linguist_service
 
 # Tool metadata with language support
@@ -9,52 +17,39 @@ SAST_TOOLS = {
     "semgrep": {
         "name": "Semgrep",
         "description": "Multi-language SAST tool for security and code quality",
-        "languages": [
-            "python",
-            "javascript",
-            "typescript",
-            "java",
-            "go",
-            "ruby",
-            "php",
-            "c",
-            "cpp",
-            "csharp",
-            "kotlin",
-            "rust",
-        ],
+        "languages": SEMGREP_LANGUAGES,
         "category": "sast",
     },
     "bandit": {
         "name": "Bandit",
         "description": "Python-specific security linter",
-        "languages": ["python"],
+        "languages": BANDIT_LANGUAGES,
         "category": "sast",
     },
     "gosec": {
         "name": "Gosec",
         "description": "Go security checker",
-        "languages": ["go"],
+        "languages": GOSEC_LANGUAGES,
         "category": "sast",
     },
     "brakeman": {
         "name": "Brakeman",
         "description": "Ruby on Rails security scanner",
-        "languages": ["ruby"],
+        "languages": BRAKEMAN_LANGUAGES,
         "category": "sast",
     },
     "pmd": {
         "name": "PMD",
         "description": "Multi-language code analyzer",
-        "languages": ["java", "javascript", "apex", "visualforce"],
+        "languages": PMD_LANGUAGES,
         "category": "sast",
     },
     "psalm": {
         "name": "Psalm",
         "description": "PHP static analysis tool",
-        "languages": ["php"],
+        "languages": PSALM_LANGUAGES,
         "category": "sast",
-    },  # will extend this in the future with more tools
+    },
 }
 
 
