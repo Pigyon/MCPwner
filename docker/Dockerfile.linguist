@@ -11,6 +11,7 @@ WORKDIR /service
 
 # Copy service files
 COPY docker/linguist_service.py .
+COPY src/utils/git_utils.py .
 
 # Expose service port
 EXPOSE 8081
