@@ -6,7 +6,6 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List
 
-from context.sqlite.context_repository import SQLiteContextRepository
 from deps import get_codeql_service, get_workspace_service
 
 logger = logging.getLogger(__name__)
@@ -102,9 +101,11 @@ def execute_query(
 
             # Enrich with function context if requested
             if enrich_context:
-                context_db_path = f"/workspaces/{workspace_id}/context.db"
-                if Path(context_db_path).exists():
-                    findings = enrich_findings_with_context(findings, context_db_path)
+                # Context extraction is disabled due to stability issues
+                # context_db_path = f"/workspaces/{workspace_id}/context.db"
+                # if Path(context_db_path).exists():
+                #     findings = enrich_findings_with_context(findings, context_db_path)
+                pass
 
             # Enforce 10MB result size limit
             result_json = json.dumps(findings)
@@ -213,41 +214,41 @@ def sanitize_path(path: str, workspace_id: str) -> str:
     return path
 
 
-def enrich_findings_with_context(
-    findings: List[Dict[str, Any]], context_db_path: str
-) -> List[Dict[str, Any]]:
-    """
-    Enrich findings with function context from context database.
-
-    Args:
-        findings: List of finding dictionaries
-        context_db_path: Path to context database
-
-    Returns:
-        Enriched findings list
-    """
-    repo = SQLiteContextRepository(context_db_path)
-
-    for finding in findings:
-        file = finding.get("file")
-        line = finding.get("start_line")
-
-        if file and line:
-            try:
-                function = repo.code_elements.get_by_location(file, line)
-                if function:
-                    finding["function_context"] = {
-                        "name": function.name,
-                        "qualified_name": function.qualified_name,
-                        "start_line": function.start_line,
-                        "end_line": function.end_line,
-                        "code": function.code,
-                    }
-            except Exception:
-                # Skip context enrichment on error
-                pass
-
-    return findings
+# def enrich_findings_with_context(
+#     findings: List[Dict[str, Any]], context_db_path: str
+# ) -> List[Dict[str, Any]]:
+#     """
+#     Enrich findings with function context from context database.
+#
+#     Args:
+#         findings: List of finding dictionaries
+#         context_db_path: Path to context database
+#
+#     Returns:
+#         Enriched findings list
+#     """
+#     repo = SQLiteContextRepository(context_db_path)
+#
+#     for finding in findings:
+#         file = finding.get("file")
+#         line = finding.get("start_line")
+#
+#         if file and line:
+#             try:
+#                 function = repo.code_elements.get_by_location(file, line)
+#                 if function:
+#                     finding["function_context"] = {
+#                         "name": function.name,
+#                         "qualified_name": function.qualified_name,
+#                         "start_line": function.start_line,
+#                         "end_line": function.end_line,
+#                         "code": function.code,
+#                     }
+#             except Exception:
+#                 # Skip context enrichment on error
+#                 pass
+#
+#     return findings
 
 
 def _parse_custom_query_csv(csv_path: str, workspace_id: str) -> List[Dict[str, Any]]:
