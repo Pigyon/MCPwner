@@ -1,10 +1,14 @@
-FROM semgrep/semgrep:latest
+FROM python:3.11-slim
 
-# Switch to root for installation
-USER root
+# Install system dependencies (curl for healthcheck, git for semgrep)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install FastAPI and uvicorn for the HTTP service
-RUN python -m pip install --break-system-packages --no-cache-dir fastapi uvicorn
+# Install Semgrep and service dependencies
+# pinning semgrep to a recent version to ensure stability
+RUN pip install --no-cache-dir semgrep fastapi uvicorn
 
 WORKDIR /service
 

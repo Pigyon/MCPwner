@@ -30,7 +30,7 @@ services:
       - /tmp:noexec,nosuid,size=1g
     dns:
       - 8.8.8.8
-      - 8.8.4.4
+      - 1.1.1.1
     networks:
       - mcpwner-internal
     environment:
