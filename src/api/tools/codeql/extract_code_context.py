@@ -34,8 +34,7 @@ def extract_code_context(
         context_service = get_context_service()
         result = context_service.extract_context(
             workspace_id=workspace_id,
-            language=language,
-            extract_call_graph=extract_call_graph_flag,
+            database_id=database_id,
         )
 
         return result
