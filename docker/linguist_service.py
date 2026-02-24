@@ -7,6 +7,8 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
+from git_utils import init_git, config_git, commit_git
+
 app = FastAPI(title="Linguist Service", version="1.0.0")
 
 
@@ -42,6 +44,17 @@ def detect_languages(request: DetectLanguagesRequest):
         # Validate path exists
         if not Path(request.path).exists():
             raise HTTPException(status_code=404, detail=f"Path does not exist: {request.path}")
+
+        # Ensure it's a git repository (Linguist requires it)
+        try:
+            if not (Path(request.path) / ".git").exists():
+                init_git(request.path)
+                config_git(request.path, email="mcpwner@local", name="MCPwner")
+                commit_git(request.path, message="Initial commit")
+        except RuntimeError as e:
+            # If git initialization fails, we log it but try to proceed anyway
+            # Linguist might still work partially or fail later with a clearer error
+            print(f"Warning: Failed to initialize git repo: {e}")
 
         # Run linguist
         result = subprocess.run(
