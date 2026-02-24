@@ -9,7 +9,6 @@ from clients.semgrep import SemgrepClient
 from config.config import load_config
 from repositories.workspace import WorkspaceRepository
 from services.codeql import CodeQLService
-from services.context import ContextService
 from services.linguist import LinguistService
 from services.semgrep import SemgrepService
 from services.workspace import WorkspaceService
@@ -22,7 +21,6 @@ _linguist_client = None
 _workspace_service = None
 _codeql_service = None
 _linguist_service = None
-_context_service = None
 
 # SAST tool instances
 _semgrep_client = None
@@ -95,14 +93,6 @@ def get_linguist_service():
     if _linguist_service is None:
         _linguist_service = LinguistService(get_workspace_repository(), get_linguist_client())
     return _linguist_service
-
-
-def get_context_service():
-    """Get context service singleton."""
-    global _context_service
-    if _context_service is None:
-        _context_service = ContextService(get_workspace_repository(), codeql_bin="codeql")
-    return _context_service
 
 
 # SAST Service Getters
