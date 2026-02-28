@@ -3,6 +3,7 @@
 import json
 import os
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -11,6 +12,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 app = FastAPI(title="Psalm Service", version="1.0.0")
+
+
+def log(message: str):
+    """Log message to stderr so it shows up in docker logs."""
+    print(f"[{datetime.utcnow().isoformat()}] {message}", file=sys.stderr)
 
 
 # Request/Response Models
@@ -130,10 +136,12 @@ def scan(request: ScanRequest):
         # Build scan command
         # Psalm uses psalm.xml in cwd to determine project root and scan scope.
         # --report with .sarif extension auto-selects SARIF format.
+        # --taint-analysis enables security scanning (SAST)
         cmd = [
             "psalm",
             f"--report={output_path}",
             "--no-cache",
+            "--taint-analysis",
         ]
 
         # Add config options
