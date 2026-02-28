@@ -1,9 +1,22 @@
 """Configuration management for MCPwner."""
 
+import os
 from pathlib import Path
 from typing import Any, Dict
 
 import yaml
+
+# Mapping from environment variable names to config paths (section, key)
+_SERVICE_URL_ENV_VARS = {
+    "CODEQL_SERVICE_URL": ("codeql", "service_url"),
+    "LINGUIST_SERVICE_URL": ("linguist", "service_url"),
+    "SEMGREP_SERVICE_URL": ("semgrep", "service_url"),
+    "BANDIT_SERVICE_URL": ("bandit", "service_url"),
+    "GOSEC_SERVICE_URL": ("gosec", "service_url"),
+    "BRAKEMAN_SERVICE_URL": ("brakeman", "service_url"),
+    "PMD_SERVICE_URL": ("pmd", "service_url"),
+    "PSALM_SERVICE_URL": ("psalm", "service_url"),
+}
 
 
 class ConfigError(Exception):
@@ -42,7 +55,20 @@ def load_config(config_path: str = "config/config.yaml") -> Dict[str, Any]:
     # Validate required sections
     _validate_config(config)
 
+    # Apply environment variable overrides for service URLs
+    _apply_env_overrides(config)
+
     return config
+
+
+def _apply_env_overrides(config: Dict[str, Any]) -> None:
+    """Override service URLs from environment variables if set."""
+    for env_var, (section, key) in _SERVICE_URL_ENV_VARS.items():
+        value = os.environ.get(env_var)
+        if value:
+            if section not in config:
+                config[section] = {}
+            config[section][key] = value
 
 
 def _validate_config(config: Dict[str, Any]) -> None:
