@@ -3,7 +3,7 @@
 import logging
 import shutil
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -30,7 +30,7 @@ class WorkspaceService:
             workspace_id=str(uuid.uuid4()),
             source_type=source_type,
             source=source,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
 
         # Handle GitHub clone
@@ -122,7 +122,7 @@ class WorkspaceService:
         self, base_path: str = "/workspaces", max_age_hours: int = 24
     ) -> Dict[str, Any]:
         """Cleanup old GitHub cloned workspaces."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         cutoff_time = now - timedelta(hours=max_age_hours)
 
         cleaned = []

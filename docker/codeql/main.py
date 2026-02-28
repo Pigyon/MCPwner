@@ -17,7 +17,7 @@ It's a standalone HTTP service that wraps CodeQL CLI operations.
 import json
 import logging
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -139,7 +139,7 @@ def create_database(request: CreateDatabaseRequest):
         return {
             "database_id": f"{request.workspace_id}-{request.language}",
             "language": request.language,
-            "created_at": datetime.utcnow().isoformat() + "Z",
+            "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "path": request.db_path,
             "stdout": result.stdout,
         }

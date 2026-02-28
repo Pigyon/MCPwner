@@ -1,7 +1,7 @@
 """CodeQL service for business logic."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -78,7 +78,7 @@ class CodeQLService:
                 database_id=result.get("database_id", f"{workspace_id}-{language}"),
                 workspace_id=workspace_id,
                 language=language,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
                 path=db_path,
                 status="ready",
             )
@@ -90,7 +90,7 @@ class CodeQLService:
                 database_id=f"{workspace_id}-{language}",
                 workspace_id=workspace_id,
                 language=language,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
                 path=db_path,
                 status="failed",
                 error=str(e),
