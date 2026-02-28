@@ -11,9 +11,9 @@ from repositories.workspace import WorkspaceRepository
 class LinguistService:
     """Service for language detection operations."""
 
-    def __init__(self, repository: WorkspaceRepository, linguist_client: LinguistClient = None):
+    def __init__(self, repository: WorkspaceRepository, linguist_client: LinguistClient):
         self.repository = repository
-        self.linguist_client = linguist_client or LinguistClient()
+        self.linguist_client = linguist_client
 
     def detect_languages(self, workspace_id: str, filter_codeql: bool = True) -> List[str]:
         """
