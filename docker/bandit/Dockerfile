@@ -9,10 +9,11 @@ RUN pip install --no-cache-dir fastapi uvicorn
 WORKDIR /service
 
 # Copy service files
-COPY docker/bandit_service.py .
+COPY docker/common /service/common
+COPY docker/bandit/main.py .
 
 # Expose service port
 EXPOSE 8083
 
 # Run the FastAPI service with uvicorn
-CMD ["python", "-m", "uvicorn", "bandit_service:app", "--host", "0.0.0.0", "--port", "8083"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8083"]

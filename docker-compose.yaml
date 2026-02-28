@@ -56,7 +56,7 @@ services:
     # and get new digest with: docker inspect mcr.microsoft.com/cstsectools/codeql-container:latest
     build:
       context: .
-      dockerfile: docker/Dockerfile.codeql
+      dockerfile: docker/codeql/Dockerfile
     container_name: codeql-executor
     user: "0:0"  # Run as root for package installation and service
     ports:
@@ -88,7 +88,7 @@ services:
   linguist:
     build:
       context: .
-      dockerfile: docker/Dockerfile.linguist
+      dockerfile: docker/linguist/Dockerfile
     container_name: linguist-detector
     user: "0:0"  # Run as root for linguist execution
     read_only: false
@@ -114,7 +114,7 @@ services:
   semgrep:
     build:
       context: .
-      dockerfile: docker/Dockerfile.semgrep
+      dockerfile: docker/semgrep/Dockerfile
     container_name: semgrep-scanner
     user: "0:0"  # Run as root for semgrep execution
     read_only: false
@@ -140,7 +140,7 @@ services:
   bandit:
     build:
       context: .
-      dockerfile: docker/Dockerfile.bandit
+      dockerfile: docker/bandit/Dockerfile
     container_name: bandit-scanner
     user: "0:0"  # Run as root for bandit execution
     read_only: false
@@ -166,7 +166,7 @@ services:
   gosec:
     build:
       context: .
-      dockerfile: docker/Dockerfile.gosec
+      dockerfile: docker/gosec/Dockerfile
     container_name: gosec-scanner
     user: "0:0"  # Run as root for gosec execution
     read_only: false
@@ -244,7 +244,7 @@ services:
   psalm:
     build:
       context: .
-      dockerfile: docker/Dockerfile.psalm
+      dockerfile: docker/psalm/Dockerfile
     container_name: psalm-scanner
     user: "0:0"  # Run as root for psalm execution
     read_only: false

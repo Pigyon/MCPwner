@@ -11,7 +11,8 @@ RUN apk add --no-cache python3 py3-pip && \
 WORKDIR /service
 
 # Copy service files
-COPY docker/pmd_service.py .
+COPY docker/common /service/common
+COPY docker/pmd/main.py .
 
 # Expose service port
 EXPOSE 8086
@@ -19,4 +20,4 @@ EXPOSE 8086
 # Run the FastAPI service with uvicorn
 # Use exec form with full path to avoid PMD command interception
 ENTRYPOINT ["/usr/bin/python3"]
-CMD ["-m", "uvicorn", "pmd_service:app", "--host", "0.0.0.0", "--port", "8086"]
+CMD ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8086"]

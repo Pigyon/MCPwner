@@ -27,7 +27,7 @@ WORKDIR /service
 COPY config/codeql_requirements.txt .
 RUN pip3 install --no-cache-dir -r codeql_requirements.txt
 
-COPY docker/codeql_service.py .
+COPY docker/codeql/main.py .
 
 # Expose service port
 EXPOSE 8080
@@ -36,4 +36,4 @@ EXPOSE 8080
 ENTRYPOINT []
 
 # Run the FastAPI service with uvicorn
-CMD ["python3", "-m", "uvicorn", "codeql_service:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
