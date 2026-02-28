@@ -2,7 +2,7 @@
 Single source of truth for supported languages across all tools.
 """
 
-from typing import Dict, List, Set
+from typing import Dict, List
 
 # CodeQL supported languages and their extensions
 CODEQL_LANGUAGES: Dict[str, List[str]] = {
