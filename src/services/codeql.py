@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 from clients.codeql import CodeQLClient
 from config.languages import CODEQL_LANGUAGES
 from models import CodeQLDatabase
+from services.linguist import LinguistService
 from repositories.workspace import WorkspaceRepository
 
 logger = logging.getLogger(__name__)
@@ -16,9 +17,15 @@ logger = logging.getLogger(__name__)
 class CodeQLService:
     """Service for CodeQL operations."""
 
-    def __init__(self, repository: WorkspaceRepository, codeql_client: CodeQLClient):
+    def __init__(
+        self,
+        repository: WorkspaceRepository,
+        codeql_client: CodeQLClient,
+        linguist_service: LinguistService,
+    ):
         self.repository = repository
         self.codeql_client = codeql_client
+        self.linguist_service = linguist_service
 
     def create_database(
         self, workspace_id: str, language: str = None, base_path: str = "/workspaces"
@@ -32,12 +39,9 @@ class CodeQLService:
         if not source_path:
             raise ValueError(f"No source path for workspace: {workspace_id}")
 
-        # Auto-detect language if not provided - import here to avoid circular dependency
+        # Auto-detect language if not provided
         if not language:
-            from deps import get_linguist_service
-
-            linguist_service = get_linguist_service()
-            detected_languages = linguist_service.detect_languages(workspace_id)
+            detected_languages = self.linguist_service.detect_languages(workspace_id)
             if not detected_languages:
                 raise ValueError("No supported languages detected in workspace")
             language = detected_languages[0]
