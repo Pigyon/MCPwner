@@ -1,8 +1,17 @@
-# MCPwner
+<div align="center">
+  <h1>MCPwner</h1>
+  <img src="readme/avatar.png" width="180" alt="MCPwner Badger Avatar"><br>
+  <strong>Beware of the Badger</strong><br>
+  <em>MCP for autonomous security research workflow</em>
+</div>
 
 ## What is this?
 
-MCPwner is a swiss knife Model Context Protocol for security researchers consolidating all secrets finding, infrastructure scanning, SAST, DAST, POC, and exploitation in a single place.
+MCPwner is a Swiss-army knife Model Context Protocol built for security researchers, designed specifically for LLM-driven workflows. It unifies secret discovery, infrastructure scanning, SAST, DAST, poc generation, and exploitation inside a structured machine-readable context layer.
+
+Instead of manually chaining tools and pasting outputs into your LLM, MCPwner standardizes and streams results directly into the model's working context. This allows reasoning, correlation and attack path discovery to happen continuously instead of isolated steps.
+
+MCPwner is built to shine in multi-agent setups where specialized agents collaborate across the security research phases under a shared persistent context.
 
 This project is still work in progress.
 
@@ -10,50 +19,67 @@ This project is still work in progress.
 
 <div align="center">
 
-### SAST tools
+## SAST (Static Application Security Testing) Scanning Tools
 
-|   <img src="readme/codeql.png" width="100">    |  <img src="readme/psalm.png" width="100">   |    <img src="readme/gosec.png" width="100">    |   <img src="readme/bandit.png" width="100">   |    <img src="readme/semgrep.jpg" width="100">     |        <img src="readme/brakeman.png" width="100">        | <img src="readme/pmd.png" width="100"> |
-| :--------------------------------------------: | :-----------------------------------------: | :--------------------------------------------: | :-------------------------------------------: | :-----------------------------------------------: | :-------------------------------------------------------: | :------------------------------------: |
-| [**CodeQL**](https://github.com/github/codeql) | [**Psalm**](https://github.com/vimeo/psalm) | [**Gosec**](https://github.com/securego/gosec) | [**Bandit**](https://github.com/PyCQA/bandit) | [**Semgrep**](https://github.com/semgrep/semgrep) | [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  |
+|   <img src="readme/codeql.png" width="100">    |  <img src="readme/psalm.png" width="100">   |    <img src="readme/gosec.png" width="100">    |   <img src="readme/bandit.png" width="100">   |    <img src="readme/semgrep.jpg" width="100">     |
+| :--------------------------------------------: | :-----------------------------------------: | :--------------------------------------------: | :-------------------------------------------: | :-----------------------------------------------: |
+| [**CodeQL**](https://github.com/github/codeql) | [**Psalm**](https://github.com/vimeo/psalm) | [**Gosec**](https://github.com/securego/gosec) | [**Bandit**](https://github.com/PyCQA/bandit) | [**Semgrep**](https://github.com/semgrep/semgrep) |
+
+<br>
+
+|        <img src="readme/brakeman.png" width="100">        | <img src="readme/pmd.png" width="100"> |
+| :-------------------------------------------------------: | :------------------------------------: |
+| [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  |
 
 </div>
 
-## Future tools (to be added soon!):
+<div align="center">
 
-### DAST, API & RECON
 
-- **OWASP ZAP**: [owasp/zap2docker-stable:latest](https://hub.docker.com/r/owasp/zap2docker-stable)
-- **Nikto**: [sullo/nikto:latest](https://hub.docker.com/r/sullo/nikto)
-- **SQLmap**: [paoloo/sqlmap:latest](https://hub.docker.com/r/paoloo/sqlmap)
-- **Nuclei**: [projectdiscovery/nuclei:latest](https://hub.docker.com/r/projectdiscovery/nuclei)
-- **Akto**: [akto/akto-api-security:latest](https://hub.docker.com/r/akto/akto-api-security)
-- **Wapiti**: [vasilyev/wapiti:latest](https://hub.docker.com/r/vasilyev/wapiti)
-- **Nmap**: [instrumentisto/nmap:latest](https://hub.docker.com/r/instrumentisto/nmap)
-- **Amass**: [caffix/amass:latest](https://hub.docker.com/r/caffix/amass)
-- **FFUF**: [ffuf/ffuf:latest](https://hub.docker.com/r/ffuf/ffuf)
+## Secrets Scanning Tools
 
-### SECRETS & SCA
+|   <img src="readme/gitleaks.png" width="100">    |  <img src="readme/trufflehog.png" width="100">   |
+| :----------------------------------------------: | :----------------------------------------------: |
+| [**Gitleaks**](https://github.com/zricethezav/gitleaks) | [**TruffleHog**](https://github.com/trufflesecurity/trufflehog) |
 
-- **Gitleaks**: [zricethezav/gitleaks:latest](https://hub.docker.com/r/zricethezav/gitleaks)
-- **TruffleHog**: [trufflesecurity/trufflehog:latest](https://hub.docker.com/r/trufflesecurity/trufflehog)
-- **Whispers**: [skyscanner/whispers:latest](https://hub.docker.com/r/skyscanner/whispers)
-- **Trivy**: [aquasec/trivy:latest](https://hub.docker.com/r/aquasec/trivy)
-- **Grype**: [anchore/grype:latest](https://hub.docker.com/r/anchore/grype)
-- **OSV-Scanner**: [ghcr.io/google/osv-scanner:latest](https://github.com/google/osv-scanner)
+</div>
 
-### INFRASTRUCTURE & IAC
 
-- **Checkov**: [bridgecrew/checkov:latest](https://hub.docker.com/r/bridgecrew/checkov)
-- **KICS**: [checkmarx/kics:latest](https://hub.docker.com/r/checkmarx/kics)
-- **Terrascan**: [tenable/terrascan:latest](https://hub.docker.com/r/tenable/terrascan)
-- **TFSec**: [aquasec/tfsec:latest](https://hub.docker.com/r/aquasec/tfsec)
-- **Hadolint**: [hadolint/hadolint:latest](https://hub.docker.com/r/hadolint/hadolint)
+## Future Tools (Planned)
 
-### POC & EXPLOITATION
+### DAST, API & Recon
 
-- **Metasploit**: [metasploitframework/metasploit-framework:latest](https://hub.docker.com/r/metasploitframework/metasploit-framework)
-- **SearchSploit**: [offensive-security/exploitdb:latest](https://hub.docker.com/r/offensive-security/exploitdb)
-- **Interactsh**: [projectdiscovery/interactsh-client:latest](https://hub.docker.com/r/projectdiscovery/interactsh-client)
+- **OWASP ZAP**
+- **Nikto**
+- **SQLmap**
+- **Nuclei**
+- **Akto**
+- **Wapiti**
+- **Nmap**
+- **Amass**
+- **FFUF**
+
+### SCA
+
+- **Trivy**
+- **Grype**
+- **OSV-Scanner**
+
+### Infrastructure & IaC
+
+- **Prowler**
+- **Checkov**
+- **KICS**
+- **Terrascan**
+- **TFSec**
+- **Hadolint**
+
+### PoC & Exploitation
+
+- **Metasploit**
+- **SearchSploit**
+- **Interactsh**
+
 
 ## How to use it?
 
