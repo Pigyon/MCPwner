@@ -6,7 +6,7 @@ from common.models import ScanRequest
 def build_bandit_cmd(request: ScanRequest, output_path: Path):
     full_scan_path = Path(request.workspace_path) / request.scan_path
     
-    cmd = ["bandit", "-f", "json", "-o", str(output_path)]
+    cmd = ["bandit", "-f", "sarif", "-o", str(output_path)]
     
     config = request.config or {}
     
@@ -40,5 +40,5 @@ app = create_scanner_app(
     tool_name="bandit",
     version_cmd=["bandit", "--version"],
     scan_cmd_builder=build_bandit_cmd,
-    report_format="json" # Bandit outputs JSON by default in this config
+    report_format="sarif" # Bandit now outputs SARIF
 )
