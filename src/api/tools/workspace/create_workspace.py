@@ -1,6 +1,7 @@
 """Create workspace tool."""
 
 import logging
+import sys
 
 from deps import get_workspace_service
 
