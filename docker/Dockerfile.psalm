@@ -1,25 +1,33 @@
-# Pin to PHP 8.2.27 (2024-01-24)
-FROM php:8.2-cli-alpine
+# Use the official optimized Psalm image
+FROM ghcr.io/danog/psalm:6.9.1
 
-# Install Python, pip, FastAPI, uvicorn, and required dependencies for Psalm
-RUN apk add --no-cache \
+# Install Python and dependencies
+RUN apt-get update && apt-get install -y \
     python3 \
-    py3-pip \
+    python3-pip \
     git \
-    bash \
-    && python3 -m pip install --break-system-packages --no-cache-dir fastapi uvicorn
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
-# Pin to Composer 2.8.4 (2024-01-24)
+# Install PHP extension installer to easily install zip extension
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN chmod +x /usr/local/bin/install-php-extensions && \
+    install-php-extensions zip
+
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Install Psalm globally
-RUN composer global require vimeo/psalm && \
-    ln -s /root/.composer/vendor/bin/psalm /usr/local/bin/psalm
+# Install Python packages
+RUN python3 -m pip install --break-system-packages --no-cache-dir fastapi uvicorn
+
+# Ensure psalm is in PATH
+ENV PATH="/composer/vendor/bin:${PATH}"
 
 WORKDIR /service
 
 # Copy service files
 COPY docker/psalm_service.py .
+COPY src/services/psalm.py .
 
 # Expose service port
 EXPOSE 8087
