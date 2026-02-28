@@ -1,7 +1,7 @@
 import json
 import logging
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -60,7 +60,7 @@ def create_scanner_app(
                 raise HTTPException(status_code=404, detail=f"Scan path does not exist: {full_scan_path}")
 
             # Create output directory
-            timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
             workspace_base = Path(request.workspace_path).parent
             # Handle case where workspace path might be deeper or different
             # We want /workspaces/{id}/reports/sast/{tool}
