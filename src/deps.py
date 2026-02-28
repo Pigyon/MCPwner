@@ -13,6 +13,7 @@ from clients.gosec import GosecClient
 from clients.brakeman import BrakemanClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
+from clients.secrets.gitleaks import GitleaksClient
 
 from config.config import load_config
 from repositories.workspace import WorkspaceRepository
@@ -25,6 +26,7 @@ from services.gosec import GosecService
 from services.brakeman import BrakemanService
 from services.pmd import PMDService
 from services.psalm import PsalmService
+from services.secrets.gitleaks import GitleaksService
 from services.workspace import WorkspaceService
 
 
@@ -150,6 +152,18 @@ def get_psalm_service():
     return PsalmService(get_workspace_repository(), get_psalm_client())
 
 
+@lru_cache(maxsize=None)
+def get_gitleaks_client():
+    config = get_config()
+    gitleaks_url = config.get("gitleaks", {}).get("service_url", "http://gitleaks:8090")
+    return GitleaksClient(gitleaks_url)
+
+
+@lru_cache(maxsize=None)
+def get_gitleaks_service():
+    return GitleaksService(get_workspace_repository(), get_gitleaks_client())
+
+
 def reset_dependencies():
     """Reset all dependencies (useful for testing)."""
     get_config.cache_clear()
@@ -172,3 +186,5 @@ def reset_dependencies():
     get_pmd_service.cache_clear()
     get_psalm_client.cache_clear()
     get_psalm_service.cache_clear()
+    get_gitleaks_client.cache_clear()
+    get_gitleaks_service.cache_clear()

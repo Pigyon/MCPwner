@@ -15,6 +15,7 @@ def create_scanner_app(
     version_cmd: List[str],
     scan_cmd_builder: Callable[[ScanRequest, Path], List[str]],
     report_format: str = "sarif",
+    tool_category: str = "sast",
 ) -> FastAPI:
     """
     Create a FastAPI app for a SAST scanner.
@@ -24,6 +25,7 @@ def create_scanner_app(
         version_cmd: Command to get version (e.g., ["semgrep", "--version"])
         scan_cmd_builder: Function that takes request and output path and returns command list
         report_format: Format of the report file extension (default: "sarif")
+        tool_category: Category of the tool (default: "sast")
     """
     app = FastAPI(title=f"{tool_name.capitalize()} Service", version="1.0.0")
 
@@ -84,13 +86,13 @@ def create_scanner_app(
                 idx = parts.index("workspaces")
                 if idx + 1 < len(parts):
                     workspace_root = Path(*parts[:idx+2])
-                    output_dir = workspace_root / "reports" / "sast" / tool_name
+                    output_dir = workspace_root / "reports" / tool_category / tool_name
                 else:
                     # Fallback
-                    output_dir = Path(request.workspace_path) / "reports" / "sast" / tool_name
+                    output_dir = Path(request.workspace_path) / "reports" / tool_category / tool_name
             else:
                  # Fallback for local testing etc
-                 output_dir = Path(request.workspace_path).parent / "reports" / "sast" / tool_name
+                 output_dir = Path(request.workspace_path).parent / "reports" / tool_category / tool_name
 
             output_dir.mkdir(parents=True, exist_ok=True)
             output_path = output_dir / f"{timestamp}.{report_format}"
