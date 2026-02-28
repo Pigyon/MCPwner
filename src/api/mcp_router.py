@@ -27,9 +27,12 @@ class MCPRouter:
         self._tools: List[Callable] = []
         self._routers: List["MCPRouter"] = []
 
-    def tool(self):
+    def tool(self, name: Optional[str] = None):
         """
         Decorator to register a tool function.
+        
+        Args:
+            name: Optional explicit name for the tool (ignored in this version)
 
         Returns:
             Decorator function
