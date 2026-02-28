@@ -1,8 +1,10 @@
 """Create workspace tool."""
 
-import sys
+import logging
 
 from deps import get_workspace_service
+
+logger = logging.getLogger(__name__)
 
 
 def create_workspace(source_type: str, source: str) -> dict:
@@ -24,5 +26,5 @@ def create_workspace(source_type: str, source: str) -> dict:
     )
     service = get_workspace_service()
     result = service.create_workspace(source_type, source)
-    print(f"[MCP SERVER] Workspace created: {result['workspace_id']}", file=sys.stderr)
+    logger.info(f"Workspace created: {result['workspace_id']}")
     return result
