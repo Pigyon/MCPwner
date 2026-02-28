@@ -28,13 +28,14 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         str(output_path),
         "--report-format",
         "sarif",
-        "--no-git", # Scan files directly
-        "--exit-code", "0", # Force exit code 0 even if leaks found (or rely on base_service handling)
-                            # Actually, base_service handles non-zero exit codes, so we don't strictly need this,
-                            # but it's safer to ensure consistent behavior if we wanted check=True.
-                            # However, base_service uses check=False.
-                            # Let's keep it simple.
-        "--verbose"
+        "--no-git",  # Scan files directly
+        "--exit-code",
+        "0",  # Force exit code 0 even if leaks found (or rely on base_service handling)
+        # Actually, base_service handles non-zero exit codes, so we don't strictly need this,
+        # but it's safer to ensure consistent behavior if we wanted check=True.
+        # However, base_service uses check=False.
+        # Let's keep it simple.
+        "--verbose",
     ]
 
     # If scan_path is provided, update source

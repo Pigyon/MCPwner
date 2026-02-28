@@ -1,5 +1,4 @@
 import logging
-from typing import Any, Dict, Optional
 
 from clients.base_secrets import BaseSecretsClient
 

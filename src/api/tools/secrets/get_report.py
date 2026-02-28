@@ -40,7 +40,6 @@ def _get_service_for_tool(tool: str):
     """Get the appropriate service instance for a tool."""
     if tool == "gitleaks":
         return get_gitleaks_service()
-    elif tool == "trufflehog":
+    if tool == "trufflehog":
         return get_trufflehog_service()
-    else:
-        raise ValueError(f"Unknown tool: {tool}")
+    raise ValueError(f"Unknown tool: {tool}")

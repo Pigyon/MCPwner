@@ -82,7 +82,7 @@ def execute_query(
                 workspace_id=workspace_id,
                 database_id=database_id,
                 query_pack=query_pack,
-                output_path=sarif_output
+                output_path=sarif_output,
             )
 
             duration = time.time() - start_time
