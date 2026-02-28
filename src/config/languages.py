@@ -33,6 +33,13 @@ SEMGREP_LANGUAGES: List[str] = [
     "ruby",
     "rust",
     "typescript",
+    "jsx",
+    "scala",
+    "swift",
+    "php",
+    "terraform",
+    "generic",
+    "json",
 ]
 
 BANDIT_LANGUAGES: List[str] = ["python"]
