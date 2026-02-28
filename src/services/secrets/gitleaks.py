@@ -1,5 +1,4 @@
 import logging
-from typing import Any, Dict, Optional
 
 from clients.secrets.gitleaks import GitleaksClient
 from repositories.workspace import WorkspaceRepository

@@ -1,5 +1,4 @@
 import logging
-from typing import Any, Dict, Optional
 
 from clients.secrets.trufflehog import TruffleHogClient
 from repositories.workspace import WorkspaceRepository

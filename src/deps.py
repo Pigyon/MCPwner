@@ -5,30 +5,28 @@ Simple factory functions for service instantiation following MCP server conventi
 
 from functools import lru_cache
 
-from clients.codeql import CodeQLClient
-from clients.linguist import LinguistClient
-from clients.semgrep import SemgrepClient
 from clients.bandit import BanditClient
-from clients.gosec import GosecClient
 from clients.brakeman import BrakemanClient
+from clients.codeql import CodeQLClient
+from clients.gosec import GosecClient
+from clients.linguist import LinguistClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
 from clients.secrets.gitleaks import GitleaksClient
 from clients.secrets.trufflehog import TruffleHogClient
-
+from clients.semgrep import SemgrepClient
 from config.config import load_config
 from repositories.workspace import WorkspaceRepository
-
-from services.codeql import CodeQLService
-from services.linguist import LinguistService
-from services.semgrep import SemgrepService
 from services.bandit import BanditService
-from services.gosec import GosecService
 from services.brakeman import BrakemanService
+from services.codeql import CodeQLService
+from services.gosec import GosecService
+from services.linguist import LinguistService
 from services.pmd import PMDService
 from services.psalm import PsalmService
 from services.secrets.gitleaks import GitleaksService
 from services.secrets.trufflehog import TruffleHogService
+from services.semgrep import SemgrepService
 from services.workspace import WorkspaceService
 
 
@@ -73,14 +71,11 @@ def get_linguist_service():
 @lru_cache(maxsize=None)
 def get_codeql_service():
     """Get CodeQL service singleton."""
-    return CodeQLService(
-        get_workspace_repository(),
-        get_codeql_client(),
-        get_linguist_service()
-    )
+    return CodeQLService(get_workspace_repository(), get_codeql_client(), get_linguist_service())
 
 
 # SAST Clients and Services
+
 
 @lru_cache(maxsize=None)
 def get_semgrep_client():
@@ -187,7 +182,7 @@ def reset_dependencies():
     get_workspace_service.cache_clear()
     get_linguist_service.cache_clear()
     get_codeql_service.cache_clear()
-    
+
     get_semgrep_client.cache_clear()
     get_semgrep_service.cache_clear()
     get_bandit_client.cache_clear()

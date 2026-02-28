@@ -3,12 +3,13 @@ import logging
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, List
 
-from fastapi import FastAPI, HTTPException
 from common.models import HealthResponse, ScanRequest, VersionResponse
+from fastapi import FastAPI, HTTPException
 
 logger = logging.getLogger(__name__)
+
 
 def create_scanner_app(
     tool_name: str,
@@ -59,7 +60,9 @@ def create_scanner_app(
             full_scan_path = Path(request.workspace_path) / request.scan_path
 
             if not full_scan_path.exists():
-                raise HTTPException(status_code=404, detail=f"Scan path does not exist: {full_scan_path}")
+                raise HTTPException(
+                    status_code=404, detail=f"Scan path does not exist: {full_scan_path}"
+                )
 
             # Create output directory
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
@@ -67,32 +70,32 @@ def create_scanner_app(
             # Handle case where workspace path might be deeper or different
             # We want /workspaces/{id}/reports/sast/{tool}
             # Assuming request.workspace_path is /workspaces/{id} or /workspaces/{id}/source
-            
+
             # Simple heuristic: find 'reports' sibling or child
             if "reports" in str(full_scan_path):
-                 # Already inside a structure with reports? Unlikely for source
-                 pass
-            
+                # Already inside a structure with reports? Unlikely for source
+                pass
+
             # Standard MCPwner structure: /workspaces/{id}/source -> /workspaces/{id}/reports
             # If workspace_path is /workspaces/{id}, then reports is /workspaces/{id}/reports
             # If workspace_path is /workspaces/{id}/source, then reports is /workspaces/{id}/reports
-            
+
             # Let's assume standard structure where reports is at workspace root
-            # We need to find the workspace root. 
+            # We need to find the workspace root.
             # If path contains /workspaces/<id>, we can extract it.
-            
+
             parts = Path(request.workspace_path).parts
             if "workspaces" in parts:
                 idx = parts.index("workspaces")
                 if idx + 1 < len(parts):
-                    workspace_root = Path(*parts[:idx+2])
+                    workspace_root = Path(*parts[: idx + 2])
                     output_dir = workspace_root / "reports" / tool_category / tool_name
                 else:
                     # Fallback
                     output_dir = Path(request.workspace_path) / "reports" / tool_category / tool_name
             else:
-                 # Fallback for local testing etc
-                 output_dir = Path(request.workspace_path).parent / "reports" / tool_category / tool_name
+                # Fallback for local testing etc
+                output_dir = Path(request.workspace_path).parent / "reports" / tool_category / tool_name
 
             output_dir.mkdir(parents=True, exist_ok=True)
             output_path = output_dir / f"{timestamp}.{report_format}"
@@ -106,7 +109,7 @@ def create_scanner_app(
                 cmd,
                 capture_output=True,
                 text=True,
-                check=False  # Don't raise on non-zero exit code as scanners often return 1 for findings
+                check=False,  # Don't raise on non-zero exit code as scanners often return 1 for findings
             )
 
             # Check if report was created
@@ -115,7 +118,7 @@ def create_scanner_app(
                 return {
                     "status": "error",
                     "error": f"Scan failed to generate report. Stderr: {result.stderr}",
-                    "output": result.stdout
+                    "output": result.stdout,
                 }
 
             # Parse report for finding count (simple heuristic or JSON parse)
@@ -127,7 +130,7 @@ def create_scanner_app(
                         for run in data.get("runs", []):
                             finding_count += len(run.get("results", []))
                 elif report_format == "json":
-                     with open(output_path, "r") as f:
+                    with open(output_path, "r") as f:
                         try:
                             data = json.load(f)
                             if isinstance(data, list):
@@ -154,7 +157,7 @@ def create_scanner_app(
                 "status": "success",
                 "finding_count": finding_count,
                 "report_path": str(output_path),
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
 
         except Exception as e:
