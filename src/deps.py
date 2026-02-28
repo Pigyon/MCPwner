@@ -14,6 +14,7 @@ from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
 from clients.secrets.gitleaks import GitleaksClient
 from clients.secrets.trufflehog import TruffleHogClient
+from clients.secrets.whispers import WhispersClient
 from clients.semgrep import SemgrepClient
 from config.config import load_config
 from repositories.workspace import WorkspaceRepository
@@ -26,6 +27,7 @@ from services.pmd import PMDService
 from services.psalm import PsalmService
 from services.secrets.gitleaks import GitleaksService
 from services.secrets.trufflehog import TruffleHogService
+from services.secrets.whispers import WhispersService
 from services.semgrep import SemgrepService
 from services.workspace import WorkspaceService
 
@@ -173,6 +175,18 @@ def get_trufflehog_service():
     return TruffleHogService(get_workspace_repository(), get_trufflehog_client())
 
 
+@lru_cache(maxsize=None)
+def get_whispers_client():
+    config = get_config()
+    whispers_url = config.get("whispers", {}).get("service_url", "http://whispers:8092")
+    return WhispersClient(whispers_url)
+
+
+@lru_cache(maxsize=None)
+def get_whispers_service():
+    return WhispersService(get_workspace_repository(), get_whispers_client())
+
+
 def reset_dependencies():
     """Reset all dependencies (useful for testing)."""
     get_config.cache_clear()
@@ -199,3 +213,5 @@ def reset_dependencies():
     get_gitleaks_service.cache_clear()
     get_trufflehog_client.cache_clear()
     get_trufflehog_service.cache_clear()
+    get_whispers_client.cache_clear()
+    get_whispers_service.cache_clear()
