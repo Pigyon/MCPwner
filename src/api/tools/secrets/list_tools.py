@@ -2,7 +2,7 @@
 
 from typing import List
 
-SECRETS_TOOLS = ["gitleaks", "trufflehog", "whispers"]
+SECRETS_TOOLS = ["gitleaks", "trufflehog", "whispers", "detect-secrets"]
 
 
 def secrets_list_tools() -> List[str]:
