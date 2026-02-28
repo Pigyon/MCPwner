@@ -28,6 +28,7 @@ WORKDIR /service
 # Copy service files
 COPY docker/common /service/common
 COPY docker/psalm/main.py .
+COPY docker/psalm/psalm.xml /service/psalm.xml
 
 # Expose service port
 EXPOSE 8087
