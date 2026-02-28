@@ -8,5 +8,5 @@ from api.tools.sast.scan import run_sast_scan
 router = MCPRouter()
 
 router.tool()(sast_list_tools)
-router.tool(name="sast_scan")(run_sast_scan)
-router.tool(name="sast_get_report")(get_sast_report)
+router.tool()(run_sast_scan)
+router.tool()(get_sast_report)
