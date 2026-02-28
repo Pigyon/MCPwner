@@ -110,7 +110,7 @@ class BaseSASTService:
                 "error_code": "NO_REPORTS_FOUND",
             }
 
-        reports = sorted(report_dir.glob("*.sarif"), reverse=True)
+        reports = sorted(list(report_dir.glob("*.sarif")) + list(report_dir.glob("*.json")), reverse=True)
         if not reports:
             return {
                 "status": "error",
@@ -120,10 +120,10 @@ class BaseSASTService:
 
         latest_report = reports[0]
 
-        # Read and parse SARIF
+        # Read and parse SARIF or JSON
         try:
             with open(latest_report, "r") as f:
-                sarif_data = json.load(f)
+                report_data = json.load(f)
 
             return {
                 "status": "success",
@@ -131,7 +131,8 @@ class BaseSASTService:
                 "tool": self.tool_name,
                 "report_path": str(latest_report),
                 "timestamp": latest_report.stem,
-                "sarif": sarif_data,
+                "sarif": report_data, # we will always prefer and pre-configure sarif, though it might be raw JSON
+                "report_content": report_data 
             }
         except Exception as e:
             return {
