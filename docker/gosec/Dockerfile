@@ -12,7 +12,8 @@ RUN pip3 install --break-system-packages --no-cache-dir fastapi uvicorn
 WORKDIR /service
 
 # Copy service files
-COPY docker/gosec_service.py .
+COPY docker/common /service/common
+COPY docker/gosec/main.py .
 
 # Expose service port
 EXPOSE 8084
@@ -21,4 +22,4 @@ EXPOSE 8084
 ENTRYPOINT []
 
 # Run the FastAPI service with uvicorn
-CMD ["python3", "-m", "uvicorn", "gosec_service:app", "--host", "0.0.0.0", "--port", "8084"]
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8084"]

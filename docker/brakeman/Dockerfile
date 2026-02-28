@@ -14,10 +14,11 @@ RUN pip3 install --no-cache-dir --break-system-packages fastapi uvicorn
 WORKDIR /service
 
 # Copy service files
-COPY docker/brakeman_service.py .
+COPY docker/common /service/common
+COPY docker/brakeman/main.py .
 
 # Expose service port
 EXPOSE 8085
 
 # Run the FastAPI service with uvicorn
-CMD ["python3", "-m", "uvicorn", "brakeman_service:app", "--host", "0.0.0.0", "--port", "8085"]
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8085"]

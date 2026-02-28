@@ -26,12 +26,12 @@ ENV PATH="/composer/vendor/bin:${PATH}"
 WORKDIR /service
 
 # Copy service files
-COPY docker/psalm_service.py .
-COPY src/services/psalm.py .
+COPY docker/common /service/common
+COPY docker/psalm/main.py .
 
 # Expose service port
 EXPOSE 8087
 
 # Run the FastAPI service with uvicorn
 ENTRYPOINT ["/usr/bin/python3"]
-CMD ["-m", "uvicorn", "psalm_service:app", "--host", "0.0.0.0", "--port", "8087"]
+CMD ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8087"]

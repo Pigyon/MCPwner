@@ -10,7 +10,7 @@ RUN apk add --no-cache python3 py3-pip curl && \
 WORKDIR /service
 
 # Copy service files
-COPY docker/linguist_service.py .
+COPY docker/linguist/main.py .
 COPY src/utils/git_utils.py .
 
 # Expose service port
@@ -20,4 +20,4 @@ EXPOSE 8081
 ENTRYPOINT []
 
 # Run the FastAPI service with uvicorn
-CMD ["python3", "-m", "uvicorn", "linguist_service:app", "--host", "0.0.0.0", "--port", "8081"]
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8081"]
