@@ -28,7 +28,8 @@ try:
 
     logger.info(f"Configuration loaded successfully from {config_path}")
 except Exception as e:
-    print(f"Configuration error: {e}", file=sys.stderr)
+    logging.basicConfig(level=logging.ERROR)
+    logging.error(f"Configuration error: {e}")
     sys.exit(1)
 
 # Initialize main server

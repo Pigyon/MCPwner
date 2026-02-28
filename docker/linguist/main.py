@@ -1,6 +1,7 @@
 """HTTP service wrapper for GitHub Linguist."""
 
 import json
+import logging
 import subprocess
 from pathlib import Path
 
@@ -8,6 +9,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from git_utils import init_git, config_git, commit_git
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Linguist Service", version="1.0.0")
 
@@ -54,7 +57,7 @@ def detect_languages(request: DetectLanguagesRequest):
         except RuntimeError as e:
             # If git initialization fails, we log it but try to proceed anyway
             # Linguist might still work partially or fail later with a clearer error
-            print(f"Warning: Failed to initialize git repo: {e}")
+            logger.warning(f"Failed to initialize git repo: {e}")
 
         # Run linguist
         result = subprocess.run(
