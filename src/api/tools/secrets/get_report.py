@@ -3,11 +3,11 @@
 import logging
 from typing import Any, Dict
 
-from deps import get_gitleaks_service
+from deps import get_gitleaks_service, get_trufflehog_service
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_TOOLS = ["gitleaks"]
+SUPPORTED_TOOLS = ["gitleaks", "trufflehog"]
 
 
 def get_secrets_report(tool: str, workspace_id: str) -> Dict[str, Any]:
@@ -40,5 +40,7 @@ def _get_service_for_tool(tool: str):
     """Get the appropriate service instance for a tool."""
     if tool == "gitleaks":
         return get_gitleaks_service()
+    elif tool == "trufflehog":
+        return get_trufflehog_service()
     else:
         raise ValueError(f"Unknown tool: {tool}")
