@@ -47,7 +47,6 @@ def version():
             timeout=5,
             check=True,
         )
-
         return {"version": result.stdout.strip(), "status": "success"}
 
     except Exception as e:
@@ -64,8 +63,10 @@ def scan(request: ScanRequest):
     try:
         # Build full scan path
         full_scan_path = Path(request.workspace_path) / request.scan_path
+        log(f"Received scan request for {full_scan_path}")
 
         if not full_scan_path.exists():
+            log(f"Scan path does not exist: {full_scan_path}")
             raise HTTPException(
                 status_code=404,
                 detail=f"Scan path does not exist: {full_scan_path}",
@@ -77,50 +78,85 @@ def scan(request: ScanRequest):
         output_dir = workspace_base / "reports" / "sast" / "psalm"
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / f"{timestamp}.sarif"
+        log(f"Output path: {output_path}")
 
-        # Build Psalm command
-        # Psalm requires initialization if psalm.xml doesn't exist
+        # Psalm needs composer autoloading to resolve classes.
+        # Install dependencies if composer.json exists but vendor/ doesn't.
+        composer_json = full_scan_path / "composer.json"
+        vendor_dir = full_scan_path / "vendor"
+        
+        if composer_json.exists() and not vendor_dir.exists():
+            log("Running composer install (existing composer.json)...")
+            result = subprocess.run(
+                ["composer", "install", "--no-dev", "--no-scripts", "--no-interaction", "--ignore-platform-reqs"],
+                capture_output=True,
+                text=True,
+                timeout=600,
+                cwd=str(full_scan_path),
+            )
+            if result.returncode != 0:
+                log(f"Composer install failed: {result.stderr}")
+                log(f"Composer stdout: {result.stdout}")
+                # We continue anyway, but log the error
+            else:
+                log("Composer install successful")
+
+        # If there's no composer.json at all, create a minimal one so psalm --init works.
+        if not composer_json.exists():
+            log("Creating minimal composer.json...")
+            composer_json.write_text('{"autoload":{"psr-4":{"":"./"}}}')
+            result = subprocess.run(
+                ["composer", "install", "--no-dev", "--no-scripts", "--no-interaction"],
+                capture_output=True,
+                text=True,
+                timeout=120,
+                cwd=str(full_scan_path),
+            )
+            if result.returncode != 0:
+                log(f"Minimal composer install failed: {result.stderr}")
+
+        # Psalm requires a psalm.xml config in the project root.
         psalm_config = full_scan_path / "psalm.xml"
         if not psalm_config.exists():
-            # Initialize Psalm with default config
-            init_result = subprocess.run(
-                ["psalm", "--init", str(full_scan_path), "3"],
+            log("Initializing psalm...")
+            subprocess.run(
+                ["psalm", "--init", ".", "3"],
                 capture_output=True,
                 text=True,
                 timeout=30,
                 cwd=str(full_scan_path),
             )
-            # Psalm init may fail if no PHP files found, continue anyway
 
         # Build scan command
+        # Psalm uses psalm.xml in cwd to determine project root and scan scope.
+        # --report with .sarif extension auto-selects SARIF format.
         cmd = [
             "psalm",
-            "--report=" + str(output_path),
-            "--output-format=sarif",
+            f"--report={output_path}",
             "--no-cache",
         ]
 
         # Add config options
         config = request.config or {}
 
-        # Add error level if specified
         if "error_level" in config:
             cmd.append(f"--error-level={config['error_level']}")
 
-        # Add path to scan
-        cmd.append(str(full_scan_path))
-
-        # Execute scan
+        # Execute scan from the project directory so Psalm finds psalm.xml
+        log(f"Executing scan command: {' '.join(cmd)}")
         start_time = datetime.utcnow()
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=600, cwd=str(full_scan_path)
+            cmd, capture_output=True, text=True, timeout=900, cwd=str(full_scan_path)
         )
         end_time = datetime.utcnow()
         duration = (end_time - start_time).total_seconds()
+        log(f"Scan completed in {duration}s with return code {result.returncode}")
 
-        # Psalm returns non-zero exit codes when findings are found
-        # Only treat it as error if the output file wasn't created
+        # Psalm returns non-zero exit codes when findings are found.
+        # Only treat it as error if the output file wasn't created.
         if not output_path.exists():
+            log(f"Output file not found. Stderr: {result.stderr}")
+            log(f"Stdout: {result.stdout}")
             raise HTTPException(
                 status_code=500,
                 detail={
@@ -135,9 +171,12 @@ def scan(request: ScanRequest):
         try:
             with open(output_path, "r") as f:
                 sarif_data = json.load(f)
-            finding_count = sum(len(run.get("results", [])) for run in sarif_data.get("runs", []))
-        except Exception:
-            # If we can't parse SARIF, still return success but with 0 findings
+            finding_count = sum(
+                len(run.get("results", [])) for run in sarif_data.get("runs", [])
+            )
+            log(f"Findings count: {finding_count}")
+        except Exception as e:
+            log(f"Failed to parse SARIF: {e}")
             pass
 
         return {
@@ -148,10 +187,12 @@ def scan(request: ScanRequest):
         }
 
     except subprocess.TimeoutExpired:
+        log("Scan timed out")
         raise HTTPException(status_code=504, detail="Psalm scan timed out")
     except HTTPException:
         raise
     except Exception as e:
+        log(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

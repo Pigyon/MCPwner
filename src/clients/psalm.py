@@ -34,7 +34,7 @@ class PsalmClient:
         if config:
             payload["config"] = config
 
-        response = requests.post(f"{self.service_url}/scan", json=payload, timeout=600)
+        response = requests.post(f"{self.service_url}/scan", json=payload, timeout=1200)
         response.raise_for_status()
         return response.json()
 
