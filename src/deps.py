@@ -30,6 +30,7 @@ from services.secrets.gitleaks import GitleaksService
 from services.secrets.trufflehog import TruffleHogService
 from services.secrets.whispers import WhispersService
 from services.secrets.detect_secrets import DetectSecretsService
+from services.secrets.hawk_scanner import HawkScannerService
 from services.semgrep import SemgrepService
 from services.workspace import WorkspaceService
 
@@ -202,6 +203,18 @@ def get_detect_secrets_service():
     return DetectSecretsService(get_workspace_repository(), get_detect_secrets_client())
 
 
+@lru_cache(maxsize=None)
+def get_hawk_scanner_client():
+    config = get_config()
+    hawk_scanner_url = config.get("hawk_scanner", {}).get("service_url", "http://hawk-scanner:8094")
+    return HawkScannerClient(hawk_scanner_url)
+
+
+@lru_cache(maxsize=None)
+def get_hawk_scanner_service():
+    return HawkScannerService(get_workspace_repository(), get_hawk_scanner_client())
+
+
 def reset_dependencies():
     """Reset all dependencies (useful for testing)."""
     get_config.cache_clear()
@@ -232,3 +245,5 @@ def reset_dependencies():
     get_whispers_service.cache_clear()
     get_detect_secrets_client.cache_clear()
     get_detect_secrets_service.cache_clear()
+    get_hawk_scanner_client.cache_clear()
+    get_hawk_scanner_service.cache_clear()

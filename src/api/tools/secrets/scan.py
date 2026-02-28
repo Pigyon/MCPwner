@@ -6,13 +6,14 @@ from typing import Any, Dict, Optional
 from deps import (
     get_detect_secrets_service,
     get_gitleaks_service,
+    get_hawk_scanner_service,
     get_trufflehog_service,
     get_whispers_service,
 )
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_TOOLS = ["gitleaks", "trufflehog", "whispers", "detect-secrets"]
+SUPPORTED_TOOLS = ["gitleaks", "trufflehog", "whispers", "detect-secrets", "hawk-scanner"]
 
 
 def run_secrets_scan(
@@ -58,4 +59,6 @@ def _get_service_for_tool(tool: str):
         return get_whispers_service()
     if tool == "detect-secrets":
         return get_detect_secrets_service()
+    if tool == "hawk-scanner":
+        return get_hawk_scanner_service()
     raise ValueError(f"Unknown tool: {tool}")
