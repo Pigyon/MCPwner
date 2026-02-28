@@ -53,6 +53,9 @@ def execute_query(
             return {"status": "error", "error": "Database path not found in metadata"}
 
         # Handle custom query execution
+        if custom_query:
+            logger.debug(f"Custom query provided (length: {len(custom_query)})")
+
         if query_type == "custom":
             # For now, custom queries are not fully supported in remote execution mode
             # unless we implement a way to send the query content to the executor
