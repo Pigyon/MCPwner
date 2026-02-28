@@ -14,6 +14,7 @@ from clients.brakeman import BrakemanClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
 from clients.secrets.gitleaks import GitleaksClient
+from clients.secrets.trufflehog import TruffleHogClient
 
 from config.config import load_config
 from repositories.workspace import WorkspaceRepository
@@ -27,6 +28,7 @@ from services.brakeman import BrakemanService
 from services.pmd import PMDService
 from services.psalm import PsalmService
 from services.secrets.gitleaks import GitleaksService
+from services.secrets.trufflehog import TruffleHogService
 from services.workspace import WorkspaceService
 
 
@@ -164,6 +166,18 @@ def get_gitleaks_service():
     return GitleaksService(get_workspace_repository(), get_gitleaks_client())
 
 
+@lru_cache(maxsize=None)
+def get_trufflehog_client():
+    config = get_config()
+    trufflehog_url = config.get("trufflehog", {}).get("service_url", "http://trufflehog:8091")
+    return TruffleHogClient(trufflehog_url)
+
+
+@lru_cache(maxsize=None)
+def get_trufflehog_service():
+    return TruffleHogService(get_workspace_repository(), get_trufflehog_client())
+
+
 def reset_dependencies():
     """Reset all dependencies (useful for testing)."""
     get_config.cache_clear()
@@ -188,3 +202,5 @@ def reset_dependencies():
     get_psalm_service.cache_clear()
     get_gitleaks_client.cache_clear()
     get_gitleaks_service.cache_clear()
+    get_trufflehog_client.cache_clear()
+    get_trufflehog_service.cache_clear()

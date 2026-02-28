@@ -128,15 +128,27 @@ def create_scanner_app(
                             finding_count += len(run.get("results", []))
                 elif report_format == "json":
                      with open(output_path, "r") as f:
-                        data = json.load(f)
-                        # Tool specific parsing would be needed here for exact count
-                        # But for now we just return success
-                        if isinstance(data, list):
-                            finding_count = len(data)
-                        elif isinstance(data, dict) and "results" in data:
-                            finding_count = len(data["results"])
-            except Exception:
-                logger.warning(f"Could not parse finding count from {output_path}")
+                        try:
+                            data = json.load(f)
+                            if isinstance(data, list):
+                                finding_count = len(data)
+                            elif isinstance(data, dict) and "results" in data:
+                                finding_count = len(data["results"])
+                        except json.JSONDecodeError:
+                            # Handle NDJSON (Newline Delimited JSON)
+                            f.seek(0)
+                            lines = f.readlines()
+                            finding_count = len(lines)
+                            # Convert NDJSON to JSON Array for easier consumption
+                            try:
+                                json_array = [json.loads(line) for line in lines if line.strip()]
+                                with open(output_path, "w") as fw:
+                                    json.dump(json_array, fw, indent=2)
+                            except Exception as e:
+                                logger.warning(f"Failed to convert NDJSON to JSON array: {e}")
+
+            except Exception as e:
+                logger.warning(f"Could not parse finding count from {output_path}: {e}")
 
             return {
                 "status": "success",
