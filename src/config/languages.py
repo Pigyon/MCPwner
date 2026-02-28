@@ -41,6 +41,22 @@ GOSEC_LANGUAGES: List[str] = ["go"]
 
 BRAKEMAN_LANGUAGES: List[str] = ["ruby"]
 
-PMD_LANGUAGES: List[str] = ["apex", "java", "javascript", "visualforce"]
+PMD_LANGUAGES: List[str] = [
+    "apex", 
+    "java", 
+    "javascript", 
+    "visualforce",
+    "kotlin", 
+    "swift", 
+    "modelica", 
+    "plsql", 
+    "apache_velocity", 
+    "jsp", 
+    "wsdl", 
+    "maven_pom", 
+    "html", 
+    "xml", 
+    "xsl"
+]
 
 PSALM_LANGUAGES: List[str] = ["php"]
