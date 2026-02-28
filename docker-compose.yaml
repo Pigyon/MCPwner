@@ -267,6 +267,32 @@ services:
       retries: 3
       start_period: 10s
 
+  gitleaks:
+    build:
+      context: .
+      dockerfile: docker/secrets/gitleaks/Dockerfile
+    container_name: gitleaks-scanner
+    user: "0:0"  # Run as root
+    read_only: false
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8090:8090"
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
 volumes:
   workspaces:
     driver: local
