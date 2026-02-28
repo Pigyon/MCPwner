@@ -192,7 +192,7 @@ services:
   brakeman:
     build:
       context: .
-      dockerfile: docker/Dockerfile.brakeman
+      dockerfile: docker/brakeman/Dockerfile
     container_name: brakeman-scanner
     user: "0:0"  # Run as root for brakeman execution
     read_only: false
@@ -218,7 +218,7 @@ services:
   pmd:
     build:
       context: .
-      dockerfile: docker/Dockerfile.pmd
+      dockerfile: docker/pmd/Dockerfile
     container_name: pmd-scanner
     user: "0:0"  # Run as root for pmd execution
     read_only: false
