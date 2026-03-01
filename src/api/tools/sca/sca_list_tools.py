@@ -61,12 +61,12 @@ def sca_list_tools(workspace_id: Optional[str] = None, show_all: bool = False) -
         compatible_tools = {}
         for tool_id, tool_info in SCA_TOOLS.items():
             tool_languages = tool_info["languages"]
-            
+
             # If tool has no specific language requirements (empty list), it's compatible
             if not tool_languages:
                 compatible_tools[tool_id] = tool_info
                 continue
-                
+
             tool_languages_set = set(tool_languages)
             if tool_languages_set.intersection(detected_languages):
                 compatible_tools[tool_id] = tool_info

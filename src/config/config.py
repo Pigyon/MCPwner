@@ -112,7 +112,6 @@ def _validate_config(config: Dict[str, Any]) -> None:
     _validate_positive_int(resources, "max_memory_mb", "resources")
     _validate_positive_int(resources, "max_cpu_cores", "resources")
 
-
     # Validate logging settings
     logging = config["logging"]
     _validate_string(logging, "level", "logging")
