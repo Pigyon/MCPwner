@@ -45,7 +45,8 @@ class BaseScanClient:
             logger.error(f"Cannot connect to {self.tool_name} service at {self.service_url}: {e}")
             raise RuntimeError(
                 f"Cannot connect to {self.tool_name} service at {self.service_url}. "
-                f"Is the {self.tool_name} container running? Check with: docker ps | grep {self.tool_name}"
+                f"Is the {self.tool_name} container running? "
+                f"Check with: docker ps | grep {self.tool_name}"
             )
         except requests.exceptions.RequestException as e:
             logger.error(f"{self.tool_name} scan request failed: {e}")
