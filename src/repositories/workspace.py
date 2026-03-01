@@ -16,20 +16,20 @@ class WorkspaceRepository:
     def __init__(self, storage_path: str = "/workspaces/.metadata"):
         """
         Initialize repository with file-based storage.
-        
+
         Args:
             storage_path: Path to store metadata files (default: /workspaces/.metadata)
         """
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
-        
+
         self.workspaces_file = self.storage_path / "workspaces.json"
         self.databases_file = self.storage_path / "databases.json"
-        
+
         # In-memory cache for performance
         self._workspaces: Dict[str, Workspace] = {}
         self._databases: Dict[str, List[CodeQLDatabase]] = {}
-        
+
         # Load existing data on initialization
         self._load_from_disk()
 
@@ -38,17 +38,14 @@ class WorkspaceRepository:
         try:
             # Load workspaces
             if self.workspaces_file.exists():
-                with open(self.workspaces_file, 'r') as f:
+                with open(self.workspaces_file, "r") as f:
                     data = json.load(f)
-                    self._workspaces = {
-                        ws_id: Workspace(**ws_data) 
-                        for ws_id, ws_data in data.items()
-                    }
+                    self._workspaces = {ws_id: Workspace(**ws_data) for ws_id, ws_data in data.items()}
                 logger.info(f"Loaded {len(self._workspaces)} workspaces from disk")
-            
+
             # Load databases
             if self.databases_file.exists():
-                with open(self.databases_file, 'r') as f:
+                with open(self.databases_file, "r") as f:
                     data = json.load(f)
                     self._databases = {
                         ws_id: [CodeQLDatabase(**db_data) for db_data in db_list]
@@ -63,14 +60,11 @@ class WorkspaceRepository:
         """Save workspaces to disk atomically."""
         try:
             # Write to temporary file first
-            temp_file = self.workspaces_file.with_suffix('.tmp')
-            data = {
-                ws_id: workspace.model_dump()
-                for ws_id, workspace in self._workspaces.items()
-            }
-            with open(temp_file, 'w') as f:
+            temp_file = self.workspaces_file.with_suffix(".tmp")
+            data = {ws_id: workspace.model_dump() for ws_id, workspace in self._workspaces.items()}
+            with open(temp_file, "w") as f:
                 json.dump(data, f, indent=2)
-            
+
             # Atomic rename
             temp_file.replace(self.workspaces_file)
             logger.debug(f"Saved {len(self._workspaces)} workspaces to disk")
@@ -81,14 +75,13 @@ class WorkspaceRepository:
         """Save databases to disk atomically."""
         try:
             # Write to temporary file first
-            temp_file = self.databases_file.with_suffix('.tmp')
+            temp_file = self.databases_file.with_suffix(".tmp")
             data = {
-                ws_id: [db.model_dump() for db in db_list]
-                for ws_id, db_list in self._databases.items()
+                ws_id: [db.model_dump() for db in db_list] for ws_id, db_list in self._databases.items()
             }
-            with open(temp_file, 'w') as f:
+            with open(temp_file, "w") as f:
                 json.dump(data, f, indent=2)
-            
+
             # Atomic rename
             temp_file.replace(self.databases_file)
             logger.debug(f"Saved database metadata for {len(self._databases)} workspaces")
@@ -147,4 +140,3 @@ class WorkspaceRepository:
             if db.database_id == database_id:
                 return db
         return None
-
