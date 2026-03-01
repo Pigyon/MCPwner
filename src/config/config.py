@@ -16,6 +16,10 @@ _SERVICE_URL_ENV_VARS = {
     "BRAKEMAN_SERVICE_URL": ("brakeman", "service_url"),
     "PMD_SERVICE_URL": ("pmd", "service_url"),
     "PSALM_SERVICE_URL": ("psalm", "service_url"),
+    "OSV_SCANNER_SERVICE_URL": ("osv_scanner", "service_url"),
+    "GRYPE_SERVICE_URL": ("grype", "service_url"),
+    "SYFT_SERVICE_URL": ("syft", "service_url"),
+    "RETIREJS_SERVICE_URL": ("retirejs", "service_url"),
 }
 
 

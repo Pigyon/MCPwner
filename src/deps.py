@@ -18,6 +18,10 @@ from clients.secrets.hawk_scanner import HawkScannerClient
 from clients.secrets.trufflehog import TruffleHogClient
 from clients.secrets.whispers import WhispersClient
 from clients.semgrep import SemgrepClient
+from clients.sca.osv_scanner import OSVScannerClient
+from clients.sca.grype import GrypeClient
+from clients.sca.syft import SyftClient
+from clients.sca.retirejs import RetireJSClient
 from config.config import load_config
 from repositories.workspace import WorkspaceRepository
 from services.bandit import BanditService
@@ -33,6 +37,10 @@ from services.secrets.hawk_scanner import HawkScannerService
 from services.secrets.trufflehog import TruffleHogService
 from services.secrets.whispers import WhispersService
 from services.semgrep import SemgrepService
+from services.sca.osv_scanner import OSVScannerService
+from services.sca.grype import GrypeService
+from services.sca.syft import SyftService
+from services.sca.retirejs import RetireJSService
 from services.workspace import WorkspaceService
 
 
@@ -155,6 +163,58 @@ def get_psalm_service():
     return PsalmService(get_workspace_repository(), get_psalm_client())
 
 
+# SCA Clients and Services
+
+@lru_cache(maxsize=None)
+def get_osv_scanner_client():
+    config = get_config()
+    osv_scanner_url = config.get("osv_scanner", {}).get("service_url", "http://osv-scanner:8100")
+    return OSVScannerClient(osv_scanner_url)
+
+
+@lru_cache(maxsize=None)
+def get_osv_scanner_service():
+    return OSVScannerService(get_workspace_repository(), get_osv_scanner_client())
+
+
+@lru_cache(maxsize=None)
+def get_grype_client():
+    config = get_config()
+    grype_url = config.get("grype", {}).get("service_url", "http://grype:8101")
+    return GrypeClient(grype_url)
+
+
+@lru_cache(maxsize=None)
+def get_grype_service():
+    return GrypeService(get_workspace_repository(), get_grype_client())
+
+
+@lru_cache(maxsize=None)
+def get_syft_client():
+    config = get_config()
+    syft_url = config.get("syft", {}).get("service_url", "http://syft:8102")
+    return SyftClient(syft_url)
+
+
+@lru_cache(maxsize=None)
+def get_syft_service():
+    return SyftService(get_workspace_repository(), get_syft_client())
+
+
+@lru_cache(maxsize=None)
+def get_retirejs_client():
+    config = get_config()
+    retirejs_url = config.get("retirejs", {}).get("service_url", "http://retirejs:8104")
+    return RetireJSClient(retirejs_url)
+
+
+@lru_cache(maxsize=None)
+def get_retirejs_service():
+    return RetireJSService(get_workspace_repository(), get_retirejs_client())
+
+
+# Secrets Clients and Services
+
 @lru_cache(maxsize=None)
 def get_gitleaks_client():
     config = get_config()
@@ -180,30 +240,27 @@ def get_trufflehog_service():
 
 
 @lru_cache(maxsize=None)
-def get_whispers_client():
-    config = get_config()
-    whispers_url = config.get("whispers", {}).get("service_url", "http://whispers:8092")
-    return WhispersClient(whispers_url)
-
-
-@lru_cache(maxsize=None)
-def get_whispers_service():
-    return WhispersService(get_workspace_repository(), get_whispers_client())
-
-
-@lru_cache(maxsize=None)
 def get_detect_secrets_client():
     config = get_config()
-    # service name in docker-compose is detect-secrets
-    detect_secrets_url = config.get("detect_secrets", {}).get(
-        "service_url", "http://detect-secrets:8093"
-    )
+    detect_secrets_url = config.get("detect_secrets", {}).get("service_url", "http://detect-secrets:8092")
     return DetectSecretsClient(detect_secrets_url)
 
 
 @lru_cache(maxsize=None)
 def get_detect_secrets_service():
     return DetectSecretsService(get_workspace_repository(), get_detect_secrets_client())
+
+
+@lru_cache(maxsize=None)
+def get_whispers_client():
+    config = get_config()
+    whispers_url = config.get("whispers", {}).get("service_url", "http://whispers:8093")
+    return WhispersClient(whispers_url)
+
+
+@lru_cache(maxsize=None)
+def get_whispers_service():
+    return WhispersService(get_workspace_repository(), get_whispers_client())
 
 
 @lru_cache(maxsize=None)
@@ -216,37 +273,3 @@ def get_hawk_scanner_client():
 @lru_cache(maxsize=None)
 def get_hawk_scanner_service():
     return HawkScannerService(get_workspace_repository(), get_hawk_scanner_client())
-
-
-def reset_dependencies():
-    """Reset all dependencies (useful for testing)."""
-    get_config.cache_clear()
-    get_workspace_repository.cache_clear()
-    get_codeql_client.cache_clear()
-    get_linguist_client.cache_clear()
-    get_workspace_service.cache_clear()
-    get_linguist_service.cache_clear()
-    get_codeql_service.cache_clear()
-
-    get_semgrep_client.cache_clear()
-    get_semgrep_service.cache_clear()
-    get_bandit_client.cache_clear()
-    get_bandit_service.cache_clear()
-    get_gosec_client.cache_clear()
-    get_gosec_service.cache_clear()
-    get_brakeman_client.cache_clear()
-    get_brakeman_service.cache_clear()
-    get_pmd_client.cache_clear()
-    get_pmd_service.cache_clear()
-    get_psalm_client.cache_clear()
-    get_psalm_service.cache_clear()
-    get_gitleaks_client.cache_clear()
-    get_gitleaks_service.cache_clear()
-    get_trufflehog_client.cache_clear()
-    get_trufflehog_service.cache_clear()
-    get_whispers_client.cache_clear()
-    get_whispers_service.cache_clear()
-    get_detect_secrets_client.cache_clear()
-    get_detect_secrets_service.cache_clear()
-    get_hawk_scanner_client.cache_clear()
-    get_hawk_scanner_service.cache_clear()
