@@ -1,11 +1,11 @@
-
 from clients.sca.syft import SyftClient
 from repositories.workspace import WorkspaceRepository
 from services.base_sca import BaseSCAService
 
+
 class SyftService(BaseSCAService):
     """Service for Syft operations."""
-    
+
     # Syft supports most languages/filesystems
     SUPPORTED_LANGUAGES = []
 

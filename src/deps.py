@@ -12,16 +12,16 @@ from clients.gosec import GosecClient
 from clients.linguist import LinguistClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
+from clients.sca.grype import GrypeClient
+from clients.sca.osv_scanner import OSVScannerClient
+from clients.sca.retirejs import RetireJSClient
+from clients.sca.syft import SyftClient
 from clients.secrets.detect_secrets import DetectSecretsClient
 from clients.secrets.gitleaks import GitleaksClient
 from clients.secrets.hawk_scanner import HawkScannerClient
 from clients.secrets.trufflehog import TruffleHogClient
 from clients.secrets.whispers import WhispersClient
 from clients.semgrep import SemgrepClient
-from clients.sca.osv_scanner import OSVScannerClient
-from clients.sca.grype import GrypeClient
-from clients.sca.syft import SyftClient
-from clients.sca.retirejs import RetireJSClient
 from config.config import load_config
 from repositories.workspace import WorkspaceRepository
 from services.bandit import BanditService
@@ -31,16 +31,16 @@ from services.gosec import GosecService
 from services.linguist import LinguistService
 from services.pmd import PMDService
 from services.psalm import PsalmService
+from services.sca.grype import GrypeService
+from services.sca.osv_scanner import OSVScannerService
+from services.sca.retirejs import RetireJSService
+from services.sca.syft import SyftService
 from services.secrets.detect_secrets import DetectSecretsService
 from services.secrets.gitleaks import GitleaksService
 from services.secrets.hawk_scanner import HawkScannerService
 from services.secrets.trufflehog import TruffleHogService
 from services.secrets.whispers import WhispersService
 from services.semgrep import SemgrepService
-from services.sca.osv_scanner import OSVScannerService
-from services.sca.grype import GrypeService
-from services.sca.syft import SyftService
-from services.sca.retirejs import RetireJSService
 from services.workspace import WorkspaceService
 
 
@@ -165,6 +165,7 @@ def get_psalm_service():
 
 # SCA Clients and Services
 
+
 @lru_cache(maxsize=None)
 def get_osv_scanner_client():
     config = get_config()
@@ -215,6 +216,7 @@ def get_retirejs_service():
 
 # Secrets Clients and Services
 
+
 @lru_cache(maxsize=None)
 def get_gitleaks_client():
     config = get_config()
@@ -242,7 +244,9 @@ def get_trufflehog_service():
 @lru_cache(maxsize=None)
 def get_detect_secrets_client():
     config = get_config()
-    detect_secrets_url = config.get("detect_secrets", {}).get("service_url", "http://detect-secrets:8092")
+    detect_secrets_url = config.get("detect_secrets", {}).get(
+        "service_url", "http://detect-secrets:8092"
+    )
     return DetectSecretsClient(detect_secrets_url)
 
 
