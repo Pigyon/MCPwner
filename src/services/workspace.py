@@ -3,7 +3,7 @@
 import logging
 import shutil
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -61,9 +61,9 @@ class WorkspaceService:
 
                 # Ignore .git directory to save space and time
                 shutil.copytree(
-                    source_path, 
+                    source_path,
                     destination_path,
-                    ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc")
+                    ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"),
                 )
 
                 workspace.local_path = source_path
@@ -94,21 +94,21 @@ class WorkspaceService:
         return self.repository.delete(workspace_id)
 
     def cleanup_workspace(
-        self, 
-        workspace_id: str, 
+        self,
+        workspace_id: str,
         delete_files: bool = True,
         delete_metadata: bool = False,
-        base_path: str = "/workspaces"
+        base_path: str = "/workspaces",
     ) -> Dict[str, Any]:
         """
         Cleanup workspace with granular control.
-        
+
         Args:
             workspace_id: Workspace to cleanup
             delete_files: If True, delete workspace files and reports
             delete_metadata: If True, delete workspace metadata from persistence
             base_path: Base path for workspaces
-            
+
         Returns:
             Dictionary with cleanup status and details
         """
@@ -122,7 +122,7 @@ class WorkspaceService:
             "deleted_files": False,
             "deleted_metadata": False,
             "preserved_metadata": False,
-            "details": []
+            "details": [],
         }
 
         # Handle file deletion
@@ -158,7 +158,6 @@ class WorkspaceService:
             result["details"].append("Workspace metadata preserved for future reference")
 
         return result
-
 
     def cleanup_old_workspaces(
         self, base_path: str = "/workspaces", max_age_hours: int = 24
