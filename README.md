@@ -1,21 +1,44 @@
 <div align="center">
   <h1>MCPwner</h1>
-  <img src="readme/avatar.png" width="180" alt="MCPwner Badger Avatar"><br>
-  <strong>Beware of the Badger</strong><br>
-  <em>MCP for autonomous security research workflow</em>
+  <img src="readme/avatar.png" width="200" alt="MCPwner Badger Avatar">
+  <h3><i>Beware of the Badger</i></h3>
+  <p>Model Context Protocol server for security research automation</p>
+  
+  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE.txt)
+  [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
+  [![MCP](https://img.shields.io/badge/MCP-compatible-green.svg)](https://modelcontextprotocol.io)
+  [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+
+
+  **Compatible with:**
+  
+  [![Kiro](https://img.shields.io/badge/Kiro-9046FF?style=for-the-badge&logoColor=white)](#installation)
+  [![Cursor](https://img.shields.io/badge/Cursor-000000?style=for-the-badge&logoColor=white)](#installation)
+  [![Claude](https://img.shields.io/badge/Claude-CC9B7A?style=for-the-badge&logo=anthropic&logoColor=white)](#installation)
+  [![VS Code](https://img.shields.io/badge/VS_Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](#installation)
+  [![Windsurf](https://img.shields.io/badge/Windsurf-09B6A2?style=for-the-badge&logo=codeium&logoColor=white)](#installation)
 </div>
 
-## What is this?
+---
 
-MCPwner is a Swiss-army knife Model Context Protocol built for security researchers, designed specifically for LLM-driven workflows. It unifies secret discovery, infrastructure scanning, SAST, DAST, poc generation, and exploitation inside a structured machine-readable context layer.
+## Overview
 
-Instead of manually chaining tools and pasting outputs into your LLM, MCPwner standardizes and streams results directly into the model's working context. This allows reasoning, correlation and attack path discovery to happen continuously instead of isolated steps.
+MCPwner is a Model Context Protocol (MCP) server that integrates security testing tools into LLM-driven workflows. It provides a unified interface for secret scanning, static analysis (SAST), software composition analysis (SCA), and vulnerability research including 0-day discovery.
 
-MCPwner is built to shine in multi-agent setups where specialized agents collaborate across the security research phases under a shared persistent context.
+Instead of manually chaining tools and pasting outputs into your LLM, MCPwner standardizes and streams results directly into the model's working context. This enables continuous reasoning, correlation, and attack path discovery across the entire security research lifecycle - from identifying known vulnerabilities to uncovering novel attack vectors.
 
-This project is still work in progress.
+> **Note**: This project is under active development. Learn more about MCPs [here](https://modelcontextprotocol.io).
 
-## What tools are included?
+## Key Features
+
+- 🔧 **Unified Interface**: Single MCP server integrating multiple security tools (SAST, SCA, secrets detection)
+- 🤖 **LLM Integration**: Structured output formats (SARIF/JSON) for direct consumption by AI assistants
+- 🔍 **Continuous Analysis**: Correlate findings across multiple tools to identify attack paths and 0-day vulnerabilities
+- 🏗️ **Multi-Agent Architecture**: Designed for specialized agents collaborating across security phases
+- 🐳 **Containerized Execution**: Isolated tool environments for reproducible scans
+- 🔌 **Extensible**: Plugin architecture for adding new security tools
+
+## Integrated Tools
 
 <div align="center">
 
@@ -46,107 +69,270 @@ This project is still work in progress.
 
 </div>
 
-## Future Tools (to be added soon!)
+## Future Tools
+
+The following tools are planned for future releases:
 
 ### Reconnaissance
+- Amass, Subfinder, httpx, Katana, gau, Nmap, Arjun, FFUF, Akto
 
-- **Amass**
-- **Subfinder**
-- **httpx**
-- **Katana**
-- **gau**
-- **Nmap**
-- **Arjun**
-- **FFUF**
-- **Akto**
+### Dynamic Application Security Testing (DAST)
+- OWASP ZAP, Wapiti, Nikto, SQLmap, SSRFmap, SSTImap, Nuclei, Dalfox, XSStrike, jwt_tool, Interactsh, Frida
 
+### Infrastructure & IaC Security
+- Prowler, Checkov, KICS, Terrascan, TFSec, Hadolint
 
-### DAST
-
-- **OWASP ZAP**
-- **Wapiti**
-- **Nikto**
-- **SQLmap**
-- **Nuclei**
-- **Dalfox**
-- **XSStrike**
-- **jwt_tool**
-- **Interactsh**
-- **Frida**
-
-### Infrastructure & IaC
-
-- **Prowler**
-- **Checkov**
-- **KICS**
-- **Terrascan**
-- **TFSec**
-- **Hadolint**
-
-### PoC & Exploitation
-
-- **Metasploit**
-- **SearchSploit**
-- **Interactsh**
+### Exploitation & PoC Development
+- Metasploit, Interactsh
 
 
-## How to use it?
+## Usage Examples
 
-1. **Setup config**:
+### Scan a GitHub Repository for Secrets
+
+```
+"Scan https://github.com/example/repo for secrets"
+→ MCPwner runs Gitleaks, TruffleHog, detect-secrets and correlates findings
+```
+
+### Security Audit
+
+```
+"Run a security audit on my Python project"
+→ MCPwner runs Bandit (SAST), OSV-Scanner (SCA), and secrets scanning
+```
+
+### Attack Path Analysis
+
+```
+"Find vulnerabilities in the authentication module"
+→ MCPwner runs CodeQL queries, cross-references with secrets and SCA results
+```
+
+## Installation
+
+### Prerequisites
+
+**System Requirements:**
+- Docker Engine 20.10+ and Docker Compose 2.0+
+- 8GB RAM minimum (16GB recommended for running multiple tools)
+- 20GB free disk space (security tool images are large)
+- Supported platforms: Linux, macOS, Windows (with WSL2)
+
+**MCP Client:**
+- Claude Desktop, Cursor, Kiro, or any MCP-compatible client
+
+### Setup
+
+1. **Clone the repository**:
    ```bash
-   cp config/config.yaml.example config/config.yaml
+   git clone https://github.com/yourusername/mcpwner.git
+   cd mcpwner
    ```
 
-2. **Run Services**:
+2. **Configure the server**:
+   ```bash
+   cp config/config.yaml.example config/config.yaml
+   # Edit config/config.yaml as needed
+   ```
+
+3. **Start the services**:
    ```bash
    docker-compose up -d --build
    ```
 
-3. **Configure your IDE/LLM**:
-   Add the following to your MCP configuration file (e.g., `mcp.json` for Cursor/Kiro/Claude Desktop or similar settings for other IDEs). This connects directly to the running Docker container.
-
-   ```json
-   {
-     "mcpServers": {
-       "mcpwner": {
-         "command": "docker",
-         "args": [
-           "exec",
-           "-i",
-           "mcpwner-server",
-           "python",
-           "src/server.py"
-         ],
-         "env": {}
-       }
-     }
-   }
+4. **Verify services are running**:
+   ```bash
+   docker-compose ps
    ```
 
-4. **Scanning Local Projects**:
-   To scan projects on your host machine, mount them into the container via `docker-compose.yaml`:
-   ```yaml
-   services:
-     mcpwner:
-       volumes:
-         - /path/to/your/projects:/mnt/projects:ro
-   ```
-   Then use the `create_workspace` tool with `source_type="local"` and `source="/mnt/projects/my-project"`.
+### Connect Your IDE
+
+Once Docker containers are running, add MCPwner to your MCP client:
+
+**Configuration File Locations:**
+- Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+- Cursor/Kiro: `mcp.json` in your project or settings directory
+
+**One-Click Install (requires Docker running):**
+
+[![Kiro](https://img.shields.io/badge/Install-Kiro-9046FF?style=for-the-badge&logoColor=white)](https://kiro.dev/launch/mcp/add?name=mcpwner&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22exec%22%2C%22-i%22%2C%22mcpwner-server%22%2C%22python%22%2C%22src%2Fserver.py%22%5D%7D)
+[![Cursor](https://img.shields.io/badge/Install-Cursor-000000?style=for-the-badge&logoColor=white)](https://cursor.com/en/install-mcp?name=mcpwner&config=eyJjb21tYW5kIjoiZG9ja2VyIiwiYXJncyI6WyJleGVjIiwiLWkiLCJtY3B3bmVyLXNlcnZlciIsInB5dGhvbiIsInNyYy9zZXJ2ZXIucHkiXX0%3D)
+[![Claude](https://img.shields.io/badge/Install-Claude-CC9B7A?style=for-the-badge&logo=anthropic&logoColor=white)](https://claude.ai/install-mcp?name=mcpwner&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22exec%22%2C%22-i%22%2C%22mcpwner-server%22%2C%22python%22%2C%22src%2Fserver.py%22%5D%7D)
+[![VS Code](https://img.shields.io/badge/Install-VS_Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=mcpwner&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22exec%22%2C%22-i%22%2C%22mcpwner-server%22%2C%22python%22%2C%22src%2Fserver.py%22%5D%7D)
+[![Windsurf](https://img.shields.io/badge/Install-Windsurf-09B6A2?style=for-the-badge&logo=codeium&logoColor=white)](https://windsurf.ai/install-mcp?name=mcpwner&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22exec%22%2C%22-i%22%2C%22mcpwner-server%22%2C%22python%22%2C%22src%2Fserver.py%22%5D%7D)
+
+**Manual Configuration:**
+
+Add the following to your MCP configuration file:
+
+```json
+{
+  "mcpServers": {
+    "mcpwner": {
+      "command": "docker",
+      "args": [
+        "exec",
+        "-i",
+        "mcpwner-server",
+        "python",
+        "src/server.py"
+      ],
+      "env": {}
+    }
+  }
+}
+```
+
+Restart your MCP client to load the new server configuration.
+
+### Scanning Local Projects
+
+To scan projects from your host machine, mount them into the container by adding a volume in `docker-compose.yaml`:
+
+```yaml
+services:
+  mcpwner:
+    volumes:
+      - /path/to/your/projects:/mnt/projects:ro
+```
+
+Then use the `create_workspace` tool with:
+- `source_type="local"`
+- `source="/mnt/projects/my-project"`
+
+## Architecture
+
+MCPwner uses HTTP-based communication between containers to support future remote deployments. While currently optimized for local usage, the architecture can be adapted for remote server deployments with minimal modifications.
+
+**Design Principles:**
+- Container isolation for security tool execution
+- Standardized output formats for LLM consumption (SARIF/JSON)
+- Extensible plugin architecture for new tools
+- Stateless API (memories are managed by user)
+
+**Architecture Overview:**
+
+```mermaid
+graph LR
+    subgraph IDE[" "]
+        LLM[🤖<br/>LLM]
+        Client[MCP Client]
+        LLM -.-> Client
+    end
+    
+    Server[MCPwner Server]
+    
+    SAST[SAST Tools]
+    Secrets[Secrets Scanning]
+    SCA[SCA Tools]
+    DAST[DAST Tools]
+    Recon[Reconnaissance]
+    IaC[IaC Security]
+    Exploit[Exploitation]
+    CodeQL[CodeQL Service]
+    Linguist[Language Detection]
+    
+    Client -->|JSON-RPC 2.0| Server
+    Server -->|HTTP| SAST
+    Server -->|HTTP| Secrets
+    Server -->|HTTP| SCA
+    Server -->|HTTP| DAST
+    Server -->|HTTP| Recon
+    Server -->|HTTP| IaC
+    Server -->|HTTP| Exploit
+    Server -->|HTTP| CodeQL
+    Server -->|HTTP| Linguist
+    
+    style LLM fill:#7C3AED,stroke:#5B21B6,stroke-width:3px,color:#fff
+    style Client fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
+    style Server fill:#F5A623,stroke:#C17D11,stroke-width:3px,color:#fff
+    style SAST fill:#E74C3C,stroke:#C0392B,stroke-width:2px,color:#fff
+    style Secrets fill:#9B59B6,stroke:#7D3C98,stroke-width:2px,color:#fff
+    style SCA fill:#1ABC9C,stroke:#16A085,stroke-width:2px,color:#fff
+    style DAST fill:#E91E63,stroke:#C2185B,stroke-width:2px,color:#fff
+    style Recon fill:#00BCD4,stroke:#0097A7,stroke-width:2px,color:#fff
+    style IaC fill:#8BC34A,stroke:#689F38,stroke-width:2px,color:#fff
+    style Exploit fill:#FF5722,stroke:#E64A19,stroke-width:2px,color:#fff
+    style CodeQL fill:#E67E22,stroke:#CA6F1E,stroke-width:2px,color:#fff
+    style Linguist fill:#3498DB,stroke:#2874A6,stroke-width:2px,color:#fff
+    style IDE fill:none,stroke:#ddd,stroke-width:2px,stroke-dasharray: 5 5
+```
+## Workflows
+
+**Data Flow - Analysis Results:**
+
+```mermaid
+sequenceDiagram
+    participant LLM as 🤖 LLM
+    participant MCP as MCP Client
+    participant Server as MCPwner Server
+    participant Tools as Security Tools
+    
+    LLM->>MCP: Request security scan
+    MCP->>Server: Execute scan command
+    Server->>Tools: Run analysis
+    Tools-->>Server: Raw results
+    Server-->>MCP: SARIF/JSON reports
+    MCP-->>LLM: Structured findings
+    Note over LLM: Correlate vulnerabilities<br/>Generate insights<br/>Suggest remediation
+```
+
+## Available MCP Tools
+
+MCPwner exposes the following tools through the MCP interface:
+
+**Workspace Management:**
+- `create_workspace` - Initialize scanning workspace from local path, Git URL, or GitHub repo
+- `list_workspaces` - List all available workspaces
+- `cleanup_workspace` - Remove workspace and associated data
+
+**SAST (Static Analysis):**
+- `sast_scan` - Run static analysis tools (CodeQL, Semgrep, Bandit, Gosec, etc.)
+- `sast_get_report` - Retrieve SAST scan results
+- `sast_list_tools` - List available SAST tools
+
+**Secrets Detection:**
+- `secrets_scan` - Run secrets scanning tools (Gitleaks, TruffleHog, etc.)
+- `secrets_get_report` - Retrieve secrets scan results
+- `secrets_list_tools` - List available secrets scanning tools
+
+**SCA (Software Composition Analysis):**
+- `sca_scan` - Analyze dependencies for vulnerabilities (Grype, OSV-Scanner, etc.)
+- `sca_get_report` - Retrieve SCA scan results
+- `sca_list_tools` - List available SCA tools
+
+**CodeQL Specific:**
+- `codeql_detect_languages` - Detect languages in codebase
+- `codeql_create_database` - Create CodeQL database for analysis
+- `codeql_list_databases` - List available CodeQL databases
+- `codeql_list_query_packs` - List available query packs
+- `codeql_execute_query` - Run specific CodeQL queries
+
+**Health & Monitoring:**
+- `health_check` - Check server and tool availability
+- `list_tools` - List all available tools and their status
+
 
 ## Contributing
 
-Contributions are welcome!
+Contributions are welcome! Please review the [contribution guidelines](CONTRIBUTING.md) before submitting pull requests.
 
-MCPwner is expected to grow significantly. Therefore, there is a need for more extensive testing infrastructure, e2e and maybe some unit testing for cruicial functions, better error handling, and timeouts. Among many other things to consider.
+**Priority Areas:**
+- Testing infrastructure (e2e and unit tests)
+- Container lifecycle management and optimization
+- Multi-stage Docker builds for reduced image sizes
+- Enhanced error handling and timeout mechanisms
+- Additional security tool integrations
 
-You can read full contribution guidelines [here](CONTRIBUTING.md).
+**Contribution Guidelines:**
+- Submit focused pull requests with manageable scope
+- Include tests for new features
+- Follow existing code style and patterns
+- Update documentation as needed
 
-If you want to contribute, please submit a single purpose pull request with a manageable number of changes and reasonable lines of code to review.
+See the [Future Tools](#future-tools) section for our development roadmap.
 
-This project needs a better management of containers since many of them are needed ad hoc and not to be ran all the time, this might be configured or maybe managed like kubernetes does with KEDA. reduction of each container size with multi stage building should be added as well.
+## Security Considerations
 
-Also need to add unit tests and add more tools.
-
-## Future plans
-
-This project was built with supporting future deployments to remote servers in mind, but for the moment it mainly supports local usage. However, with a few modifications, it could be deployed and used. That's why communication between containers is HTTP and not using the docker-cli.
+MCPwner executes security tools that may perform intrusive operations. Only use on systems and codebases you own or have explicit permission to test - unauthorized access is illegal. Restrict MCP server access to authorized users and consider network isolation for production deployments. Review tool configurations before running scans as some tools can generate significant network traffic or system load. Log tool execution and results, keeping in mind that security scans can trigger alerts in monitoring systems. Follow responsible disclosure practices when reporting vulnerabilities discovered using MCPwner. Keep Docker images updated and scan containers for vulnerabilities regularly. Never commit API keys, tokens, or credentials to configuration files - use environment variables or secret management systems instead.
