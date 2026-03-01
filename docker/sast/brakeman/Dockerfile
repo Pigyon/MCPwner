@@ -8,8 +8,9 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends python3 python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
-# Install FastAPI and uvicorn for the HTTP service
-RUN pip3 install --no-cache-dir --break-system-packages fastapi uvicorn
+# Copy requirements and install dependencies
+COPY docker/sast/brakeman/requirements.txt .
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 WORKDIR /service
 

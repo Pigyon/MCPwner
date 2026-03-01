@@ -1,11 +1,12 @@
-FROM crazymax/linguist:latest
+FROM crazymax/linguist:9.2.0
 
 # Switch to root for installation
 USER root
 
 # Install Python and FastAPI/uvicorn for the HTTP service
+COPY docker/linguist/requirements.txt /tmp/requirements.txt
 RUN apk add --no-cache python3 py3-pip curl && \
-    pip3 install --break-system-packages --no-cache-dir fastapi uvicorn
+    pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt
 
 WORKDIR /service
 

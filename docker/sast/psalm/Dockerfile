@@ -17,8 +17,9 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Install Python packages
-RUN python3 -m pip install --break-system-packages --no-cache-dir fastapi uvicorn
+# Copy requirements and install Python packages
+COPY docker/sast/psalm/requirements.txt .
+RUN python3 -m pip install --break-system-packages --no-cache-dir -r requirements.txt
 
 # Ensure psalm is in PATH
 ENV PATH="/composer/vendor/bin:${PATH}"

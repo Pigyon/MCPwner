@@ -10,9 +10,10 @@ COPY --from=anchore/grype:v0.109.0-nonroot /grype /usr/local/bin/grype
 # Create app directory
 WORKDIR /app
 
-# Install Python dependencies with pinned versions
+# Copy requirements and install Python dependencies
+COPY docker/sca/grype/requirements.txt .
 RUN apk add --no-cache gcompat && \
-    pip install --no-cache-dir fastapi==0.115.12 uvicorn==0.34.0
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY docker/common /app/common

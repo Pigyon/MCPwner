@@ -1,12 +1,10 @@
 FROM python:3.11-slim
 
-# Install Bandit
-RUN pip install --no-cache-dir bandit[sarif]
-
-# Install FastAPI and uvicorn for the HTTP service
-RUN pip install --no-cache-dir fastapi uvicorn
-
 WORKDIR /service
+
+# Copy requirements and install dependencies
+COPY docker/sast/bandit/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy service files
 COPY docker/common /service/common

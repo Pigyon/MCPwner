@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy gitleaks binary
 COPY --from=gitleaks /usr/bin/gitleaks /usr/bin/gitleaks
 
-# Install FastAPI and uvicorn
-RUN pip install --no-cache-dir fastapi uvicorn
+# Copy requirements and install dependencies
+COPY docker/secrets/gitleaks/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /service
 

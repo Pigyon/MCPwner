@@ -1,4 +1,4 @@
-FROM securego/gosec:latest
+FROM securego/gosec:2.24.6
 
 # Switch to root for installation
 USER root
@@ -6,8 +6,9 @@ USER root
 # Install Python and pip for FastAPI
 RUN apk add --no-cache python3 py3-pip
 
-# Install FastAPI and uvicorn for the HTTP service
-RUN pip3 install --break-system-packages --no-cache-dir fastapi uvicorn
+# Copy requirements and install dependencies
+COPY docker/sast/gosec/requirements.txt .
+RUN pip3 install --break-system-packages --no-cache-dir -r requirements.txt
 
 WORKDIR /service
 

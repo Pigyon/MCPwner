@@ -24,8 +24,8 @@ ENV PATH=$PATH:/usr/local/go/bin
 WORKDIR /service
 
 # Copy service files
-COPY config/codeql_requirements.txt .
-RUN pip3 install --no-cache-dir -r codeql_requirements.txt
+COPY docker/codeql/requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY docker/codeql/main.py .
 
