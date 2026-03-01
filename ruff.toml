@@ -10,7 +10,6 @@ select = [
     "SIM",  # flake8-simplify: Simplify code patterns
     "RET",  # flake8-return: Enforce consistent return statements
     "C4",   # flake8-comprehensions: Improve comprehensions
-    "PTH",  # flake8-use-pathlib: Prefer pathlib over os.path
     "S",    # bandit: Security issue detection
     "E",    # pycodestyle errors
     "W",    # pycodestyle warnings
@@ -27,7 +26,6 @@ ignore = [
     "S607",  # Allow partial executable paths (codeql, semgrep are in PATH)
     "S110",  # Allow try-except-pass (sometimes appropriate)
     "S113",  # Allow requests without timeout in tests
-    "PTH",   # Allow os.path usage (pathlib migration can be done later)
     "RET504", # Allow unnecessary assignment before return (can be clearer)
     "SIM117", # Allow nested with statements (sometimes clearer)
     "F841",  # Allow unused variables (validation calls may be intentional)

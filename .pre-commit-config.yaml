@@ -1,38 +1,33 @@
 repos:
-  # Code Quality
+  # Code Quality - Run on COMMIT
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14  
+    rev: v0.15.4
     hooks:
-      - id: ruff-check
+      # Format first (fixes many lint issues automatically)
+      - id: ruff-format
+        name: Format code with ruff
+        exclude: '^\.vulture_whitelist\.py$'
+        stages: [pre-commit]
+      
+      # Then lint (on formatted code)
+      - id: ruff
         name: Run ruff linter
         args:
           - --fix
           - --exit-non-zero-on-fix
         exclude: '^\.vulture_whitelist\.py$'
-      - id: ruff-format
-        name: Format code with ruff
-        exclude: '^\.vulture_whitelist\.py$'
+        stages: [pre-commit]
 
-  # Dead Code Detection
+  # Dead Code Detection - Run on COMMIT (BLOCKS if found)
   - repo: https://github.com/jendrikseipp/vulture
-    rev: v2.14  
+    rev: v2.14
     hooks:
       - id: vulture
-        name: Find dead code with vulture
-        args: 
+        name: Find dead code with vulture (STRICT)
+        args:
           - 'src/'
           - '.vulture_whitelist.py'
-          - '--min-confidence=80'  # Only report high-confidence issues
-          - '--exclude=tests/'  # Exclude tests (pytest fixtures cause false positives)
-        # Detects unused functions, classes, variables, imports, and attributes
-
-  # Tests
-  - repo: local
-    hooks:
-      - id: pytest
-        name: Run pytest tests
-        entry: tests/hooks/run-tests.py
-        language: script
-        pass_filenames: false
-        always_run: true
-        stages: [pre-push]  # Only run on push, not on every commit
+          - '--min-confidence=80'
+          - '--exclude=tests/'
+        stages: [pre-commit]
+        # BLOCKS commit if dead code found - add to whitelist if intentional

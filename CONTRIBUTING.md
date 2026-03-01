@@ -7,7 +7,7 @@
 1. Clone the repository
 2. Install dependencies:
    ```bash
-   pip install -r config/requirements.txt
+   pip install -r requirements.txt
    pip install -r tests/integration/requirements.txt
    ```
 
@@ -19,43 +19,54 @@
 
 ### Pre-commit Hooks
 
-This project uses pre-commit to maintain code quality and run tests. The hooks are configured in `.pre-commit-config.yaml`.
+This project uses pre-commit to maintain code quality. The hooks are configured in `.pre-commit-config.yaml`.
 
 **First time setup:**
 ```bash
-pip install pre-commit
+pip install pre-commit ruff vulture
 pre-commit install
 ```
 
-**What runs on every commit:**
-- **Ruff linter**: Checks code quality, simplifies patterns, enforces best practices
+**What runs on every commit (STRICT - blocks if issues found):**
 - **Ruff formatter**: Auto-formats Python code
-- **Vulture**: Detects unused/dead code
-- **JSON/YAML validation**: Ensures config files are valid
-- **Git quality checks**: Detects merge conflicts, blocks large files, fixes whitespace
+- **Ruff linter**: Checks code quality, auto-fixes simple issues
+- **Vulture**: Detects unused/dead code (min-confidence=80, BLOCKS commit)
 
-**What runs on push:**
-- **Integration tests**: Full test suite (configured with `stages: [manual, pre-push]`)
+**Editor integration (VSCode/Kiro):**
+- Ruff runs automatically on file save
+- Install the Ruff extension for real-time feedback
+- See `.vscode/settings.json` for configuration
 
 **Manual runs:**
 ```bash
-# Run all hooks on all files
+# Run all commit hooks on all files
 pre-commit run --all-files
 
-# Run only tests (pre-push stage)
-pre-commit run --hook-stage push --all-files
-
 # Run specific hook
-pre-commit run ruff-check --all-files
+pre-commit run ruff --all-files
+pre-commit run vulture --all-files
+
+# Format code manually
+ruff format .
+
+# Lint code manually
+ruff check --fix .
+
+# Check for dead code manually
+vulture src/ .vulture_whitelist.py --min-confidence=80
 ```
 
-**Bypass in emergencies:**
+**If vulture blocks your commit:**
+1. Review the reported dead code - is it actually unused?
+2. If truly dead: Delete it
+3. If intentional (API methods, fixtures, etc.): Add to `.vulture_whitelist.py`
+
+**Bypass in emergencies (not recommended):**
 ```bash
 git commit --no-verify  # Skip commit hooks
-git push --no-verify    # Skip push hooks
 ```
 
-**Note:** Pre-commit automatically downloads and manages all tools (ruff, vulture, etc.) - you don't need to install them separately.
+**Note:** Pre-commit automatically downloads and manages hook environments - you don't need to install tools globally except for editor integration.
 
 ### Running Tests Manually
 
