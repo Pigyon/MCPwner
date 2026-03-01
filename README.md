@@ -19,7 +19,7 @@ This project is still work in progress.
 
 <div align="center">
 
-## SAST (Static Application Security Testing) Scanning Tools
+## Static Application Security Testing (SAST) Scanning Tools
 
 |   <img src="readme/codeql.png" width="100">    |  <img src="readme/psalm.png" width="100">   |    <img src="readme/gosec.png" width="100">    |   <img src="readme/bandit.png" width="100">   |    <img src="readme/semgrep.jpg" width="100">     |
 | :--------------------------------------------: | :-----------------------------------------: | :--------------------------------------------: | :-------------------------------------------: | :-----------------------------------------------: |
@@ -31,9 +31,6 @@ This project is still work in progress.
 | :-------------------------------------------------------: | :------------------------------------: |
 | [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  |
 
-</div>
-
-<div align="center">
 
 ## Secrets Scanning Tools
 
@@ -41,27 +38,41 @@ This project is still work in progress.
 | :----------------------------------------------: | :----------------------------------------------: | :----------------------------------------------: | :------------------------------------------: | :------------------------------------------: |
 | [**Gitleaks**](https://github.com/zricethezav/gitleaks) | [**TruffleHog**](https://github.com/trufflesecurity/trufflehog) | [**detect-secrets**](https://github.com/Yelp/detect-secrets) | [**Whispers**](https://github.com/Skyscanner/whispers) | [**Hawk-Eye**](https://github.com/rohitcoder/hawk-eye) |
 
+## Software Composition Analysis (SCA) Tools
+
+|   <img src="readme/grype.png" width="50"><img src="readme/syft.png" width="50">    |  <img src="readme/osv-scanner.png" width="100">   | <img src="readme/retirejs.png" width="100"> |
+| :----------------------------------------------: | :----------------------------------------------: | :------------------------------------------: |
+| [**Grype**](https://github.com/anchore/grype) & [**Syft**](https://github.com/anchore/syft) | [**OSV-Scanner**](https://github.com/google/osv-scanner) | [**Retire.js**](https://github.com/RetireJS/retire.js) |
+
 </div>
 
-## Future Tools (Planned)
+## Future Tools (to be added soon!)
 
-### DAST, API & Recon
+### Reconnaissance
+
+- **Amass**
+- **Subfinder**
+- **httpx**
+- **Katana**
+- **gau**
+- **Nmap**
+- **Arjun**
+- **FFUF**
+- **Akto**
+
+
+### DAST
 
 - **OWASP ZAP**
+- **Wapiti**
 - **Nikto**
 - **SQLmap**
 - **Nuclei**
-- **Akto**
-- **Wapiti**
-- **Nmap**
-- **Amass**
-- **FFUF**
-
-### SCA
-
-- **Trivy**
-- **Grype**
-- **OSV-Scanner**
+- **Dalfox**
+- **XSStrike**
+- **jwt_tool**
+- **Interactsh**
+- **Frida**
 
 ### Infrastructure & IaC
 
@@ -130,11 +141,11 @@ MCPwner is expected to grow significantly. Therefore, there is a need for more e
 
 You can read full contribution guidelines [here](CONTRIBUTING.md).
 
-Will also consider a better management of containers since many of them are needed ad hoc and not to be ran all the time, this might be configured or maybe managed like kubernetes does with KEDA
-
-Also, adding all the tools and testing that them with LLM to verify they work as efficiently and as expected will take some time as well.
-
 If you want to contribute, please submit a single purpose pull request with a manageable number of changes and reasonable lines of code to review.
+
+This project needs a better management of containers since many of them are needed ad hoc and not to be ran all the time, this might be configured or maybe managed like kubernetes does with KEDA. reduction of each container size with multi stage building should be added as well.
+
+Also need to add unit tests and add more tools.
 
 ## Future plans
 
