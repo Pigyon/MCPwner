@@ -20,7 +20,7 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     """Build Detect-Secrets scan command."""
     # detect-secrets prints to stdout, so we use shell redirection
     cmd_str = f"detect-secrets scan --all-files {request.workspace_path} > {output_path}"
-    
+
     if request.scan_path:
         full_source = Path(request.workspace_path) / request.scan_path
         cmd_str = f"detect-secrets scan --all-files {full_source} > {output_path}"

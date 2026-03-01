@@ -12,11 +12,11 @@ from clients.gosec import GosecClient
 from clients.linguist import LinguistClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
+from clients.secrets.detect_secrets import DetectSecretsClient
 from clients.secrets.gitleaks import GitleaksClient
+from clients.secrets.hawk_scanner import HawkScannerClient
 from clients.secrets.trufflehog import TruffleHogClient
 from clients.secrets.whispers import WhispersClient
-from clients.secrets.detect_secrets import DetectSecretsClient
-from clients.secrets.hawk_scanner import HawkScannerClient
 from clients.semgrep import SemgrepClient
 from config.config import load_config
 from repositories.workspace import WorkspaceRepository
@@ -27,11 +27,11 @@ from services.gosec import GosecService
 from services.linguist import LinguistService
 from services.pmd import PMDService
 from services.psalm import PsalmService
+from services.secrets.detect_secrets import DetectSecretsService
 from services.secrets.gitleaks import GitleaksService
+from services.secrets.hawk_scanner import HawkScannerService
 from services.secrets.trufflehog import TruffleHogService
 from services.secrets.whispers import WhispersService
-from services.secrets.detect_secrets import DetectSecretsService
-from services.secrets.hawk_scanner import HawkScannerService
 from services.semgrep import SemgrepService
 from services.workspace import WorkspaceService
 
@@ -195,7 +195,9 @@ def get_whispers_service():
 def get_detect_secrets_client():
     config = get_config()
     # service name in docker-compose is detect-secrets
-    detect_secrets_url = config.get("detect_secrets", {}).get("service_url", "http://detect-secrets:8093")
+    detect_secrets_url = config.get("detect_secrets", {}).get(
+        "service_url", "http://detect-secrets:8093"
+    )
     return DetectSecretsClient(detect_secrets_url)
 
 
