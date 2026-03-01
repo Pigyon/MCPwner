@@ -6,8 +6,8 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-class BaseSASTClient:
-    """Base HTTP client for SAST services."""
+class BaseScanClient:
+    """Base HTTP client for scan services (SAST, SCA, etc.)."""
 
     def __init__(self, service_url: str, tool_name: str):
         self.service_url = service_url.rstrip("/")
@@ -58,3 +58,15 @@ class BaseSASTClient:
         response = requests.get(f"{self.service_url}/version", timeout=10)
         response.raise_for_status()
         return response.json()
+
+
+class BaseSASTClient(BaseScanClient):
+    """Base HTTP client for SAST services."""
+
+    pass
+
+
+class BaseSCAClient(BaseScanClient):
+    """Base HTTP client for SCA services."""
+
+    pass
