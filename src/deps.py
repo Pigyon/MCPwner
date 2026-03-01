@@ -16,6 +16,7 @@ from clients.secrets.gitleaks import GitleaksClient
 from clients.secrets.trufflehog import TruffleHogClient
 from clients.secrets.whispers import WhispersClient
 from clients.secrets.detect_secrets import DetectSecretsClient
+from clients.secrets.hawk_scanner import HawkScannerClient
 from clients.semgrep import SemgrepClient
 from config.config import load_config
 from repositories.workspace import WorkspaceRepository
