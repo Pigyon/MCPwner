@@ -93,30 +93,72 @@ class WorkspaceService:
         """Delete workspace."""
         return self.repository.delete(workspace_id)
 
-    def cleanup_workspace(self, workspace_id: str, base_path: str = "/workspaces") -> Dict[str, Any]:
-        """Cleanup workspace directory."""
+    def cleanup_workspace(
+        self, 
+        workspace_id: str, 
+        delete_files: bool = True,
+        delete_metadata: bool = False,
+        base_path: str = "/workspaces"
+    ) -> Dict[str, Any]:
+        """
+        Cleanup workspace with granular control.
+        
+        Args:
+            workspace_id: Workspace to cleanup
+            delete_files: If True, delete workspace files and reports
+            delete_metadata: If True, delete workspace metadata from persistence
+            base_path: Base path for workspaces
+            
+        Returns:
+            Dictionary with cleanup status and details
+        """
         workspace = self.repository.find_by_id(workspace_id)
         if not workspace:
             raise ValueError(f"Workspace not found: {workspace_id}")
 
-        if workspace.is_local_mount():
-            return {
-                "workspace_id": workspace_id,
-                "status": "skipped",
-                "reason": "Local mount - preserving user data",
-            }
-
-        workspace_dir = Path(base_path) / workspace_id
-        if workspace_dir.exists():
-            shutil.rmtree(workspace_dir)
-
-        self.repository.delete(workspace_id)
-
-        return {
+        result = {
             "workspace_id": workspace_id,
-            "status": "cleaned",
-            "reason": "GitHub clone removed",
+            "status": "success",
+            "deleted_files": False,
+            "deleted_metadata": False,
+            "preserved_metadata": False,
+            "details": []
         }
+
+        # Handle file deletion
+        if delete_files:
+            if workspace.is_local_mount():
+                result["details"].append("Skipped file deletion: Local mount - preserving user data")
+                result["status"] = "partial"
+            else:
+                workspace_dir = Path(base_path) / workspace_id
+                if workspace_dir.exists():
+                    try:
+                        shutil.rmtree(workspace_dir)
+                        result["deleted_files"] = True
+                        result["details"].append(f"Deleted workspace directory: {workspace_dir}")
+                    except Exception as e:
+                        result["status"] = "error"
+                        result["details"].append(f"Failed to delete files: {e}")
+                        logger.error(f"Failed to delete workspace directory {workspace_dir}: {e}")
+                else:
+                    result["details"].append("No workspace directory found to delete")
+        else:
+            result["details"].append("File deletion skipped (delete_files=False)")
+
+        # Handle metadata deletion
+        if delete_metadata:
+            if self.repository.delete(workspace_id):
+                result["deleted_metadata"] = True
+                result["details"].append("Deleted workspace metadata from persistence layer")
+            else:
+                result["details"].append("Metadata deletion failed or already deleted")
+        else:
+            result["preserved_metadata"] = True
+            result["details"].append("Workspace metadata preserved for future reference")
+
+        return result
+
 
     def cleanup_old_workspaces(
         self, base_path: str = "/workspaces", max_age_hours: int = 24
