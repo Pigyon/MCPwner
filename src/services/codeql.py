@@ -8,8 +8,8 @@ from typing import Any, Dict, List
 from clients.codeql import CodeQLClient
 from config.languages import CODEQL_LANGUAGES
 from models import CodeQLDatabase
-from services.linguist import LinguistService
 from repositories.workspace import WorkspaceRepository
+from services.linguist import LinguistService
 
 logger = logging.getLogger(__name__)
 
@@ -124,8 +124,10 @@ class CodeQLService:
         resolved_pack = query_pack
         if query_pack in ["security-extended", "security-and-quality", "code-scanning"]:
             # Map generic alias to language-specific suite
-            # e.g. "security-extended" -> "codeql/python-queries:codeql-suites/python-security-extended.qls"
-            resolved_pack = f"codeql/{database.language}-queries:codeql-suites/{database.language}-{query_pack}.qls"
+            # Example: "security-extended" -> "codeql/python-queries:..."
+            resolved_pack = (
+                f"codeql/{database.language}-queries:codeql-suites/{database.language}-{query_pack}.qls"
+            )
             logger.info(f"Resolved query pack alias '{query_pack}' to '{resolved_pack}'")
 
         return self.codeql_client.execute_query(

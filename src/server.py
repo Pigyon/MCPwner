@@ -40,6 +40,7 @@ logger.info("Loading tools...")
 
 try:
     from api.router import router as api_router
+
     # Register all tools from the router
     logger.info("Registering tools from api_router...")
     api_router.register_tools(mcp)

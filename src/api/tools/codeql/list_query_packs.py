@@ -27,7 +27,7 @@ def list_query_packs(language: Optional[str] = None) -> dict:
     try:
         codeql_service = get_codeql_service()
         result = codeql_service.list_query_packs()
-        
+
         # The result from service is already structured
         return result
 

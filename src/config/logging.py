@@ -19,9 +19,7 @@ def setup_logging(config: Dict[str, Any]) -> None:
     log_level = getattr(logging, log_level_str, logging.INFO)
 
     # Create formatters and handlers
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)

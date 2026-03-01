@@ -45,9 +45,7 @@ class LinguistService:
 
             # Filter to only CodeQL-supported languages if requested
             if filter_codeql:
-                detected_languages = [
-                    lang for lang in detected_languages if lang in CODEQL_LANGUAGES
-                ]
+                detected_languages = [lang for lang in detected_languages if lang in CODEQL_LANGUAGES]
 
             return sorted(detected_languages)
 
