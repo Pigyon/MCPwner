@@ -3,12 +3,12 @@
   <img src="readme/avatar.png" width="200" alt="MCPwner Badger Avatar">
   <h3><i>Beware of the Badger</i></h3>
   <p>Model Context Protocol server for security research automation</p>
-  
-  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE.txt)
-  [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
-  [![MCP](https://img.shields.io/badge/MCP-compatible-green.svg)](https://modelcontextprotocol.io)
-  [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 
+
+[![Docker](https://img.shields.io/badge/Docker-ready-1F2937?logo=docker&logoColor=2496ED)](https://www.docker.com/)
+[![MCP](https://img.shields.io/badge/MCP-compatible-065F46)](https://modelcontextprotocol.io)
+[![Python](https://img.shields.io/badge/Python-3.11+-1E3A8A?logo=python&logoColor=FBBF24)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-374151)](LICENSE.txt)
 
   **Compatible with:**
   
@@ -36,6 +36,7 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 - 🔍 **Continuous Analysis**: Correlate findings across multiple tools to identify attack paths and 0-day vulnerabilities
 - 🏗️ **Multi-Agent Architecture**: Designed for specialized agents collaborating across security phases
 - 🐳 **Containerized Execution**: Isolated tool environments for reproducible scans
+- 💾 **Automatic Persistence**: Workspace and database metadata survives container restarts
 - 🔌 **Extensible**: Plugin architecture for adding new security tools
 
 ## Integrated Tools
@@ -54,17 +55,16 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 | :-------------------------------------------------------: | :------------------------------------: |
 | [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  |
 
-
 ## Secrets Scanning Tools
 
-|   <img src="readme/gitleaks.png" width="100">    |  <img src="readme/trufflehog.png" width="100">   | <img src="readme/detect-secrets.png" width="100"> | <img src="readme/whispers.png" width="100"> | <img src="readme/hawk-eye.jpeg" width="100"> |
-| :----------------------------------------------: | :----------------------------------------------: | :----------------------------------------------: | :------------------------------------------: | :------------------------------------------: |
+|       <img src="readme/gitleaks.png" width="100">       |          <img src="readme/trufflehog.png" width="100">          |      <img src="readme/detect-secrets.png" width="100">       |      <img src="readme/whispers.png" width="100">       |      <img src="readme/hawk-eye.jpeg" width="100">      |
+| :-----------------------------------------------------: | :-------------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------------: |
 | [**Gitleaks**](https://github.com/zricethezav/gitleaks) | [**TruffleHog**](https://github.com/trufflesecurity/trufflehog) | [**detect-secrets**](https://github.com/Yelp/detect-secrets) | [**Whispers**](https://github.com/Skyscanner/whispers) | [**Hawk-Eye**](https://github.com/rohitcoder/hawk-eye) |
 
 ## Software Composition Analysis (SCA) Tools
 
-|   <img src="readme/grype.png" width="50"><img src="readme/syft.png" width="50">    |  <img src="readme/osv-scanner.png" width="100">   | <img src="readme/retirejs.png" width="100"> |
-| :----------------------------------------------: | :----------------------------------------------: | :------------------------------------------: |
+|        <img src="readme/grype.png" width="50"><img src="readme/syft.png" width="50">        |      <img src="readme/osv-scanner.png" width="100">      |      <img src="readme/retirejs.png" width="100">       |
+| :-----------------------------------------------------------------------------------------: | :------------------------------------------------------: | :----------------------------------------------------: |
 | [**Grype**](https://github.com/anchore/grype) & [**Syft**](https://github.com/anchore/syft) | [**OSV-Scanner**](https://github.com/google/osv-scanner) | [**Retire.js**](https://github.com/RetireJS/retire.js) |
 
 </div>
@@ -74,17 +74,20 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 The following tools are planned for future releases:
 
 ### Reconnaissance
+
 - Amass, Subfinder, httpx, Katana, gau, Nmap, Arjun, FFUF, Akto
 
 ### Dynamic Application Security Testing (DAST)
+
 - OWASP ZAP, Wapiti, Nikto, SQLmap, SSRFmap, SSTImap, Nuclei, Dalfox, XSStrike, jwt_tool, Interactsh, Frida
 
 ### Infrastructure & IaC Security
+
 - Prowler, Checkov, KICS, Terrascan, TFSec, Hadolint
 
 ### Exploitation & PoC Development
-- Metasploit, Interactsh
 
+- Metasploit, Interactsh
 
 ## Usage Examples
 
@@ -114,29 +117,34 @@ The following tools are planned for future releases:
 ### Prerequisites
 
 **System Requirements:**
+
 - Docker Engine 20.10+ and Docker Compose 2.0+
 - 8GB RAM minimum (16GB recommended for running multiple tools)
 - 20GB free disk space (security tool images are large)
 - Supported platforms: Linux, macOS, Windows (with WSL2)
 
 **MCP Client:**
+
 - Claude Desktop, Cursor, Kiro, or any MCP-compatible client
 
 ### Setup
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/yourusername/mcpwner.git
    cd mcpwner
    ```
 
 2. **Configure the server**:
+
    ```bash
    cp config/config.yaml.example config/config.yaml
    # Edit config/config.yaml as needed
    ```
 
 3. **Start the services**:
+
    ```bash
    docker-compose up -d --build
    ```
@@ -151,6 +159,7 @@ The following tools are planned for future releases:
 Once Docker containers are running, add MCPwner to your MCP client:
 
 **Configuration File Locations:**
+
 - Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 - Cursor/Kiro: `mcp.json` in your project or settings directory
 
@@ -171,13 +180,7 @@ Add the following to your MCP configuration file:
   "mcpServers": {
     "mcpwner": {
       "command": "docker",
-      "args": [
-        "exec",
-        "-i",
-        "mcpwner-server",
-        "python",
-        "src/server.py"
-      ],
+      "args": ["exec", "-i", "mcpwner-server", "python", "src/server.py"],
       "env": {}
     }
   }
@@ -198,14 +201,40 @@ services:
 ```
 
 Then use the `create_workspace` tool with:
+
 - `source_type="local"`
 - `source="/mnt/projects/my-project"`
+
+## Data Persistence
+
+MCPwner automatically persists workspace and CodeQL database metadata across container restarts using file-based storage in the shared Docker volume (`/workspaces/.metadata/`). No configuration required - the system loads existing data on startup and saves after every operation using atomic writes to prevent corruption.
+
+**Workspace Cleanup Control:**
+
+The `cleanup_workspace` tool provides granular control:
+
+- `delete_files=True, delete_metadata=False` - Free disk space but preserve workspace history (recommended)
+- `delete_files=True, delete_metadata=True` - Complete removal of workspace and metadata
+- `delete_files=False, delete_metadata=True` - Remove from list but keep files on disk
+
+**Backup:**
+
+```bash
+# Backup entire workspaces volume
+docker run --rm -v mcpwner_workspaces:/data -v $(pwd):/backup \
+  alpine tar czf /backup/workspaces-backup.tar.gz /data
+
+# Restore volume
+docker run --rm -v mcpwner_workspaces:/data -v $(pwd):/backup \
+  alpine tar xzf /backup/workspaces-backup.tar.gz -C /
+```
 
 ## Architecture
 
 MCPwner uses HTTP-based communication between containers to support future remote deployments. While currently optimized for local usage, the architecture can be adapted for remote server deployments with minimal modifications.
 
 **Design Principles:**
+
 - Container isolation for security tool execution
 - Standardized output formats for LLM consumption (SARIF/JSON)
 - Extensible plugin architecture for new tools
@@ -220,9 +249,9 @@ graph LR
         Client[MCP Client]
         LLM -.-> Client
     end
-    
+
     Server[MCPwner Server]
-    
+
     SAST[SAST Tools]
     Secrets[Secrets Scanning]
     SCA[SCA Tools]
@@ -232,7 +261,7 @@ graph LR
     Exploit[Exploitation]
     CodeQL[CodeQL Service]
     Linguist[Language Detection]
-    
+
     Client -->|JSON-RPC 2.0| Server
     Server -->|HTTP| SAST
     Server -->|HTTP| Secrets
@@ -243,7 +272,7 @@ graph LR
     Server -->|HTTP| Exploit
     Server -->|HTTP| CodeQL
     Server -->|HTTP| Linguist
-    
+
     style LLM fill:#7C3AED,stroke:#5B21B6,stroke-width:3px,color:#fff
     style Client fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
     style Server fill:#F5A623,stroke:#C17D11,stroke-width:3px,color:#fff
@@ -258,6 +287,7 @@ graph LR
     style Linguist fill:#3498DB,stroke:#2874A6,stroke-width:2px,color:#fff
     style IDE fill:none,stroke:#ddd,stroke-width:2px,stroke-dasharray: 5 5
 ```
+
 ## Workflows
 
 **Data Flow - Analysis Results:**
@@ -268,7 +298,7 @@ sequenceDiagram
     participant MCP as MCP Client
     participant Server as MCPwner Server
     participant Tools as Security Tools
-    
+
     LLM->>MCP: Request security scan
     MCP->>Server: Execute scan command
     Server->>Tools: Run analysis
@@ -283,26 +313,31 @@ sequenceDiagram
 MCPwner exposes the following tools through the MCP interface:
 
 **Workspace Management:**
+
 - `create_workspace` - Initialize scanning workspace from local path, Git URL, or GitHub repo
 - `list_workspaces` - List all available workspaces
 - `cleanup_workspace` - Remove workspace and associated data
 
 **SAST (Static Analysis):**
+
 - `sast_scan` - Run static analysis tools (CodeQL, Semgrep, Bandit, Gosec, etc.)
 - `sast_get_report` - Retrieve SAST scan results
 - `sast_list_tools` - List available SAST tools
 
 **Secrets Detection:**
+
 - `secrets_scan` - Run secrets scanning tools (Gitleaks, TruffleHog, etc.)
 - `secrets_get_report` - Retrieve secrets scan results
 - `secrets_list_tools` - List available secrets scanning tools
 
 **SCA (Software Composition Analysis):**
+
 - `sca_scan` - Analyze dependencies for vulnerabilities (Grype, OSV-Scanner, etc.)
 - `sca_get_report` - Retrieve SCA scan results
 - `sca_list_tools` - List available SCA tools
 
 **CodeQL Specific:**
+
 - `codeql_detect_languages` - Detect languages in codebase
 - `codeql_create_database` - Create CodeQL database for analysis
 - `codeql_list_databases` - List available CodeQL databases
@@ -310,15 +345,16 @@ MCPwner exposes the following tools through the MCP interface:
 - `codeql_execute_query` - Run specific CodeQL queries
 
 **Health & Monitoring:**
+
 - `health_check` - Check server and tool availability
 - `list_tools` - List all available tools and their status
-
 
 ## Contributing
 
 Contributions are welcome! Please review the [contribution guidelines](CONTRIBUTING.md) before submitting pull requests.
 
 **Priority Areas:**
+
 - Testing infrastructure (e2e and unit tests)
 - Container lifecycle management and optimization
 - Multi-stage Docker builds for reduced image sizes
@@ -326,6 +362,7 @@ Contributions are welcome! Please review the [contribution guidelines](CONTRIBUT
 - Additional security tool integrations
 
 **Contribution Guidelines:**
+
 - Submit focused pull requests with manageable scope
 - Include tests for new features
 - Follow existing code style and patterns
