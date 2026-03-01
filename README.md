@@ -35,15 +35,13 @@ This project is still work in progress.
 
 <div align="center">
 
-
 ## Secrets Scanning Tools
 
-|   <img src="readme/gitleaks.png" width="100">    |  <img src="readme/trufflehog.png" width="100">   |
-| :----------------------------------------------: | :----------------------------------------------: |
-| [**Gitleaks**](https://github.com/zricethezav/gitleaks) | [**TruffleHog**](https://github.com/trufflesecurity/trufflehog) |
+|   <img src="readme/gitleaks.png" width="100">    |  <img src="readme/trufflehog.png" width="100">   | <img src="readme/detect-secrets.png" width="100"> | <img src="readme/whispers.png" width="100"> | <img src="readme/hawk-eye.jpeg" width="100"> |
+| :----------------------------------------------: | :----------------------------------------------: | :----------------------------------------------: | :------------------------------------------: | :------------------------------------------: |
+| [**Gitleaks**](https://github.com/zricethezav/gitleaks) | [**TruffleHog**](https://github.com/trufflesecurity/trufflehog) | [**detect-secrets**](https://github.com/Yelp/detect-secrets) | [**Whispers**](https://github.com/Skyscanner/whispers) | [**Hawk-Eye**](https://github.com/rohitcoder/hawk-eye) |
 
 </div>
-
 
 ## Future Tools (Planned)
 
