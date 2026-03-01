@@ -11,8 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy trufflehog binary
 COPY --from=trufflehog /usr/bin/trufflehog /usr/bin/trufflehog
 
-# Install FastAPI and uvicorn
-RUN pip install --no-cache-dir fastapi uvicorn
+# Copy requirements and install dependencies
+COPY docker/secrets/trufflehog/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /service
 

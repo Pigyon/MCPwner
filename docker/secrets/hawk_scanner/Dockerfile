@@ -7,11 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install hawk-scanner
-RUN pip install hawk-scanner==0.3.37
-
-# Install FastAPI and uvicorn
-RUN pip install --no-cache-dir fastapi uvicorn
+# Copy requirements and install dependencies
+COPY docker/secrets/hawk_scanner/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /service
 

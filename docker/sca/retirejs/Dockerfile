@@ -9,8 +9,9 @@ RUN npm install -g retire@5.4.2
 # Create app directory
 WORKDIR /app
 
-# Install Python dependencies with pinned versions
-RUN pip install --no-cache-dir fastapi==0.115.12 uvicorn==0.34.0
+# Copy requirements and install Python dependencies
+COPY docker/sca/retirejs/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY docker/common /app/common

@@ -6,8 +6,9 @@ RUN apk add --no-cache osv-scanner --repository=http://dl-cdn.alpinelinux.org/al
 # Create app directory
 WORKDIR /app
 
-# Install Python dependencies with pinned versions
-RUN pip install --no-cache-dir fastapi==0.115.12 uvicorn==0.34.0
+# Copy requirements and install Python dependencies
+COPY docker/sca/osv-scanner/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY docker/common /app/common

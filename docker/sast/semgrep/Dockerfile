@@ -6,9 +6,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Semgrep and service dependencies
-# pinning semgrep to a recent version to ensure stability
-RUN pip install --no-cache-dir semgrep fastapi uvicorn
+# Copy requirements and install dependencies
+COPY docker/sast/semgrep/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /service
 
