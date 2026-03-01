@@ -76,7 +76,7 @@ def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:
                 "error": f"Unknown tool: {tool_name}",
                 "available_tools": list(services.keys()),
             }
-        
+
         client_getter = services[tool_name]
         return _check_service(tool_name, client_getter())
 

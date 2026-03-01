@@ -30,7 +30,7 @@ class MCPRouter:
     def tool(self, name: Optional[str] = None):
         """
         Decorator to register a tool function.
-        
+
         Args:
             name: Optional explicit name for the tool (ignored in this version)
 

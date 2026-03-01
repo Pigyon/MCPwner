@@ -19,7 +19,7 @@ class Workspace(BaseModel):
 
     model_config = ConfigDict()
 
-    @field_serializer('created_at')
+    @field_serializer("created_at")
     def serialize_created_at(self, dt: datetime, _info):
         return dt.isoformat() + "Z"
 
@@ -45,7 +45,7 @@ class CodeQLDatabase(BaseModel):
 
     model_config = ConfigDict()
 
-    @field_serializer('created_at')
+    @field_serializer("created_at")
     def serialize_created_at(self, dt: datetime, _info):
         return dt.isoformat() + "Z"
 

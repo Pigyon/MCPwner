@@ -6,9 +6,8 @@ import subprocess
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from git_utils import commit_git, config_git, init_git
 from pydantic import BaseModel
-
-from git_utils import init_git, config_git, commit_git
 
 logger = logging.getLogger(__name__)
 

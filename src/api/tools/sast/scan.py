@@ -54,15 +54,14 @@ def _get_service_for_tool(tool: str):
     """Get the appropriate service instance for a tool."""
     if tool == "semgrep":
         return get_semgrep_service()
-    elif tool == "bandit":
+    if tool == "bandit":
         return get_bandit_service()
-    elif tool == "gosec":
+    if tool == "gosec":
         return get_gosec_service()
-    elif tool == "brakeman":
+    if tool == "brakeman":
         return get_brakeman_service()
-    elif tool == "pmd":
+    if tool == "pmd":
         return get_pmd_service()
-    elif tool == "psalm":
+    if tool == "psalm":
         return get_psalm_service()
-    else:
-        raise ValueError(f"Unknown tool: {tool}")
+    raise ValueError(f"Unknown tool: {tool}")
