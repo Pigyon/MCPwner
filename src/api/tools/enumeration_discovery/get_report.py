@@ -5,11 +5,11 @@ from typing import Any, Dict
 
 from deps import (
     get_amass_service,
+    get_ffuf_service,
     get_masscan_service,
     get_subfinder_service,
     # get_akto_service,
     # get_arjun_service,
-    # get_ffuf_service,
     # get_gau_service,
     # get_gowitness_service,
     # get_httpx_service,
@@ -23,7 +23,7 @@ SUPPORTED_TOOLS = [
     "amass",
     # "httpx",
     # "katana",
-    # "ffuf",
+    "ffuf",
     # "nuclei",
     # "nmap",
     "masscan",
@@ -71,8 +71,8 @@ def _get_service_for_tool(tool: str):
     #     return get_httpx_service()
     # if tool == "katana":
     #     return get_katana_service()
-    # if tool == "ffuf":
-    #     return get_ffuf_service()
+    if tool == "ffuf":
+        return get_ffuf_service()
     # if tool == "nuclei":
     #     return get_nuclei_service()
     # if tool == "nmap":
