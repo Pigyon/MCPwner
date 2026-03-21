@@ -2,8 +2,8 @@
 
 from api.mcp_router import MCPRouter
 from api.routers.codeql.router import router as codeql_router
-from api.routers.enumeration_discovery.router import router as enumeration_discovery_router
 from api.routers.health.router import router as health_router
+from api.routers.reconnaissance.router import router as reconnaissance_router
 from api.routers.sast.router import router as sast_router
 from api.routers.sca.router import router as sca_router
 from api.routers.secrets.router import router as secrets_router
@@ -19,4 +19,4 @@ router.include_router(codeql_router)
 router.include_router(sast_router)
 router.include_router(sca_router)
 router.include_router(secrets_router)
-router.include_router(enumeration_discovery_router)
+router.include_router(reconnaissance_router)

@@ -17,8 +17,8 @@ def create_workspace(source_type: str, source: str) -> dict:
         source: For github: a GitHub URL or "owner/repo" shorthand (e.g. "octocat/Hello-World").
                 For local: an absolute path that exists inside the container
                 (requires a volume mount in docker-compose.yaml).
-                For virtual: a descriptive name (e.g. "enumeration-workspace").
-                Virtual workspaces are used for enumeration/discovery tools that don't need source code.
+                For virtual: a descriptive name (e.g. "reconnaissance-workspace").
+                Virtual workspaces are used for reconnaissance tools that don't need source code.
 
     Returns:
         Dictionary with workspace_id, source_type, source, and created_at
