@@ -33,8 +33,25 @@ class WorkspaceService:
             created_at=datetime.now(timezone.utc),
         )
 
+        # Handle virtual workspace (for tools that don't have source code)
+        if source_type == "virtual":
+            try:
+                workspace_dir = Path(base_path) / workspace.workspace_id
+                workspace_dir.mkdir(parents=True, exist_ok=True)
+
+                # Create reports directory structure
+                reports_dir = workspace_dir / "reports"
+                reports_dir.mkdir(exist_ok=True)
+
+                workspace.path = str(workspace_dir)
+                self.repository.save(workspace)
+                logger.info(f"Successfully created virtual workspace at {workspace_dir}")
+            except Exception as e:
+                logger.error(f"Failed to create virtual workspace: {e}")
+                raise
+
         # Handle GitHub clone
-        if source_type == "github":
+        elif source_type == "github":
             try:
                 repo_path = clone_repository(source, workspace.workspace_id, base_path)
                 workspace.path = repo_path
@@ -130,6 +147,20 @@ class WorkspaceService:
             if workspace.is_local_mount():
                 result["details"].append("Skipped file deletion: Local mount - preserving user data")
                 result["status"] = "partial"
+            elif workspace.is_virtual():
+                # Virtual workspaces can be safely deleted (only contain reports)
+                workspace_dir = Path(base_path) / workspace_id
+                if workspace_dir.exists():
+                    try:
+                        shutil.rmtree(workspace_dir)
+                        result["deleted_files"] = True
+                        result["details"].append(f"Deleted virtual workspace directory: {workspace_dir}")
+                    except Exception as e:
+                        result["status"] = "error"
+                        result["details"].append(f"Failed to delete files: {e}")
+                        logger.error(f"Failed to delete workspace directory {workspace_dir}: {e}")
+                else:
+                    result["details"].append("No workspace directory found to delete")
             else:
                 workspace_dir = Path(base_path) / workspace_id
                 if workspace_dir.exists():

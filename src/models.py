@@ -31,6 +31,10 @@ class Workspace(BaseModel):
         """Check if workspace is a local mount."""
         return self.source_type == "local"
 
+    def is_virtual(self) -> bool:
+        """Check if workspace is virtual (no source code)."""
+        return self.source_type == "virtual"
+
 
 class CodeQLDatabase(BaseModel):
     """CodeQL database domain model."""
