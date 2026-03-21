@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 from deps import (
     get_amass_service,
     get_masscan_service,
+    get_nmap_service,
     get_subfinder_service,
     get_workspace_service,
     # get_akto_service,
@@ -15,7 +16,6 @@ from deps import (
     # get_gowitness_service,
     # get_httpx_service,
     # get_katana_service,
-    # get_nmap_service,
     # get_nuclei_service,
     # get_wafw00f_service,
 )
@@ -29,7 +29,7 @@ SUPPORTED_TOOLS = [
     # "katana",
     # "ffuf",
     # "nuclei",
-    # "nmap",
+    "nmap",
     "masscan",
     # "arjun",
     # "gau",
@@ -102,8 +102,8 @@ def _get_service_for_tool(tool: str):
     #     return get_ffuf_service()
     # if tool == "nuclei":
     #     return get_nuclei_service()
-    # if tool == "nmap":
-    #     return get_nmap_service()
+    if tool == "nmap":
+        return get_nmap_service()
     if tool == "masscan":
         return get_masscan_service()
     # if tool == "arjun":

@@ -10,6 +10,7 @@ from clients.brakeman import BrakemanClient
 from clients.codeql import CodeQLClient
 from clients.enumeration_discovery.amass import AmassClient
 from clients.enumeration_discovery.masscan import MasscanClient
+from clients.enumeration_discovery.nmap import NmapClient
 from clients.enumeration_discovery.subfinder import SubfinderClient
 from clients.gosec import GosecClient
 from clients.linguist import LinguistClient
@@ -32,6 +33,7 @@ from services.brakeman import BrakemanService
 from services.codeql import CodeQLService
 from services.enumeration_discovery.amass import AmassService
 from services.enumeration_discovery.masscan import MasscanService
+from services.enumeration_discovery.nmap import NmapService
 from services.enumeration_discovery.subfinder import SubfinderService
 from services.gosec import GosecService
 from services.linguist import LinguistService
@@ -332,3 +334,17 @@ def get_masscan_client():
 @lru_cache(maxsize=None)
 def get_masscan_service():
     return MasscanService(get_workspace_repository(), get_masscan_client())
+
+
+@lru_cache(maxsize=None)
+def get_nmap_client():
+    config = get_config()
+    nmap_url = (
+        config.get("enumeration_discovery", {}).get("nmap", {}).get("service_url", "http://nmap:8116")
+    )
+    return NmapClient(nmap_url)
+
+
+@lru_cache(maxsize=None)
+def get_nmap_service():
+    return NmapService(get_workspace_repository(), get_nmap_client())
