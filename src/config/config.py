@@ -20,6 +20,7 @@ _SERVICE_URL_ENV_VARS = {
     "GRYPE_SERVICE_URL": ("grype", "service_url"),
     "SYFT_SERVICE_URL": ("syft", "service_url"),
     "RETIREJS_SERVICE_URL": ("retirejs", "service_url"),
+    "SUBFINDER_SERVICE_URL": ("enumeration_discovery", "subfinder", "service_url"),
 }
 
 
@@ -67,12 +68,22 @@ def load_config(config_path: str = "config/config.yaml") -> Dict[str, Any]:
 
 def _apply_env_overrides(config: Dict[str, Any]) -> None:
     """Override service URLs from environment variables if set."""
-    for env_var, (section, key) in _SERVICE_URL_ENV_VARS.items():
+    for env_var, path_tuple in _SERVICE_URL_ENV_VARS.items():
         value = os.environ.get(env_var)
         if value:
-            if section not in config:
-                config[section] = {}
-            config[section][key] = value
+            # Handle nested paths (e.g., enumeration_discovery.subfinder.service_url)
+            if len(path_tuple) == 2:
+                section, key = path_tuple
+                if section not in config:
+                    config[section] = {}
+                config[section][key] = value
+            elif len(path_tuple) == 3:
+                section, subsection, key = path_tuple
+                if section not in config:
+                    config[section] = {}
+                if subsection not in config[section]:
+                    config[section][subsection] = {}
+                config[section][subsection][key] = value
 
 
 def _validate_config(config: Dict[str, Any]) -> None:

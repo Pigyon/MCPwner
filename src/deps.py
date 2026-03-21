@@ -8,6 +8,7 @@ from functools import lru_cache
 from clients.bandit import BanditClient
 from clients.brakeman import BrakemanClient
 from clients.codeql import CodeQLClient
+from clients.enumeration_discovery.subfinder import SubfinderClient
 from clients.gosec import GosecClient
 from clients.linguist import LinguistClient
 from clients.pmd import PMDClient
@@ -27,6 +28,7 @@ from repositories.workspace import WorkspaceRepository
 from services.bandit import BanditService
 from services.brakeman import BrakemanService
 from services.codeql import CodeQLService
+from services.enumeration_discovery.subfinder import SubfinderService
 from services.gosec import GosecService
 from services.linguist import LinguistService
 from services.pmd import PMDService
@@ -277,3 +279,22 @@ def get_hawk_scanner_client():
 @lru_cache(maxsize=None)
 def get_hawk_scanner_service():
     return HawkScannerService(get_workspace_repository(), get_hawk_scanner_client())
+
+
+# Enumeration & Discovery Clients and Services
+
+
+@lru_cache(maxsize=None)
+def get_subfinder_client():
+    config = get_config()
+    subfinder_url = (
+        config.get("enumeration_discovery", {})
+        .get("subfinder", {})
+        .get("service_url", "http://subfinder:8110")
+    )
+    return SubfinderClient(subfinder_url)
+
+
+@lru_cache(maxsize=None)
+def get_subfinder_service():
+    return SubfinderService(get_workspace_repository(), get_subfinder_client())
