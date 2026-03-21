@@ -4,9 +4,9 @@ import logging
 from typing import Any, Dict
 
 from deps import (
+    get_amass_service,
     get_subfinder_service,
     # get_akto_service,
-    # get_amass_service,
     # get_arjun_service,
     # get_ffuf_service,
     # get_gau_service,
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_TOOLS = [
     "subfinder",
-    # "amass",
+    "amass",
     # "httpx",
     # "katana",
     # "ffuf",
@@ -68,8 +68,8 @@ def _get_service_for_tool(tool: str):
     """Get the appropriate service instance for a tool."""
     if tool == "subfinder":
         return get_subfinder_service()
-    # if tool == "amass":
-    #     return get_amass_service()
+    if tool == "amass":
+        return get_amass_service()
     # if tool == "httpx":
     #     return get_httpx_service()
     # if tool == "katana":
