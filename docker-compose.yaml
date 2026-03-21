@@ -51,6 +51,7 @@ services:
       - AMASS_SERVICE_URL=http://amass:8111
       - MASSCAN_SERVICE_URL=http://masscan:8117
       - NMAP_SERVICE_URL=http://nmap:8116
+      - FFUF_SERVICE_URL=http://ffuf:8114
     depends_on:
       - codeql
       - linguist
@@ -71,6 +72,7 @@ services:
       - amass
       - masscan
       - nmap
+      - ffuf
 
   codeql:
     # Using digest for reproducibility (equivalent to latest as of 2026-01-23)
@@ -627,6 +629,30 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  ffuf:
+    build:
+      context: .
+      dockerfile: docker/enumeration_discovery/ffuf/Dockerfile
+    container_name: ffuf-scanner
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8114:8114"
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8114/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
 volumes:
   workspaces:
     driver: local

@@ -101,7 +101,15 @@ def create_scanner_app(
             output_path = output_dir / f"{timestamp}.{report_format}"
 
             # Build command
-            cmd = scan_cmd_builder(request, output_path)
+            try:
+                cmd = scan_cmd_builder(request, output_path)
+            except ValueError as e:
+                logger.error(f"Scan configuration error: {e}")
+                raise HTTPException(status_code=400, detail=str(e))
+            except Exception as e:
+                # Other errors
+                logger.error(f"Error building scan command: {e}")
+                raise HTTPException(status_code=500, detail=f"Failed to build scan command: {e}")
 
             # Execute scan
             logger.info(f"Executing {tool_name} scan: {' '.join(cmd)}")

@@ -9,6 +9,7 @@ from clients.bandit import BanditClient
 from clients.brakeman import BrakemanClient
 from clients.codeql import CodeQLClient
 from clients.enumeration_discovery.amass import AmassClient
+from clients.enumeration_discovery.ffuf import FfufClient
 from clients.enumeration_discovery.masscan import MasscanClient
 from clients.enumeration_discovery.nmap import NmapClient
 from clients.enumeration_discovery.subfinder import SubfinderClient
@@ -32,6 +33,7 @@ from services.bandit import BanditService
 from services.brakeman import BrakemanService
 from services.codeql import CodeQLService
 from services.enumeration_discovery.amass import AmassService
+from services.enumeration_discovery.ffuf import FfufService
 from services.enumeration_discovery.masscan import MasscanService
 from services.enumeration_discovery.nmap import NmapService
 from services.enumeration_discovery.subfinder import SubfinderService
@@ -348,3 +350,17 @@ def get_nmap_client():
 @lru_cache(maxsize=None)
 def get_nmap_service():
     return NmapService(get_workspace_repository(), get_nmap_client())
+
+
+@lru_cache(maxsize=None)
+def get_ffuf_client():
+    config = get_config()
+    ffuf_url = (
+        config.get("enumeration_discovery", {}).get("ffuf", {}).get("service_url", "http://ffuf:8114")
+    )
+    return FfufClient(ffuf_url)
+
+
+@lru_cache(maxsize=None)
+def get_ffuf_service():
+    return FfufService(get_workspace_repository(), get_ffuf_client())
