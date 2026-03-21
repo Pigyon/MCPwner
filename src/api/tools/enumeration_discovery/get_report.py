@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 from deps import (
     get_amass_service,
+    get_masscan_service,
     get_subfinder_service,
     # get_akto_service,
     # get_arjun_service,
@@ -13,10 +14,6 @@ from deps import (
     # get_gowitness_service,
     # get_httpx_service,
     # get_katana_service,
-    # get_masscan_service,
-    # get_nmap_service,
-    # get_nuclei_service,
-    # get_wafw00f_service,
 )
 
 logger = logging.getLogger(__name__)
@@ -29,7 +26,7 @@ SUPPORTED_TOOLS = [
     # "ffuf",
     # "nuclei",
     # "nmap",
-    # "masscan",
+    "masscan",
     # "arjun",
     # "gau",
     # "akto",
@@ -80,8 +77,8 @@ def _get_service_for_tool(tool: str):
     #     return get_nuclei_service()
     # if tool == "nmap":
     #     return get_nmap_service()
-    # if tool == "masscan":
-    #     return get_masscan_service()
+    if tool == "masscan":
+        return get_masscan_service()
     # if tool == "arjun":
     #     return get_arjun_service()
     # if tool == "gau":

@@ -9,6 +9,7 @@ from clients.bandit import BanditClient
 from clients.brakeman import BrakemanClient
 from clients.codeql import CodeQLClient
 from clients.enumeration_discovery.amass import AmassClient
+from clients.enumeration_discovery.masscan import MasscanClient
 from clients.enumeration_discovery.subfinder import SubfinderClient
 from clients.gosec import GosecClient
 from clients.linguist import LinguistClient
@@ -30,6 +31,7 @@ from services.bandit import BanditService
 from services.brakeman import BrakemanService
 from services.codeql import CodeQLService
 from services.enumeration_discovery.amass import AmassService
+from services.enumeration_discovery.masscan import MasscanService
 from services.enumeration_discovery.subfinder import SubfinderService
 from services.gosec import GosecService
 from services.linguist import LinguistService
@@ -314,3 +316,19 @@ def get_amass_client():
 @lru_cache(maxsize=None)
 def get_amass_service():
     return AmassService(get_workspace_repository(), get_amass_client())
+
+
+@lru_cache(maxsize=None)
+def get_masscan_client():
+    config = get_config()
+    masscan_url = (
+        config.get("enumeration_discovery", {})
+        .get("masscan", {})
+        .get("service_url", "http://masscan:8117")
+    )
+    return MasscanClient(masscan_url)
+
+
+@lru_cache(maxsize=None)
+def get_masscan_service():
+    return MasscanService(get_workspace_repository(), get_masscan_client())
