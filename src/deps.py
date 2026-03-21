@@ -8,15 +8,15 @@ from functools import lru_cache
 from clients.bandit import BanditClient
 from clients.brakeman import BrakemanClient
 from clients.codeql import CodeQLClient
-from clients.enumeration_discovery.amass import AmassClient
-from clients.enumeration_discovery.ffuf import FfufClient
-from clients.enumeration_discovery.masscan import MasscanClient
-from clients.enumeration_discovery.nmap import NmapClient
-from clients.enumeration_discovery.subfinder import SubfinderClient
 from clients.gosec import GosecClient
 from clients.linguist import LinguistClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
+from clients.reconnaissance.amass import AmassClient
+from clients.reconnaissance.ffuf import FfufClient
+from clients.reconnaissance.masscan import MasscanClient
+from clients.reconnaissance.nmap import NmapClient
+from clients.reconnaissance.subfinder import SubfinderClient
 from clients.sca.grype import GrypeClient
 from clients.sca.osv_scanner import OSVScannerClient
 from clients.sca.retirejs import RetireJSClient
@@ -32,15 +32,15 @@ from repositories.workspace import WorkspaceRepository
 from services.bandit import BanditService
 from services.brakeman import BrakemanService
 from services.codeql import CodeQLService
-from services.enumeration_discovery.amass import AmassService
-from services.enumeration_discovery.ffuf import FfufService
-from services.enumeration_discovery.masscan import MasscanService
-from services.enumeration_discovery.nmap import NmapService
-from services.enumeration_discovery.subfinder import SubfinderService
 from services.gosec import GosecService
 from services.linguist import LinguistService
 from services.pmd import PMDService
 from services.psalm import PsalmService
+from services.reconnaissance.amass import AmassService
+from services.reconnaissance.ffuf import FfufService
+from services.reconnaissance.masscan import MasscanService
+from services.reconnaissance.nmap import NmapService
+from services.reconnaissance.subfinder import SubfinderService
 from services.sca.grype import GrypeService
 from services.sca.osv_scanner import OSVScannerService
 from services.sca.retirejs import RetireJSService
@@ -289,16 +289,14 @@ def get_hawk_scanner_service():
     return HawkScannerService(get_workspace_repository(), get_hawk_scanner_client())
 
 
-# Enumeration & Discovery Clients and Services
+# Reconnaissance Clients and Services
 
 
 @lru_cache(maxsize=None)
 def get_subfinder_client():
     config = get_config()
     subfinder_url = (
-        config.get("enumeration_discovery", {})
-        .get("subfinder", {})
-        .get("service_url", "http://subfinder:8110")
+        config.get("reconnaissance", {}).get("subfinder", {}).get("service_url", "http://subfinder:8110")
     )
     return SubfinderClient(subfinder_url)
 
@@ -311,9 +309,7 @@ def get_subfinder_service():
 @lru_cache(maxsize=None)
 def get_amass_client():
     config = get_config()
-    amass_url = (
-        config.get("enumeration_discovery", {}).get("amass", {}).get("service_url", "http://amass:8111")
-    )
+    amass_url = config.get("reconnaissance", {}).get("amass", {}).get("service_url", "http://amass:8111")
     return AmassClient(amass_url)
 
 
@@ -326,9 +322,7 @@ def get_amass_service():
 def get_masscan_client():
     config = get_config()
     masscan_url = (
-        config.get("enumeration_discovery", {})
-        .get("masscan", {})
-        .get("service_url", "http://masscan:8117")
+        config.get("reconnaissance", {}).get("masscan", {}).get("service_url", "http://masscan:8117")
     )
     return MasscanClient(masscan_url)
 
@@ -341,9 +335,7 @@ def get_masscan_service():
 @lru_cache(maxsize=None)
 def get_nmap_client():
     config = get_config()
-    nmap_url = (
-        config.get("enumeration_discovery", {}).get("nmap", {}).get("service_url", "http://nmap:8116")
-    )
+    nmap_url = config.get("reconnaissance", {}).get("nmap", {}).get("service_url", "http://nmap:8116")
     return NmapClient(nmap_url)
 
 
@@ -355,9 +347,7 @@ def get_nmap_service():
 @lru_cache(maxsize=None)
 def get_ffuf_client():
     config = get_config()
-    ffuf_url = (
-        config.get("enumeration_discovery", {}).get("ffuf", {}).get("service_url", "http://ffuf:8114")
-    )
+    ffuf_url = config.get("reconnaissance", {}).get("ffuf", {}).get("service_url", "http://ffuf:8114")
     return FfufClient(ffuf_url)
 
 

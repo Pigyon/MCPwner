@@ -528,7 +528,7 @@ services:
   subfinder:
     build:
       context: .
-      dockerfile: docker/enumeration_discovery/subfinder/Dockerfile
+      dockerfile: docker/reconnaissance/subfinder/Dockerfile
     container_name: subfinder-scanner
     user: "0:0"  # Run as root
     read_only: false
@@ -554,7 +554,7 @@ services:
   amass:
     build:
       context: .
-      dockerfile: docker/enumeration_discovery/amass/Dockerfile
+      dockerfile: docker/reconnaissance/amass/Dockerfile
     container_name: amass-scanner
     user: "0:0"  # Run as root
     read_only: false
@@ -580,7 +580,7 @@ services:
   masscan:
     build:
       context: .
-      dockerfile: docker/enumeration_discovery/masscan/Dockerfile
+      dockerfile: docker/reconnaissance/masscan/Dockerfile
     container_name: masscan-scanner
     user: "0:0"  # Run as root (required for raw socket access)
     read_only: false
@@ -606,7 +606,7 @@ services:
   nmap:
     build:
       context: .
-      dockerfile: docker/enumeration_discovery/nmap/Dockerfile
+      dockerfile: docker/reconnaissance/nmap/Dockerfile
     container_name: nmap-scanner
     user: "0:0"  # Run as root (required for some scan types)
     read_only: false
@@ -633,7 +633,7 @@ services:
   ffuf:
     build:
       context: .
-      dockerfile: docker/enumeration_discovery/ffuf/Dockerfile
+      dockerfile: docker/reconnaissance/ffuf/Dockerfile
     container_name: ffuf-scanner
     read_only: false
     security_opt:
