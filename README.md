@@ -81,11 +81,11 @@ The following tools are planned for future releases:
 
 ### Reconnaissance
 
-- httpx, Katana, gau, Arjun, Nuclei, wafw00f, kiterunner
+- httpx, Katana, gau, Arjun, wafw00f, kiterunner
 
 ### Dynamic Application Security Testing (DAST)
 
-- OWASP ZAP, SQLmap, NoSQLMap, Dalfox, Nikto, SSTImap, Commix, jwt_tool
+- OWASP ZAP, SQLmap, NoSQLMap, Dalfox, Nikto, SSTImap, Commix, jwt_tool, Wapiti, Nuclei,
 
 ### OSINT
 
