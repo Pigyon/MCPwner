@@ -4,34 +4,34 @@
   <h3><i>Beware of the Badger</i></h3>
   <p>Model Context Protocol server for security research automation</p>
 
-
 [![Docker](https://img.shields.io/badge/Docker-ready-1F2937?logo=docker&logoColor=2496ED)](https://www.docker.com/)
 [![MCP](https://img.shields.io/badge/MCP-compatible-065F46)](https://modelcontextprotocol.io)
 [![Python](https://img.shields.io/badge/Python-3.11+-1E3A8A?logo=python&logoColor=FBBF24)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-374151)](LICENSE.txt)
 
-  **Compatible with:**
-  
-  [![Kiro](https://img.shields.io/badge/Kiro-9046FF?style=for-the-badge&logoColor=white)](#installation)
-  [![Cursor](https://img.shields.io/badge/Cursor-000000?style=for-the-badge&logoColor=white)](#installation)
-  [![Claude](https://img.shields.io/badge/Claude-CC9B7A?style=for-the-badge&logo=anthropic&logoColor=white)](#installation)
-  [![VS Code](https://img.shields.io/badge/VS_Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](#installation)
-  [![Windsurf](https://img.shields.io/badge/Windsurf-09B6A2?style=for-the-badge&logo=codeium&logoColor=white)](#installation)
+**Compatible with:**
+
+[![Kiro](https://img.shields.io/badge/Kiro-9046FF?style=for-the-badge&logoColor=white)](#installation)
+[![Cursor](https://img.shields.io/badge/Cursor-000000?style=for-the-badge&logoColor=white)](#installation)
+[![Claude](https://img.shields.io/badge/Claude-CC9B7A?style=for-the-badge&logo=anthropic&logoColor=white)](#installation)
+[![VS Code](https://img.shields.io/badge/VS_Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](#installation)
+[![Windsurf](https://img.shields.io/badge/Windsurf-09B6A2?style=for-the-badge&logo=codeium&logoColor=white)](#installation)
+
 </div>
 
 ---
 
 ## Overview
 
-MCPwner is a Model Context Protocol (MCP) server that integrates security testing tools into LLM-driven workflows. It provides a unified interface for secret scanning, static analysis (SAST), software composition analysis (SCA), and vulnerability research including 0-day discovery.
+MCPwner is a Model Context Protocol (MCP) server that integrates security testing tools into LLM-driven workflows. It provides a unified interface for secret scanning, static analysis (SAST), software composition analysis (SCA), reconnaissance, dynamic application security testing (DAST), and vulnerability research including 0-day discovery.
 
-Instead of manually chaining tools and pasting outputs into your LLM, MCPwner standardizes and streams results directly into the model's working context. This enables continuous reasoning, correlation, and attack path discovery across the entire security research lifecycle - from identifying known vulnerabilities to uncovering novel attack vectors.
+Instead of manually chaining tools and pasting outputs into your LLM, MCPwner standardizes and streams results directly into the model's working context. This enables continuous reasoning, correlation, and attack path discovery across the entire security research lifecycle - from mapping attack surfaces and identifying known vulnerabilities to uncovering novel attack vectors through dynamic testing.
 
 > **Note**: This project is under active development. Learn more about MCPs [here](https://modelcontextprotocol.io).
 
 ## Key Features
 
-- 🔧 **Unified Interface**: Single MCP server integrating multiple security tools (SAST, SCA, secrets detection)
+- 🔧 **Unified Interface**: Single MCP server integrating multiple security tools (SAST, SCA, secrets detection, reconnaissance, DAST)
 - 🤖 **LLM Integration**: Structured output formats (SARIF/JSON) for direct consumption by AI assistants
 - 🔍 **Continuous Analysis**: Correlate findings across multiple tools to identify attack paths and 0-day vulnerabilities
 - 🏗️ **Multi-Agent Architecture**: Designed for specialized agents collaborating across security phases
@@ -42,6 +42,12 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 ## Integrated Tools
 
 <div align="center">
+
+## Reconnaissance
+
+|          <img src="readme/subfinder.png" width="100">          |     <img src="readme/amass.png" width="100">      | <img src="readme/nmap.png" width="100">  |         <img src="readme/masscan.png" width="100">          | <img src="readme/ffuf.png" width="100">  |
+| :------------------------------------------------------------: | :-----------------------------------------------: | :--------------------------------------: | :---------------------------------------------------------: | :--------------------------------------: |
+| [**Subfinder**](https://github.com/projectdiscovery/subfinder) | [**Amass**](https://github.com/owasp-amass/amass) | [**Nmap**](https://github.com/nmap/nmap) | [**Masscan**](https://github.com/robertdavidgraham/masscan) | [**ffuf**](https://github.com/ffuf/ffuf) |
 
 ## Static Application Security Testing (SAST) Scanning Tools
 
@@ -75,11 +81,15 @@ The following tools are planned for future releases:
 
 ### Reconnaissance
 
-- Amass, Subfinder, httpx, Katana, gau, Nmap, Arjun, FFUF, Akto
+- httpx, Katana, gau, Arjun, Nuclei, wafw00f, kiterunner
 
 ### Dynamic Application Security Testing (DAST)
 
-- OWASP ZAP, Wapiti, Nikto, SQLmap, SSRFmap, SSTImap, Nuclei, Dalfox, XSStrike, jwt_tool, Interactsh, Frida
+- OWASP ZAP, SQLmap, NoSQLMap, Dalfox, Nikto, SSTImap, Commix, jwt_tool
+
+### OSINT
+
+- Shodan API, Censys API, crt.sh, Altdns, Lazys3, Bucket Stream
 
 ### Infrastructure & IaC Security
 
@@ -87,9 +97,16 @@ The following tools are planned for future releases:
 
 ### Exploitation & PoC Development
 
-- Metasploit, Interactsh
+- Metasploit, Interactsh, Frida
 
 ## Usage Examples
+
+### Automated Enumeration Pipeline
+
+```
+"Enumerate and scan example.com"
+→ MCPwner chains: Subfinder + Amass → Masscan + Nmap → httpx → Katana + gau → ffuf + Arjun → Nuclei
+```
 
 ### Scan a GitHub Repository for Secrets
 
@@ -132,7 +149,7 @@ The following tools are planned for future releases:
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/yourusername/mcpwner.git
+   git clone https://github.com/nedlir/mcpwner.git
    cd mcpwner
    ```
 
@@ -335,6 +352,18 @@ MCPwner exposes the following tools through the MCP interface:
 - `sca_scan` - Analyze dependencies for vulnerabilities (Grype, OSV-Scanner, etc.)
 - `sca_get_report` - Retrieve SCA scan results
 - `sca_list_tools` - List available SCA tools
+
+**Reconnaissance:**
+
+- `recon_scan` - Run reconnaissance tools (Nuclei, httpx, Katana, ffuf, etc.)
+- `recon_get_report` - Retrieve reconnaissance scan results
+- `recon_list_tools` - List available reconnaissance tools
+
+**DAST (Dynamic Analysis):**
+
+- `dast_scan` - Run dynamic security testing tools (OWASP ZAP, SQLmap, Dalfox, etc.)
+- `dast_get_report` - Retrieve DAST scan results
+- `dast_list_tools` - List available DAST tools
 
 **CodeQL Specific:**
 
