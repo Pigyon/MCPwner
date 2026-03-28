@@ -81,7 +81,13 @@ RECONNAISSANCE_TOOLS = {
     },
     "gau": {
         "name": "gau",
-        "description": "Get All URLs from web archives",
+        "description": (
+            "Get All URLs from web archives (Wayback Machine, Common Crawl, OTX, URLScan). "
+            "Supports chaining: pass source_tool='subfinder' (or amass, bbot, httpx) "
+            "to auto-read domains from a previous scan's report. "
+            "Also accepts 'targets' list for batch querying or single 'target'. "
+            "Optional: providers, blacklist, threads, from, to."
+        ),
         "category": "reconnaissance",
     },
     "akto": {

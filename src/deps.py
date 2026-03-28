@@ -16,6 +16,7 @@ from clients.reconnaissance.amass import AmassClient
 from clients.reconnaissance.bbot import BbotClient
 from clients.reconnaissance.ffuf import FfufClient
 from clients.reconnaissance.httpx import HttpxClient
+from clients.reconnaissance.gau import GauClient
 from clients.reconnaissance.katana import KatanaClient
 from clients.reconnaissance.masscan import MasscanClient
 from clients.reconnaissance.nmap import NmapClient
@@ -43,6 +44,7 @@ from services.reconnaissance.amass import AmassService
 from services.reconnaissance.bbot import BbotService
 from services.reconnaissance.ffuf import FfufService
 from services.reconnaissance.httpx import HttpxService
+from services.reconnaissance.gau import GauService
 from services.reconnaissance.katana import KatanaService
 from services.reconnaissance.masscan import MasscanService
 from services.reconnaissance.nmap import NmapService
@@ -400,3 +402,15 @@ def get_katana_client():
 @lru_cache(maxsize=None)
 def get_katana_service():
     return KatanaService(get_workspace_repository(), get_katana_client())
+
+
+@lru_cache(maxsize=None)
+def get_gau_client():
+    config = get_config()
+    gau_url = config.get("reconnaissance", {}).get("gau", {}).get("service_url", "http://gau:8115")
+    return GauClient(gau_url)
+
+
+@lru_cache(maxsize=None)
+def get_gau_service():
+    return GauService(get_workspace_repository(), get_gau_client())

@@ -7,13 +7,13 @@ from deps import (
     get_amass_service,
     get_bbot_service,
     get_ffuf_service,
+    get_gau_service,
     get_httpx_service,
     get_katana_service,
     get_masscan_service,
     get_subfinder_service,
     # get_akto_service,
     # get_arjun_service,
-    # get_gau_service,
     # get_gowitness_service,
 )
 
@@ -31,7 +31,7 @@ SUPPORTED_TOOLS = [
     "masscan",
     "bbot",
     # "arjun",
-    # "gau",
+    "gau",
     # "akto",
     # "wafw00f",
     # "gowitness",
@@ -105,13 +105,12 @@ def _get_service_for_tool(tool: str):
     if tool == "bbot":
         return get_bbot_service()
 
+    if tool == "gau":
+        return get_gau_service()
+
     # if tool == "arjun":
 
     #     return get_arjun_service()
-    # if tool == "gau":
-
-    #     return get_gau_service()
-
     # if tool == "akto":
 
     #     return get_akto_service()

@@ -88,3 +88,5 @@ reconnaissance:
     service_url: "http://httpx:8112"
   katana:
     service_url: "http://katana:8113"
+  gau:
+    service_url: "http://gau:8115"
