@@ -201,13 +201,13 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     # Build base command — arjun outputs JSON via -oJ
     cmd = ["arjun", "-oJ", str(output_path)]
 
-    # Input: single URL via -u, multiple via --urls file
+    # Input: single URL via -u, multiple via -i file
     if len(all_targets) == 1:
         cmd.extend(["-u", next(iter(all_targets))])
     else:
         targets_file = _write_targets_file(all_targets, workspace_root)
         logger.info(f"Wrote {len(all_targets)} targets to {targets_file}")
-        cmd.extend(["--urls", str(targets_file)])
+        cmd.extend(["-i", str(targets_file)])
 
     # Optional flags
     if config.get("method"):
