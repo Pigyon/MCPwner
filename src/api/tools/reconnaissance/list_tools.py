@@ -5,12 +5,15 @@ from typing import Optional
 RECONNAISSANCE_TOOLS = {
     "subfinder": {
         "name": "Subfinder",
-        "description": "Subdomain discovery tool",
+        "description": "Subdomain discovery tool. Accepts 'target' (domain) or 'domain' in config.",
         "category": "reconnaissance",
     },
     "amass": {
         "name": "Amass",
-        "description": "Network mapping and attack surface discovery",
+        "description": (
+            "Network mapping and attack surface discovery. "
+            "Config: target/domain (required), passive (bool), timeout (minutes, default: 30)."
+        ),
         "category": "reconnaissance",
     },
     "httpx": {
@@ -36,22 +39,30 @@ RECONNAISSANCE_TOOLS = {
     },
     "ffuf": {
         "name": "ffuf",
-        "description": "Fast web fuzzer for content discovery",
-        "category": "reconnaissance",
-    },
-    "nuclei": {
-        "name": "Nuclei",
-        "description": "Vulnerability scanner with template-based detection",
+        "description": (
+            "Fast web fuzzer for content discovery. "
+            "Supports chaining: pass source_tool='httpx' (or katana, gau) "
+            "to auto-extract a base URL from a previous scan's report. "
+            "Requires 'url' or 'target' with FUZZ keyword (auto-appended if missing). "
+            "Optional: wordlist, extensions, match_codes, filter_codes, threads, rate."
+        ),
         "category": "reconnaissance",
     },
     "nmap": {
         "name": "Nmap",
-        "description": "Network scanner for host and service discovery",
+        "description": (
+            "Network scanner for host and service discovery. "
+            "Config: target (required), ports (default: '1-1000'), timeout (seconds, default: 300)."
+        ),
         "category": "reconnaissance",
     },
     "masscan": {
         "name": "Masscan",
-        "description": "Fast port scanner for large-scale scanning",
+        "description": (
+            "Fast port scanner for large-scale scanning. "
+            "Config: target (required, IP or hostname), ports (default: '1-1000'), "
+            "rate (packets/sec, default: 100)."
+        ),
         "category": "reconnaissance",
     },
     "arjun": {
@@ -96,11 +107,6 @@ RECONNAISSANCE_TOOLS = {
         ),
         "category": "reconnaissance",
     },
-    "akto": {
-        "name": "Akto",
-        "description": "API security testing platform",
-        "category": "reconnaissance",
-    },
     "wafw00f": {
         "name": "wafw00f",
         "description": (
@@ -110,11 +116,6 @@ RECONNAISSANCE_TOOLS = {
             "Also accepts 'targets' list for batch testing or single 'target'. "
             "Optional: test_all (test all WAF signatures), verbose."
         ),
-        "category": "reconnaissance",
-    },
-    "gowitness": {
-        "name": "Gowitness",
-        "description": "Web screenshot utility for visual reconnaissance",
         "category": "reconnaissance",
     },
     "kiterunner": {

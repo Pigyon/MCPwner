@@ -1,7 +1,7 @@
 """Generic Reconnaissance scan tool."""
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from deps import (
     get_amass_service,
@@ -17,9 +17,6 @@ from deps import (
     get_subfinder_service,
     get_wafw00f_service,
     get_workspace_service,
-    # get_akto_service,
-    # get_gowitness_service,
-    # get_nuclei_service,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,7 +28,6 @@ SUPPORTED_TOOLS = [
     "httpx",
     "katana",
     "ffuf",
-    # "nuclei",
     "nmap",
     "masscan",
     "bbot",
@@ -39,8 +35,17 @@ SUPPORTED_TOOLS = [
     "gau",
     "wafw00f",
     "kiterunner",
-    # "akto",
-    # "gowitness",
+]
+
+# Tools that support source_tool chaining (target is optional when source_tool is set)
+CHAINABLE_TOOLS = [
+    "httpx",
+    "katana",
+    "arjun",
+    "gau",
+    "wafw00f",
+    "kiterunner",
+    "ffuf",
 ]
 
 
@@ -54,13 +59,31 @@ def run_reconnaissance_scan(
     """Execute a Reconnaissance scan using the specified tool.
 
     Args:
-        tool: Name of the reconnaissance tool to run. Supported: subfinder, amass, ffuf, nmap, masscan, bbot.
-        target: The domain, IP, URL, or CIDR to scan (e.g. "example.com"). Required.
+        tool: Name of the reconnaissance tool to run.
+              Supported: subfinder, amass, httpx, katana, ffuf, nmap, masscan, bbot,
+                         arjun, gau, wafw00f, kiterunner.
+        target: The domain, IP, URL, or CIDR to scan (e.g. "example.com").
+                Required unless config.source_tool is set (for chained scans).
         workspace_id: UUID of the workspace (optional - auto-creates if not provided).
                       IMPORTANT: reuse the same workspace_id across chained scans to keep
                       all reports together.
         scan_path: Optional relative path within workspace to scan.
         config: Optional tool-specific configuration dict for advanced options.
+
+            CHAINING — pass results from one tool to the next automatically:
+              Set source_tool to the name of a previously run tool in the same workspace.
+              The tool will auto-read targets from that tool's latest report.
+              Example: config={"source_tool": "httpx"} — reads URLs from httpx report.
+              When source_tool is set, 'target' is optional (can still be combined).
+
+              Supported source_tool values per tool:
+                httpx:      subfinder, amass, bbot, nmap, masscan, ffuf
+                katana:     httpx, subfinder, amass, bbot, nmap, masscan, ffuf, gau
+                arjun:      httpx, katana, gau, ffuf, bbot
+                gau:        subfinder, amass, bbot, httpx
+                wafw00f:    httpx, subfinder, amass, bbot, katana
+                kiterunner: httpx, katana, gau, subfinder, amass, bbot
+                ffuf:       httpx, katana, gau (extracts base URL for fuzzing)
 
             BBOT config (the scan response includes a structured summary with suggested_next_steps):
               preset: preset name(s), comma-separated. Default: 'subdomain-enum'.
@@ -73,26 +96,37 @@ def run_reconnaissance_scan(
               modules: space-separated e.g. 'httpx sslcert portscan'
               strict_scope: bool, fast_mode: bool, allow_deadly: bool
 
-            RECOMMENDED WORKFLOW — chain scans for best results:
-              1. Start with target='example.com' (defaults to subdomain-enum)
-              2. Review summary.subdomains and summary.open_ports in the response
-              3. Run again with preset='web-thorough' on interesting subdomains
-              4. Run with preset='nuclei' for vulnerability scanning on discovered URLs
+            AMASS config:
+              passive: bool (default: false) — passive-only enumeration, faster but fewer results
+              timeout: int — scan timeout in minutes (default: 30)
+
+            MASSCAN config:
+              rate: int — packets per second (default: 100, max: 10000)
+              ports: str — port range (default: "1-1000")
+
+            NMAP config:
+              timeout: int — per-host timeout in seconds (default: 300)
+              ports: str — port range (default: "1-1000")
 
     Returns:
-        Scan results with workspace_id, finding_count, and a structured summary containing:
-        subdomains, ip_addresses, open_ports, urls, technologies, vulnerabilities,
-        findings, emails, storage_buckets, event_type_counts, and suggested_next_steps.
+        Scan results with workspace_id, finding_count, and tool-specific summary.
     """
     # Resolve target from either the top-level param or config dict
     if target:
         config = {**(config or {}), "target": target}
     elif config and config.get("target"):
         target = config["target"]
+    elif config and config.get("source_tool") and tool in CHAINABLE_TOOLS:
+        # Chained scan — target comes from source_tool's report, not required here
+        pass
     else:
         return {
             "status": "error",
-            "error": "A 'target' is required (e.g. target='example.com'). What should the tool scan?",
+            "error": (
+                "A 'target' is required (e.g. target='example.com'). "
+                f"Or set config.source_tool to chain from a previous scan "
+                f"(supported for: {', '.join(CHAINABLE_TOOLS)})."
+            ),
         }
 
     if tool not in SUPPORTED_TOOLS:
@@ -153,10 +187,6 @@ def _get_service_for_tool(tool: str):
     if tool == "ffuf":
         return get_ffuf_service()
 
-    # if tool == "nuclei":
-
-    #     return get_nuclei_service()
-
     if tool == "nmap":
         return get_nmap_service()
 
@@ -177,13 +207,5 @@ def _get_service_for_tool(tool: str):
 
     if tool == "kiterunner":
         return get_kiterunner_service()
-
-    # if tool == "wafw00f":
-
-    #     return get_wafw00f_service()
-
-    # if tool == "gowitness":
-
-    #     return get_gowitness_service()
 
     raise ValueError(f"Unknown tool: {tool}")

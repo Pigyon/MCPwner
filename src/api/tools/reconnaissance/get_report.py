@@ -13,10 +13,9 @@ from deps import (
     get_katana_service,
     get_kiterunner_service,
     get_masscan_service,
+    get_nmap_service,
     get_subfinder_service,
     get_wafw00f_service,
-    # get_akto_service,
-    # get_gowitness_service,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,16 +27,13 @@ SUPPORTED_TOOLS = [
     "httpx",
     "katana",
     "ffuf",
-    # "nuclei",
-    # "nmap",
+    "nmap",
     "masscan",
     "bbot",
     "arjun",
     "gau",
     "wafw00f",
     "kiterunner",
-    # "akto",
-    # "gowitness",
 ]
 
 
@@ -94,13 +90,9 @@ def _get_service_for_tool(tool: str):
 
     if tool == "ffuf":
         return get_ffuf_service()
-    # if tool == "nuclei":
 
-    #     return get_nuclei_service()
-
-    # if tool == "nmap":
-
-    #     return get_nmap_service()
+    if tool == "nmap":
+        return get_nmap_service()
 
     if tool == "masscan":
         return get_masscan_service()
@@ -119,13 +111,5 @@ def _get_service_for_tool(tool: str):
 
     if tool == "kiterunner":
         return get_kiterunner_service()
-
-    # if tool == "akto":
-
-    #     return get_akto_service()
-
-    # if tool == "gowitness":
-
-    #     return get_gowitness_service()
 
     raise ValueError(f"Unknown tool: {tool}")
