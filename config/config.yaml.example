@@ -90,3 +90,5 @@ reconnaissance:
     service_url: "http://katana:8113"
   gau:
     service_url: "http://gau:8115"
+  arjun:
+    service_url: "http://arjun:8119"
