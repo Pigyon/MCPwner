@@ -57,6 +57,7 @@ services:
       - KATANA_SERVICE_URL=http://katana:8113
       - ARJUN_SERVICE_URL=http://arjun:8119
       - GAU_SERVICE_URL=http://gau:8115
+      - WAFW00F_SERVICE_URL=http://wafw00f:8120
     depends_on:
       - codeql
       - linguist
@@ -83,6 +84,7 @@ services:
       - katana
       - gau
       - arjun
+      - wafw00f
 
   codeql:
     # Using digest for reproducibility (equivalent to latest as of 2026-01-23)
@@ -778,6 +780,30 @@ services:
       - mcpwner-internal
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8119/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  wafw00f:
+    build:
+      context: .
+      dockerfile: docker/reconnaissance/wafw00f/Dockerfile
+    container_name: wafw00f-scanner
+    user: "0:0"  # Run as root
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8120:8120"
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8120/health"]
       interval: 30s
       timeout: 10s
       retries: 3
