@@ -8,13 +8,13 @@ from deps import (
     get_bbot_service,
     get_ffuf_service,
     get_httpx_service,
+    get_katana_service,
     get_masscan_service,
     get_subfinder_service,
     # get_akto_service,
     # get_arjun_service,
     # get_gau_service,
     # get_gowitness_service,
-    # get_katana_service,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ SUPPORTED_TOOLS = [
     "subfinder",
     "amass",
     "httpx",
-    # "katana",
+    "katana",
     "ffuf",
     # "nuclei",
     # "nmap",
@@ -86,9 +86,9 @@ def _get_service_for_tool(tool: str):
     if tool == "httpx":
         return get_httpx_service()
 
-    # if tool == "katana":
+    if tool == "katana":
+        return get_katana_service()
 
-    #     return get_katana_service()
     if tool == "ffuf":
         return get_ffuf_service()
     # if tool == "nuclei":

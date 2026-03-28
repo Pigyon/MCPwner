@@ -16,6 +16,7 @@ from clients.reconnaissance.amass import AmassClient
 from clients.reconnaissance.bbot import BbotClient
 from clients.reconnaissance.ffuf import FfufClient
 from clients.reconnaissance.httpx import HttpxClient
+from clients.reconnaissance.katana import KatanaClient
 from clients.reconnaissance.masscan import MasscanClient
 from clients.reconnaissance.nmap import NmapClient
 from clients.reconnaissance.subfinder import SubfinderClient
@@ -42,6 +43,7 @@ from services.reconnaissance.amass import AmassService
 from services.reconnaissance.bbot import BbotService
 from services.reconnaissance.ffuf import FfufService
 from services.reconnaissance.httpx import HttpxService
+from services.reconnaissance.katana import KatanaService
 from services.reconnaissance.masscan import MasscanService
 from services.reconnaissance.nmap import NmapService
 from services.reconnaissance.subfinder import SubfinderService
@@ -384,3 +386,17 @@ def get_httpx_client():
 @lru_cache(maxsize=None)
 def get_httpx_service():
     return HttpxService(get_workspace_repository(), get_httpx_client())
+
+
+@lru_cache(maxsize=None)
+def get_katana_client():
+    config = get_config()
+    katana_url = (
+        config.get("reconnaissance", {}).get("katana", {}).get("service_url", "http://katana:8113")
+    )
+    return KatanaClient(katana_url)
+
+
+@lru_cache(maxsize=None)
+def get_katana_service():
+    return KatanaService(get_workspace_repository(), get_katana_client())

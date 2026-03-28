@@ -54,6 +54,7 @@ services:
       - FFUF_SERVICE_URL=http://ffuf:8114
       - BBOT_SERVICE_URL=http://bbot:8118
       - HTTPX_SERVICE_URL=http://httpx:8112
+      - KATANA_SERVICE_URL=http://katana:8113
     depends_on:
       - codeql
       - linguist
@@ -77,6 +78,7 @@ services:
       - ffuf
       - bbot
       - httpx
+      - katana
 
   codeql:
     # Using digest for reproducibility (equivalent to latest as of 2026-01-23)
@@ -700,6 +702,30 @@ services:
       - mcpwner-internal
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8112/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  katana:
+    build:
+      context: .
+      dockerfile: docker/reconnaissance/katana/Dockerfile
+    container_name: katana-scanner
+    user: "0:0"  # Run as root
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8113:8113"
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8113/health"]
       interval: 30s
       timeout: 10s
       retries: 3
