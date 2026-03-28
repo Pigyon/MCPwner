@@ -51,7 +51,7 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
 
     # Add optional parameters before target
     if request.config:
-        # Add rate limit (packets per second, default to 100 for safety)
+        # Rate limit (packets per second, default to 100 for safety)
         rate = request.config.get("rate", 100)
         cmd.extend(["--rate", str(rate)])
 
@@ -63,10 +63,15 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         # Add banners (grab service banners)
         if request.config.get("banners", False):
             cmd.append("--banners")
+    else:
+        cmd.extend(["--rate", "100"])
 
     # Add resolved target and output file
     cmd.append(resolved_target)
     cmd.extend(["-oJ", str(output_path)])
+
+    # Masscan requires --wait to flush results before exit (default 10s is fine)
+    cmd.extend(["--wait", "5"])
 
     logger.info(f"Built masscan command: {cmd}")
     return cmd

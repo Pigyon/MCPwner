@@ -87,10 +87,14 @@ def scan(request: ScanRequest):
                 cmd.append("-passive")
             if request.config.get("brute", False):
                 cmd.append("-brute")
-            if "timeout" in request.config:
-                cmd.extend(["-timeout", str(request.config["timeout"])])
+            # Default timeout of 30 minutes to prevent indefinite hangs
+            timeout_min = request.config.get("timeout", 30)
+            cmd.extend(["-timeout", str(timeout_min)])
             if "max_dns_queries" in request.config:
                 cmd.extend(["-max-dns-queries", str(request.config["max_dns_queries"])])
+        else:
+            # Always set a default timeout
+            cmd.extend(["-timeout", "30"])
 
         # Execute scan
         logger.info(f"Executing Amass scan: {' '.join(cmd)}")

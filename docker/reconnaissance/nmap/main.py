@@ -151,7 +151,10 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     cmd = ["nmap", "-oX", str(xml_path)]
 
     # Add default timeouts to prevent hangs
-    cmd.extend(["--host-timeout", "5m"])  # 5 minute timeout per host
+    host_timeout = "5m"
+    if request.config and request.config.get("timeout"):
+        host_timeout = f"{request.config['timeout']}s"
+    cmd.extend(["--host-timeout", host_timeout])
     cmd.extend(["--max-retries", "2"])  # Limit retries
 
     # Add optional parameters
