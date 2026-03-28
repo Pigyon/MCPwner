@@ -14,6 +14,7 @@ from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
 from clients.reconnaissance.amass import AmassClient
 from clients.reconnaissance.arjun import ArjunClient
+from clients.reconnaissance.wafw00f import Wafw00fClient
 from clients.reconnaissance.bbot import BbotClient
 from clients.reconnaissance.ffuf import FfufClient
 from clients.reconnaissance.httpx import HttpxClient
@@ -43,6 +44,7 @@ from services.pmd import PMDService
 from services.psalm import PsalmService
 from services.reconnaissance.amass import AmassService
 from services.reconnaissance.arjun import ArjunService
+from services.reconnaissance.wafw00f import Wafw00fService
 from services.reconnaissance.bbot import BbotService
 from services.reconnaissance.ffuf import FfufService
 from services.reconnaissance.httpx import HttpxService
@@ -428,3 +430,15 @@ def get_arjun_client():
 @lru_cache(maxsize=None)
 def get_arjun_service():
     return ArjunService(get_workspace_repository(), get_arjun_client())
+
+
+@lru_cache(maxsize=None)
+def get_wafw00f_client():
+    config = get_config()
+    wafw00f_url = config.get("reconnaissance", {}).get("wafw00f", {}).get("service_url", "http://wafw00f:8120")
+    return Wafw00fClient(wafw00f_url)
+
+
+@lru_cache(maxsize=None)
+def get_wafw00f_service():
+    return Wafw00fService(get_workspace_repository(), get_wafw00f_client())

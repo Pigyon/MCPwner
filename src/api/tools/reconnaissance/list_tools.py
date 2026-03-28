@@ -103,7 +103,13 @@ RECONNAISSANCE_TOOLS = {
     },
     "wafw00f": {
         "name": "wafw00f",
-        "description": "Web Application Firewall detection tool",
+        "description": (
+            "Web Application Firewall detection and fingerprinting tool. "
+            "Supports chaining: pass source_tool='httpx' (or subfinder, amass, bbot, katana) "
+            "to auto-read targets from a previous scan's report. "
+            "Also accepts 'targets' list for batch testing or single 'target'. "
+            "Optional: test_all (test all WAF signatures), verbose."
+        ),
         "category": "reconnaissance",
     },
     "gowitness": {
