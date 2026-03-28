@@ -123,11 +123,18 @@ def create_scanner_app(
             # Check if report was created
             if not output_path.exists():
                 logger.error(f"Scan failed: {result.stderr}")
-                return {
-                    "status": "error",
-                    "error": f"Scan failed to generate report. Stderr: {result.stderr}",
-                    "output": result.stdout,
-                }
+                # Some tools (e.g. arjun) don't write output when they find nothing.
+                # If the tool exited cleanly (rc 0) and stderr is empty, treat as 0 findings.
+                if result.returncode == 0 and not result.stderr.strip():
+                    logger.info(f"{tool_name} exited cleanly but produced no report — writing empty result")
+                    with open(output_path, "w") as f:
+                        json.dump([], f)
+                else:
+                    return {
+                        "status": "error",
+                        "error": f"Scan failed to generate report. Stderr: {result.stderr}",
+                        "output": result.stdout,
+                    }
 
             # Parse report for finding count (simple heuristic or JSON parse)
             finding_count = 0
@@ -168,6 +175,8 @@ def create_scanner_app(
                 "timestamp": timestamp,
             }
 
+        except HTTPException:
+            raise
         except Exception as e:
             logger.exception("Scan execution error")
             raise HTTPException(status_code=500, detail=str(e))
