@@ -14,6 +14,7 @@ from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
 from clients.reconnaissance.amass import AmassClient
 from clients.reconnaissance.arjun import ArjunClient
+from clients.reconnaissance.kiterunner import KiterunnerClient
 from clients.reconnaissance.wafw00f import Wafw00fClient
 from clients.reconnaissance.bbot import BbotClient
 from clients.reconnaissance.ffuf import FfufClient
@@ -44,6 +45,7 @@ from services.pmd import PMDService
 from services.psalm import PsalmService
 from services.reconnaissance.amass import AmassService
 from services.reconnaissance.arjun import ArjunService
+from services.reconnaissance.kiterunner import KiterunnerService
 from services.reconnaissance.wafw00f import Wafw00fService
 from services.reconnaissance.bbot import BbotService
 from services.reconnaissance.ffuf import FfufService
@@ -442,3 +444,15 @@ def get_wafw00f_client():
 @lru_cache(maxsize=None)
 def get_wafw00f_service():
     return Wafw00fService(get_workspace_repository(), get_wafw00f_client())
+
+
+@lru_cache(maxsize=None)
+def get_kiterunner_client():
+    config = get_config()
+    kiterunner_url = config.get("reconnaissance", {}).get("kiterunner", {}).get("service_url", "http://kiterunner:8121")
+    return KiterunnerClient(kiterunner_url)
+
+
+@lru_cache(maxsize=None)
+def get_kiterunner_service():
+    return KiterunnerService(get_workspace_repository(), get_kiterunner_client())

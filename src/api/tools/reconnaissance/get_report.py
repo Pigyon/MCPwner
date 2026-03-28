@@ -11,6 +11,7 @@ from deps import (
     get_gau_service,
     get_httpx_service,
     get_katana_service,
+    get_kiterunner_service,
     get_masscan_service,
     get_subfinder_service,
     get_wafw00f_service,
@@ -34,6 +35,7 @@ SUPPORTED_TOOLS = [
     "arjun",
     "gau",
     "wafw00f",
+    "kiterunner",
     # "akto",
     # "gowitness",
 ]
@@ -114,6 +116,9 @@ def _get_service_for_tool(tool: str):
 
     if tool == "wafw00f":
         return get_wafw00f_service()
+
+    if tool == "kiterunner":
+        return get_kiterunner_service()
 
     # if tool == "akto":
 

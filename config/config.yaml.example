@@ -94,3 +94,5 @@ reconnaissance:
     service_url: "http://arjun:8119"
   wafw00f:
     service_url: "http://wafw00f:8120"
+  kiterunner:
+    service_url: "http://kiterunner:8121"
