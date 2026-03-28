@@ -10,6 +10,7 @@ from clients.brakeman import BrakemanClient
 from clients.codeql import CodeQLClient
 from clients.gosec import GosecClient
 from clients.linguist import LinguistClient
+from clients.nodejsscan import NodeJsScanClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
 from clients.reconnaissance.amass import AmassClient
@@ -41,6 +42,7 @@ from services.brakeman import BrakemanService
 from services.codeql import CodeQLService
 from services.gosec import GosecService
 from services.linguist import LinguistService
+from services.nodejsscan import NodeJsScanService
 from services.pmd import PMDService
 from services.psalm import PsalmService
 from services.reconnaissance.amass import AmassService
@@ -185,6 +187,18 @@ def get_psalm_client():
 @lru_cache(maxsize=None)
 def get_psalm_service():
     return PsalmService(get_workspace_repository(), get_psalm_client())
+
+
+@lru_cache(maxsize=None)
+def get_nodejsscan_client():
+    config = get_config()
+    nodejsscan_url = config.get("nodejsscan", {}).get("service_url", "http://nodejsscan:8088")
+    return NodeJsScanClient(nodejsscan_url)
+
+
+@lru_cache(maxsize=None)
+def get_nodejsscan_service():
+    return NodeJsScanService(get_workspace_repository(), get_nodejsscan_client())
 
 
 # SCA Clients and Services

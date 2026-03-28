@@ -68,6 +68,8 @@ PMD_LANGUAGES: List[str] = [
 
 PSALM_LANGUAGES: List[str] = ["php"]
 
+NODEJSSCAN_LANGUAGES: List[str] = ["javascript", "typescript"]
+
 # SCA tool supported languages
 PYTHON_LANGUAGES: List[str] = ["python"]
 JAVASCRIPT_LANGUAGES: List[str] = ["javascript", "typescript", "jsx", "tsx"]

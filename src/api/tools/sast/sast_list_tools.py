@@ -6,6 +6,7 @@ from config.languages import (
     BANDIT_LANGUAGES,
     BRAKEMAN_LANGUAGES,
     GOSEC_LANGUAGES,
+    NODEJSSCAN_LANGUAGES,
     PMD_LANGUAGES,
     PSALM_LANGUAGES,
     SEMGREP_LANGUAGES,
@@ -48,6 +49,12 @@ SAST_TOOLS = {
         "name": "Psalm",
         "description": "PHP static analysis tool",
         "languages": PSALM_LANGUAGES,
+        "category": "sast",
+    },
+    "nodejsscan": {
+        "name": "NodeJsScan",
+        "description": "Node.js/JavaScript SAST scanner for Express, Hapi, and other frameworks",
+        "languages": NODEJSSCAN_LANGUAGES,
         "category": "sast",
     },
 }
