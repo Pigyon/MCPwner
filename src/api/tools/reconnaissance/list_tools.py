@@ -15,7 +15,12 @@ RECONNAISSANCE_TOOLS = {
     },
     "httpx": {
         "name": "httpx",
-        "description": "HTTP toolkit for probing and analysis",
+        "description": (
+            "HTTP toolkit for probing and analysis of web servers. "
+            "Supports chaining: pass source_tool='subfinder' (or amass, bbot, nmap, masscan, ffuf) "
+            "to auto-read targets from a previous scan's report. "
+            "Also accepts 'targets' list for batch probing or single 'target'."
+        ),
         "category": "reconnaissance",
     },
     "katana": {

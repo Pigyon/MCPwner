@@ -84,3 +84,5 @@ logging:
 reconnaissance:
   bbot:
     service_url: "http://bbot:8118"
+  httpx:
+    service_url: "http://httpx:8112"
