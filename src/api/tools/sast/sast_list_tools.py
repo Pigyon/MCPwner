@@ -11,6 +11,7 @@ from config.languages import (
     PMD_LANGUAGES,
     PSALM_LANGUAGES,
     SEMGREP_LANGUAGES,
+    YASA_LANGUAGES,
 )
 from deps import get_linguist_service
 
@@ -62,6 +63,12 @@ SAST_TOOLS = {
         "name": "Joern",
         "description": "Code property graph based multi-language SAST platform for deep vulnerability analysis",
         "languages": JOERN_LANGUAGES,
+        "category": "sast",
+    },
+    "yasa": {
+        "name": "YASA",
+        "description": "Multi-language SAST engine with UAST-based taint analysis for JavaScript/TypeScript, Java, Go, and Python",
+        "languages": YASA_LANGUAGES,
         "category": "sast",
     },
 }
