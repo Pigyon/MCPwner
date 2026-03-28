@@ -9,6 +9,7 @@ from clients.bandit import BanditClient
 from clients.brakeman import BrakemanClient
 from clients.codeql import CodeQLClient
 from clients.gosec import GosecClient
+from clients.joern import JoernClient
 from clients.linguist import LinguistClient
 from clients.nodejsscan import NodeJsScanClient
 from clients.pmd import PMDClient
@@ -41,6 +42,7 @@ from services.bandit import BanditService
 from services.brakeman import BrakemanService
 from services.codeql import CodeQLService
 from services.gosec import GosecService
+from services.joern import JoernService
 from services.linguist import LinguistService
 from services.nodejsscan import NodeJsScanService
 from services.pmd import PMDService
@@ -199,6 +201,18 @@ def get_nodejsscan_client():
 @lru_cache(maxsize=None)
 def get_nodejsscan_service():
     return NodeJsScanService(get_workspace_repository(), get_nodejsscan_client())
+
+
+@lru_cache(maxsize=None)
+def get_joern_client():
+    config = get_config()
+    joern_url = config.get("joern", {}).get("service_url", "http://joern:8089")
+    return JoernClient(joern_url)
+
+
+@lru_cache(maxsize=None)
+def get_joern_service():
+    return JoernService(get_workspace_repository(), get_joern_client())
 
 
 # SCA Clients and Services

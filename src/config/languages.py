@@ -70,6 +70,20 @@ PSALM_LANGUAGES: List[str] = ["php"]
 
 NODEJSSCAN_LANGUAGES: List[str] = ["javascript", "typescript"]
 
+JOERN_LANGUAGES: List[str] = [
+    "c",
+    "cpp",
+    "csharp",
+    "go",
+    "java",
+    "javascript",
+    "kotlin",
+    "php",
+    "python",
+    "ruby",
+    "swift",
+]
+
 # SCA tool supported languages
 PYTHON_LANGUAGES: List[str] = ["python"]
 JAVASCRIPT_LANGUAGES: List[str] = ["javascript", "typescript", "jsx", "tsx"]

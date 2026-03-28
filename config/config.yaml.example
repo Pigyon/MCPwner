@@ -62,6 +62,11 @@ nodejsscan:
   # NodeJsScan service URL (internal Docker network)
   service_url: "http://nodejsscan:8088"
 
+# Joern Service
+joern:
+  # Joern service URL (internal Docker network)
+  service_url: "http://joern:8089"
+
 # Workspace settings
 workspace:
   # Maximum number of concurrent workspaces

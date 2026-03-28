@@ -6,6 +6,7 @@ from config.languages import (
     BANDIT_LANGUAGES,
     BRAKEMAN_LANGUAGES,
     GOSEC_LANGUAGES,
+    JOERN_LANGUAGES,
     NODEJSSCAN_LANGUAGES,
     PMD_LANGUAGES,
     PSALM_LANGUAGES,
@@ -55,6 +56,12 @@ SAST_TOOLS = {
         "name": "NodeJsScan",
         "description": "Node.js/JavaScript SAST scanner for Express, Hapi, and other frameworks",
         "languages": NODEJSSCAN_LANGUAGES,
+        "category": "sast",
+    },
+    "joern": {
+        "name": "Joern",
+        "description": "Code property graph based multi-language SAST platform for deep vulnerability analysis",
+        "languages": JOERN_LANGUAGES,
         "category": "sast",
     },
 }
