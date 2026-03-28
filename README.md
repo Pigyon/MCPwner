@@ -67,7 +67,11 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 
 |        <img src="readme/brakeman.png" width="100">        | <img src="readme/pmd.png" width="100"> | <img src="readme/nodejsscan.png" width="100" height="100"> |
 | :-------------------------------------------------------: | :------------------------------------: | :-----------------------------------------------------------------------------------------------------: |
-| [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  | [**NodeJsScan**](https://github.com/ajinabraham/NodeJsScan) |## Secrets Scanning Tools
+| [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  | [**NodeJsScan**](https://github.com/ajinabraham/NodeJsScan) |
+
+|        <img src="readme/joern.png" width="100">        |
+| :----------------------------------------------------: |
+| [**Joern**](https://github.com/joernio/joern) |## Secrets Scanning Tools
 
 |       <img src="readme/gitleaks.png" width="100">       |          <img src="readme/trufflehog.png" width="100">          |      <img src="readme/detect-secrets.png" width="100">       |      <img src="readme/whispers.png" width="100">       |      <img src="readme/hawk-eye.jpeg" width="100">      |
 | :-----------------------------------------------------: | :-------------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------------: |
@@ -330,7 +334,7 @@ MCPwner exposes the following tools through the MCP interface:
 
 **SAST (Static Analysis):**
 
-- `run_sast_scan` - Run static analysis tools (Semgrep, Bandit, Gosec, Brakeman, PMD, Psalm, NodeJsScan)
+- `run_sast_scan` - Run static analysis tools (Semgrep, Bandit, Gosec, Brakeman, PMD, Psalm, NodeJsScan, Joern)
 - `get_sast_report` - Retrieve SAST scan results
 - `sast_list_tools` - List available SAST tools
 
