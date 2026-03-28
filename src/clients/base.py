@@ -33,13 +33,17 @@ class BaseScanClient:
         payload = {"workspace_path": workspace_path}
         if scan_path:
             payload["scan_path"] = scan_path
-        if config:
-            payload["config"] = config
+        # Always include config (even if None) so the service can give a clear error
+        payload["config"] = config if config is not None else {}
 
         logger.info(f"Sending scan request to {self.service_url}/scan with payload: {payload}")
         try:
             response = requests.post(f"{self.service_url}/scan", json=payload, timeout=600)
-            response.raise_for_status()
+            if not response.ok:
+                body = response.text[:500]
+                raise RuntimeError(
+                    f"{self.tool_name} service returned HTTP {response.status_code}: {body}"
+                )
             return response.json()
         except requests.exceptions.ConnectionError as e:
             logger.error(f"Cannot connect to {self.tool_name} service at {self.service_url}: {e}")

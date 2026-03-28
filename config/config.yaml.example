@@ -79,3 +79,8 @@ logging:
   level: "INFO"
   # Log file path
   file: "/var/log/mcpwner/server.log"
+
+# Reconnaissance Services
+reconnaissance:
+  bbot:
+    service_url: "http://bbot:8118"
