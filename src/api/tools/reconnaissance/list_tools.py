@@ -48,6 +48,26 @@ RECONNAISSANCE_TOOLS = {
         "description": "HTTP parameter discovery tool",
         "category": "reconnaissance",
     },
+    "bbot": {
+        "name": "bbot",
+        "description": (
+            "OSINT automation framework with 90+ modules. Use run_reconnaissance_scan with tool='bbot'. "
+            "The scan returns a structured summary with subdomains, IPs, open ports, URLs, "
+            "technologies, vulnerabilities, and suggested_next_steps for chaining.\n\n"
+            "PRESETS (via config.preset, comma-separated for multiple):\n"
+            "  subdomain-enum (default) – 51 modules: DNS, certs, Shodan, APIs\n"
+            "  web-basic – 18 modules: HTTP probe, git, robots, GraphQL\n"
+            "  web-thorough – 32 modules: SSRF, smuggling, 403 bypass, lightfuzz\n"
+            "  nuclei / nuclei-intense – vulnerability scanning\n"
+            "  cloud-enum – S3/GCS/Azure bucket discovery\n"
+            "  email-enum – email harvesting\n"
+            "  spider – recursive web crawl\n"
+            "  paramminer – parameter brute-force\n"
+            "  deep – stacks 8 presets + aggressive (very slow)\n\n"
+            "WORKFLOW: subdomain-enum first → web-thorough on findings → nuclei for vulns"
+        ),
+        "category": "reconnaissance",
+    },
     "gau": {
         "name": "gau",
         "description": "Get All URLs from web archives",

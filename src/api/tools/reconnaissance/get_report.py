@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 from deps import (
     get_amass_service,
+    get_bbot_service,
     get_ffuf_service,
     get_masscan_service,
     get_subfinder_service,
@@ -28,6 +29,7 @@ SUPPORTED_TOOLS = [
     # "nuclei",
     # "nmap",
     "masscan",
+    "bbot",
     # "arjun",
     # "gau",
     # "akto",
@@ -100,6 +102,9 @@ def _get_service_for_tool(tool: str):
 
     if tool == "masscan":
         return get_masscan_service()
+
+    if tool == "bbot":
+        return get_bbot_service()
 
     # if tool == "arjun":
 

@@ -13,6 +13,7 @@ from clients.linguist import LinguistClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
 from clients.reconnaissance.amass import AmassClient
+from clients.reconnaissance.bbot import BbotClient
 from clients.reconnaissance.ffuf import FfufClient
 from clients.reconnaissance.masscan import MasscanClient
 from clients.reconnaissance.nmap import NmapClient
@@ -37,6 +38,7 @@ from services.linguist import LinguistService
 from services.pmd import PMDService
 from services.psalm import PsalmService
 from services.reconnaissance.amass import AmassService
+from services.reconnaissance.bbot import BbotService
 from services.reconnaissance.ffuf import FfufService
 from services.reconnaissance.masscan import MasscanService
 from services.reconnaissance.nmap import NmapService
@@ -354,3 +356,15 @@ def get_ffuf_client():
 @lru_cache(maxsize=None)
 def get_ffuf_service():
     return FfufService(get_workspace_repository(), get_ffuf_client())
+
+
+@lru_cache(maxsize=None)
+def get_bbot_client():
+    config = get_config()
+    bbot_url = config.get("reconnaissance", {}).get("bbot", {}).get("service_url", "http://bbot:8118")
+    return BbotClient(bbot_url)
+
+
+@lru_cache(maxsize=None)
+def get_bbot_service():
+    return BbotService(get_workspace_repository(), get_bbot_client())

@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 from deps import (
     get_amass_service,
+    get_bbot_service,
     get_ffuf_service,
     get_masscan_service,
     get_nmap_service,
@@ -32,6 +33,7 @@ SUPPORTED_TOOLS = [
     # "nuclei",
     "nmap",
     "masscan",
+    "bbot",
     # "arjun",
     # "gau",
     # "akto",
@@ -42,30 +44,54 @@ SUPPORTED_TOOLS = [
 
 def run_reconnaissance_scan(
     tool: str,
+    target: Optional[str] = None,
     workspace_id: Optional[str] = None,
     scan_path: Optional[str] = None,
     config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """
-
-    Execute a Reconnaissance scan using the specified tool.
-
+    """Execute a Reconnaissance scan using the specified tool.
 
     Args:
+        tool: Name of the reconnaissance tool to run. Supported: subfinder, amass, ffuf, nmap, masscan, bbot.
+        target: The domain, IP, URL, or CIDR to scan (e.g. "example.com"). Required.
+        workspace_id: UUID of the workspace (optional - auto-creates if not provided).
+                      IMPORTANT: reuse the same workspace_id across chained scans to keep
+                      all reports together.
+        scan_path: Optional relative path within workspace to scan.
+        config: Optional tool-specific configuration dict for advanced options.
 
-        tool: Name of the reconnaissance tool to run
+            BBOT config (the scan response includes a structured summary with suggested_next_steps):
+              preset: preset name(s), comma-separated. Default: 'subdomain-enum'.
+                  Quick:  'subdomain-enum' (51 modules, fast)
+                  Web:    'web-basic' (18 modules) or 'web-thorough' (32 modules, aggressive)
+                  Combo:  'subdomain-enum,web-basic' or 'subdomain-enum,web-thorough'
+                  Vuln:   'nuclei' or 'nuclei-intense'
+                  Full:   'deep' (stacks 8 presets + aggressive, very slow)
+              flags: 'passive', 'safe', or 'aggressive'
+              modules: space-separated e.g. 'httpx sslcert portscan'
+              strict_scope: bool, fast_mode: bool, allow_deadly: bool
 
-        workspace_id: UUID of the workspace (optional - auto-creates virtual workspace if not provided)
-
-        scan_path: Optional relative path within workspace to scan
-
-        config: Optional tool-specific configuration
-
+            RECOMMENDED WORKFLOW — chain scans for best results:
+              1. Start with target='example.com' (defaults to subdomain-enum)
+              2. Review summary.subdomains and summary.open_ports in the response
+              3. Run again with preset='web-thorough' on interesting subdomains
+              4. Run with preset='nuclei' for vulnerability scanning on discovered URLs
 
     Returns:
-
-        Scan results including workspace_id used
+        Scan results with workspace_id, finding_count, and a structured summary containing:
+        subdomains, ip_addresses, open_ports, urls, technologies, vulnerabilities,
+        findings, emails, storage_buckets, event_type_counts, and suggested_next_steps.
     """
+    # Resolve target from either the top-level param or config dict
+    if target:
+        config = {**(config or {}), "target": target}
+    elif config and config.get("target"):
+        target = config["target"]
+    else:
+        return {
+            "status": "error",
+            "error": "A 'target' is required (e.g. target='example.com'). What should the tool scan?",
+        }
 
     if tool not in SUPPORTED_TOOLS:
         return {
@@ -135,6 +161,9 @@ def _get_service_for_tool(tool: str):
 
     if tool == "masscan":
         return get_masscan_service()
+
+    if tool == "bbot":
+        return get_bbot_service()
 
     # if tool == "arjun":
 
