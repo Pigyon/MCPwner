@@ -117,6 +117,17 @@ RECONNAISSANCE_TOOLS = {
         "description": "Web screenshot utility for visual reconnaissance",
         "category": "reconnaissance",
     },
+    "kiterunner": {
+        "name": "Kiterunner",
+        "description": (
+            "Context-aware content discovery tool by Assetnote using API-aware wordlists. "
+            "Supports chaining: pass source_tool='httpx' (or katana, gau, subfinder, amass, bbot) "
+            "to auto-read targets from a previous scan's report. "
+            "Also accepts 'targets' list for batch scanning or single 'target'. "
+            "Optional: wordlist, threads, max_connection_per_host."
+        ),
+        "category": "reconnaissance",
+    },
 }
 
 
