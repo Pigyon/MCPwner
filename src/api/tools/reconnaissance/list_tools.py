@@ -25,7 +25,13 @@ RECONNAISSANCE_TOOLS = {
     },
     "katana": {
         "name": "Katana",
-        "description": "Web crawling framework for reconnaissance",
+        "description": (
+            "Web crawling framework for spidering and URL extraction. "
+            "Supports chaining: pass source_tool='httpx' (or subfinder, amass, bbot, nmap, masscan, ffuf, gau) "
+            "to auto-read targets from a previous scan's report. "
+            "Also accepts 'targets' list for batch crawling or single 'target'. "
+            "Optional: depth, js_crawl, headless, scope."
+        ),
         "category": "reconnaissance",
     },
     "ffuf": {
