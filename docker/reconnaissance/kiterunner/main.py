@@ -86,7 +86,12 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                 elif entry.get("input"):
                     targets.add(entry["input"])
             elif source_tool == "katana":
-                if entry.get("url"):
+                req = entry.get("request")
+                if isinstance(req, dict) and req.get("endpoint"):
+                    url = req["endpoint"]
+                    if url.startswith("http://") or url.startswith("https://"):
+                        targets.add(url)
+                elif entry.get("url"):
                     targets.add(entry["url"])
                 elif entry.get("endpoint"):
                     targets.add(entry["endpoint"])
