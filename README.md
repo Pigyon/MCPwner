@@ -25,13 +25,13 @@
 
 MCPwner is a Model Context Protocol (MCP) server that integrates security testing tools into LLM-driven workflows. It provides a unified interface for secret scanning, static analysis (SAST), software composition analysis (SCA), reconnaissance, dynamic application security testing (DAST), and vulnerability research including 0-day discovery.
 
-Instead of manually chaining tools and pasting outputs into your LLM, MCPwner standardizes and streams results directly into the model's working context. This enables continuous reasoning, correlation, and attack path discovery across the entire security research lifecycle - from mapping attack surfaces and identifying known vulnerabilities to uncovering novel attack vectors through dynamic testing.
+Instead of manually chaining tools and pasting outputs into your LLM, MCPwner standardizes and streams results directly into the model's working context. This enables continuous reasoning, correlation, and attack path discovery across the security research lifecycle - from mapping attack surfaces and identifying known vulnerabilities to uncovering novel attack vectors.
 
 > **Note**: This project is under active development. Learn more about MCPs [here](https://modelcontextprotocol.io).
 
 ## Key Features
 
-- 🔧 **Unified Interface**: Single MCP server integrating multiple security tools (SAST, SCA, secrets detection, reconnaissance, DAST)
+- 🔧 **Unified Interface**: Single MCP server integrating multiple security tools (SAST, SCA, secrets detection, reconnaissance)
 - 🤖 **LLM Integration**: Structured output formats (SARIF/JSON) for direct consumption by AI assistants
 - 🔍 **Continuous Analysis**: Correlate findings across multiple tools to identify attack paths and 0-day vulnerabilities
 - 🏗️ **Multi-Agent Architecture**: Designed for specialized agents collaborating across security phases
@@ -48,6 +48,14 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 |          <img src="readme/subfinder.png" width="100">          |     <img src="readme/amass.png" width="100">      | <img src="readme/nmap.png" width="100">  |         <img src="readme/masscan.png" width="100">          | <img src="readme/ffuf.png" width="100">  |
 | :------------------------------------------------------------: | :-----------------------------------------------: | :--------------------------------------: | :---------------------------------------------------------: | :--------------------------------------: |
 | [**Subfinder**](https://github.com/projectdiscovery/subfinder) | [**Amass**](https://github.com/owasp-amass/amass) | [**Nmap**](https://github.com/nmap/nmap) | [**Masscan**](https://github.com/robertdavidgraham/masscan) | [**ffuf**](https://github.com/ffuf/ffuf) |
+
+|        <img src="readme/bbot.png" width="100">         |        <img src="readme/httpx.png" width="100">        |       <img src="readme/katana.png" width="100">        |      <img src="https://img.shields.io/badge/gau-333333?style=for-the-badge" width="100" height="100">      |      <img src="readme/arjun.png" width="100">      |
+| :----------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------: | :------------------------------------------------: |
+| [**bbot**](https://github.com/blacklanternsecurity/bbot) | [**httpx**](https://github.com/projectdiscovery/httpx) | [**Katana**](https://github.com/projectdiscovery/katana) | [**gau**](https://github.com/lc/gau) | [**Arjun**](https://github.com/s0md3v/Arjun) |
+
+|        <img src="readme/wafw00f.png" width="100">        |          <img src="readme/kiterunner.png" width="100">          |
+| :------------------------------------------------------: | :-------------------------------------------------------------: |
+| [**wafw00f**](https://github.com/EnableSecurity/wafw00f) | [**Kiterunner**](https://github.com/assetnote/kiterunner) |
 
 ## Static Application Security Testing (SAST) Scanning Tools
 
@@ -69,19 +77,15 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 
 ## Software Composition Analysis (SCA) Tools
 
-|        <img src="readme/grype.png" width="50"><img src="readme/syft.png" width="50">        |      <img src="readme/osv-scanner.png" width="100">      |      <img src="readme/retirejs.png" width="100">       |
-| :-----------------------------------------------------------------------------------------: | :------------------------------------------------------: | :----------------------------------------------------: |
-| [**Grype**](https://github.com/anchore/grype) & [**Syft**](https://github.com/anchore/syft) | [**OSV-Scanner**](https://github.com/google/osv-scanner) | [**Retire.js**](https://github.com/RetireJS/retire.js) |
+| <img src="readme/grype.png" width="100"> | <img src="readme/syft.png" width="100"> | <img src="readme/osv-scanner.png" width="100"> | <img src="readme/retirejs.png" width="100"> |
+| :--------------------------------------: | :-------------------------------------: | :--------------------------------------------: | :-----------------------------------------: |
+| [**Grype**](https://github.com/anchore/grype) | [**Syft**](https://github.com/anchore/syft) | [**OSV-Scanner**](https://github.com/google/osv-scanner) | [**Retire.js**](https://github.com/RetireJS/retire.js) |
 
 </div>
 
 ## Future Tools
 
 The following tools are planned for future releases:
-
-### Reconnaissance
-
-- httpx, Katana, gau, Arjun, wafw00f, kiterunner
 
 ### Dynamic Application Security Testing (DAST)
 
@@ -105,7 +109,7 @@ The following tools are planned for future releases:
 
 ```
 "Enumerate and scan example.com"
-→ MCPwner chains: Subfinder + Amass → Masscan + Nmap → httpx → Katana + gau → ffuf + Arjun → Nuclei
+→ MCPwner chains: Subfinder + Amass → Masscan + Nmap → httpx → Katana + gau → ffuf + Arjun
 ```
 
 ### Scan a GitHub Repository for Secrets
@@ -272,10 +276,7 @@ graph LR
     SAST[SAST Tools]
     Secrets[Secrets Scanning]
     SCA[SCA Tools]
-    DAST[DAST Tools]
     Recon[Reconnaissance]
-    IaC[IaC Security]
-    Exploit[Exploitation]
     CodeQL[CodeQL Service]
     Linguist[Language Detection]
 
@@ -283,10 +284,7 @@ graph LR
     Server -->|HTTP| SAST
     Server -->|HTTP| Secrets
     Server -->|HTTP| SCA
-    Server -->|HTTP| DAST
     Server -->|HTTP| Recon
-    Server -->|HTTP| IaC
-    Server -->|HTTP| Exploit
     Server -->|HTTP| CodeQL
     Server -->|HTTP| Linguist
 
@@ -296,10 +294,7 @@ graph LR
     style SAST fill:#E74C3C,stroke:#C0392B,stroke-width:2px,color:#fff
     style Secrets fill:#9B59B6,stroke:#7D3C98,stroke-width:2px,color:#fff
     style SCA fill:#1ABC9C,stroke:#16A085,stroke-width:2px,color:#fff
-    style DAST fill:#E91E63,stroke:#C2185B,stroke-width:2px,color:#fff
     style Recon fill:#00BCD4,stroke:#0097A7,stroke-width:2px,color:#fff
-    style IaC fill:#8BC34A,stroke:#689F38,stroke-width:2px,color:#fff
-    style Exploit fill:#FF5722,stroke:#E64A19,stroke-width:2px,color:#fff
     style CodeQL fill:#E67E22,stroke:#CA6F1E,stroke-width:2px,color:#fff
     style Linguist fill:#3498DB,stroke:#2874A6,stroke-width:2px,color:#fff
     style IDE fill:none,stroke:#ddd,stroke-width:2px,stroke-dasharray: 5 5
@@ -337,41 +332,36 @@ MCPwner exposes the following tools through the MCP interface:
 
 **SAST (Static Analysis):**
 
-- `sast_scan` - Run static analysis tools (CodeQL, Semgrep, Bandit, Gosec, etc.)
-- `sast_get_report` - Retrieve SAST scan results
+- `run_sast_scan` - Run static analysis tools (Semgrep, Bandit, Gosec, Brakeman, PMD, Psalm)
+- `get_sast_report` - Retrieve SAST scan results
 - `sast_list_tools` - List available SAST tools
 
 **Secrets Detection:**
 
-- `secrets_scan` - Run secrets scanning tools (Gitleaks, TruffleHog, etc.)
-- `secrets_get_report` - Retrieve secrets scan results
+- `run_secrets_scan` - Run secrets scanning tools (Gitleaks, TruffleHog, Whispers, detect-secrets, Hawk-Eye)
+- `get_secrets_report` - Retrieve secrets scan results
 - `secrets_list_tools` - List available secrets scanning tools
 
 **SCA (Software Composition Analysis):**
 
-- `sca_scan` - Analyze dependencies for vulnerabilities (Grype, OSV-Scanner, etc.)
-- `sca_get_report` - Retrieve SCA scan results
+- `run_sca_scan` - Analyze dependencies for vulnerabilities (Grype, Syft, OSV-Scanner, Retire.js)
+- `get_sca_report` - Retrieve SCA scan results
 - `sca_list_tools` - List available SCA tools
 
 **Reconnaissance:**
 
-- `recon_scan` - Run reconnaissance tools (Nuclei, httpx, Katana, ffuf, etc.)
-- `recon_get_report` - Retrieve reconnaissance scan results
-- `recon_list_tools` - List available reconnaissance tools
+- `run_reconnaissance_scan` - Run a single reconnaissance tool (Subfinder, Amass, Nmap, Masscan, httpx, Katana, ffuf, bbot, gau, Arjun, wafw00f, Kiterunner)
+- `run_reconnaissance_chain` - Chain multiple reconnaissance tools sequentially
+- `get_reconnaissance_report` - Retrieve reconnaissance scan results
+- `reconnaissance_list_tools` - List available reconnaissance tools
 
-**DAST (Dynamic Analysis):**
+**CodeQL:**
 
-- `dast_scan` - Run dynamic security testing tools (OWASP ZAP, SQLmap, Dalfox, etc.)
-- `dast_get_report` - Retrieve DAST scan results
-- `dast_list_tools` - List available DAST tools
-
-**CodeQL Specific:**
-
-- `codeql_detect_languages` - Detect languages in codebase
-- `codeql_create_database` - Create CodeQL database for analysis
-- `codeql_list_databases` - List available CodeQL databases
-- `codeql_list_query_packs` - List available query packs
-- `codeql_execute_query` - Run specific CodeQL queries
+- `detect_languages` - Detect languages in codebase via Linguist
+- `create_codeql_database` - Create CodeQL database for analysis
+- `list_databases` - List available CodeQL databases
+- `list_query_packs` - List available query packs
+- `execute_query` - Run specific CodeQL queries
 
 **Health & Monitoring:**
 
