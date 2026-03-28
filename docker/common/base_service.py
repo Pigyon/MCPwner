@@ -150,16 +150,20 @@ def create_scanner_app(
                             data = json.load(f)
                             if isinstance(data, list):
                                 finding_count = len(data)
-                            elif isinstance(data, dict) and "results" in data:
-                                finding_count = len(data["results"])
+                            elif isinstance(data, dict):
+                                if "results" in data:
+                                    finding_count = len(data["results"])
+                                else:
+                                    # Single JSON object (e.g. one httpx NDJSON line) = 1 finding
+                                    finding_count = 1
                         except json.JSONDecodeError:
                             # Handle NDJSON (Newline Delimited JSON)
                             f.seek(0)
-                            lines = f.readlines()
+                            lines = [line for line in f.readlines() if line.strip()]
                             finding_count = len(lines)
                             # Convert NDJSON to JSON Array for easier consumption
                             try:
-                                json_array = [json.loads(line) for line in lines if line.strip()]
+                                json_array = [json.loads(line) for line in lines]
                                 with open(output_path, "w") as fw:
                                     json.dump(json_array, fw, indent=2)
                             except Exception as e:

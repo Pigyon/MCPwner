@@ -75,9 +75,15 @@ def _extract_base_url_from_report(report_path: Path, source_tool: str) -> Option
                 if url:
                     candidates.add(url)
             elif source_tool == "katana":
-                url = entry.get("url") or entry.get("endpoint", "")
-                if url:
-                    candidates.add(url)
+                req = entry.get("request")
+                if isinstance(req, dict) and req.get("endpoint"):
+                    url = req["endpoint"]
+                    if url.startswith("http://") or url.startswith("https://"):
+                        candidates.add(url)
+                elif entry.get("url"):
+                    candidates.add(entry["url"])
+                elif entry.get("endpoint"):
+                    candidates.add(entry["endpoint"])
             elif source_tool == "gau":
                 for key in ("url", "data"):
                     val = entry.get(key, "")
