@@ -1,15 +1,20 @@
 """
 ffuf Service - Fast Web Fuzzer
 
+Supports chaining: for example pass source_tool='httpx' (or katana, gau) to auto-extract
+a base URL from a previous scan's report for fuzzing.
+
 Available wordlists:
 - /usr/share/wordlists/common.txt - Common files and directories
 - /usr/share/wordlists/parameters.txt - Common HTTP parameters
 - /usr/share/wordlists/subdomains.txt - Common subdomain names
 """
 
+import json
 import logging
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List, Optional, Set
+from urllib.parse import urlparse
 
 from common.base_service import create_scanner_app
 from common.models import ScanRequest
@@ -20,7 +25,6 @@ logger = logging.getLogger(__name__)
 TOOL_NAME = "ffuf"
 VERSION_CMD = ["ffuf", "-V"]
 
-# Available wordlists
 WORDLISTS = {
     "common": "/usr/share/wordlists/common.txt",
     "parameters": "/usr/share/wordlists/parameters.txt",
@@ -28,11 +32,82 @@ WORDLISTS = {
 }
 
 
+def _resolve_workspace_root(workspace_path: str) -> Path:
+    parts = Path(workspace_path).parts
+    if "workspaces" in parts:
+        idx = parts.index("workspaces")
+        if idx + 1 < len(parts):
+            return Path(*parts[: idx + 2])
+    return Path(workspace_path)
+
+
+def _find_latest_report(workspace_root: Path, source_tool: str) -> Optional[Path]:
+    report_dir = workspace_root / "reports" / "reconnaissance" / source_tool
+    if not report_dir.exists():
+        return None
+    reports = sorted(report_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return reports[0] if reports else None
+
+
+def _extract_base_url_from_report(report_path: Path, source_tool: str) -> Optional[str]:
+    """Extract a single base URL from a previous tool's report for ffuf fuzzing."""
+    try:
+        with open(report_path, "r") as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                f.seek(0)
+                data = [json.loads(line) for line in f if line.strip()]
+
+        if not isinstance(data, list):
+            data = [data]
+
+        candidates: Set[str] = set()
+        for entry in data:
+            if not isinstance(entry, dict):
+                val = str(entry).strip()
+                if val.startswith("http://") or val.startswith("https://"):
+                    candidates.add(val)
+                continue
+
+            if source_tool == "httpx":
+                url = entry.get("url") or entry.get("input", "")
+                if url:
+                    candidates.add(url)
+            elif source_tool == "katana":
+                url = entry.get("url") or entry.get("endpoint", "")
+                if url:
+                    candidates.add(url)
+            elif source_tool == "gau":
+                for key in ("url", "data"):
+                    val = entry.get(key, "")
+                    if isinstance(val, str) and val.startswith("http"):
+                        candidates.add(val)
+                        break
+
+        if not candidates:
+            return None
+
+        # Return the shortest URL (most likely the base/root)
+        return min(candidates, key=lambda u: len(u))
+
+    except Exception as e:
+        logger.warning(f"Failed to extract base URL from {report_path}: {e}")
+        return None
+
+
+def _get_base_url(url: str) -> str:
+    """Strip path from URL to get scheme://host."""
+    parsed = urlparse(url)
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
 def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     """Build ffuf scan command.
 
     Config options:
-    - url/target: Target URL with FUZZ keyword (required)
+    - url/target: Target URL with FUZZ keyword (required, or derived from source_tool)
+    - source_tool: Auto-extract base URL from a previous scan (httpx, katana, gau)
     - wordlist: Path to wordlist or name (common/parameters/subdomains)
     - extensions: Comma-separated file extensions (e.g., "php,html,js")
     - match_codes: HTTP status codes to match (e.g., "200,301")
@@ -44,74 +119,66 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     - timeout: Request timeout in seconds
     - silent: Silent mode (boolean)
     """
-    # Get URL from config (accept both 'url' and 'target' for compatibility)
-    url = ""
-    if request.config:
-        url = request.config.get("url") or request.config.get("target", "")
+    config: Dict[str, Any] = request.config or {}
+    workspace_root = _resolve_workspace_root(request.workspace_path)
+
+    # Resolve URL: explicit config takes priority, then source_tool
+    url = config.get("url") or config.get("target", "")
+
+    if not url and config.get("source_tool"):
+        source_tool = config["source_tool"].strip()
+        report_path = _find_latest_report(workspace_root, source_tool)
+        if not report_path:
+            raise ValueError(
+                f"No report found for source tool '{source_tool}' in workspace. "
+                f"Run {source_tool} first, then chain with ffuf."
+            )
+        base_url = _extract_base_url_from_report(report_path, source_tool)
+        if not base_url:
+            raise ValueError(
+                f"Could not extract a base URL from {source_tool} report at {report_path}"
+            )
+        url = _get_base_url(base_url)
+        logger.info(f"Derived base URL from {source_tool} report: {url}")
 
     if not url:
-        raise ValueError("URL is required in config for ffuf scan (use 'url' or 'target' field)")
+        raise ValueError(
+            "URL is required for ffuf scan. Provide 'url'/'target' in config, "
+            "or set 'source_tool' to chain from a previous scan (httpx, katana, gau)."
+        )
 
     # Auto-add FUZZ keyword if missing
     if "FUZZ" not in url:
-        # Smart FUZZ placement based on URL structure
         if url.endswith("/"):
             url = url + "FUZZ"
-            logger.info(f"Auto-added FUZZ keyword to URL: {url}")
         else:
             url = url + "/FUZZ"
-            logger.info(f"Auto-added /FUZZ to URL: {url}")
+        logger.info(f"Auto-added FUZZ keyword to URL: {url}")
 
-    # Get wordlist from config - support both path and name
     wordlist = "/usr/share/wordlists/common.txt"
-    if request.config and "wordlist" in request.config:
-        wordlist_input = request.config["wordlist"]
-        # Check if it's a named wordlist, otherwise use as path
-        wordlist = WORDLISTS.get(wordlist_input, wordlist_input)
+    if "wordlist" in config:
+        wordlist = WORDLISTS.get(config["wordlist"], config["wordlist"])
 
-    logger.info(f"Using wordlist: {wordlist}")
-
-    # ffuf command with JSON output
-    # FUZZ keyword in URL will be replaced with wordlist entries
     cmd = ["ffuf", "-u", url, "-w", wordlist, "-o", str(output_path), "-of", "json"]
 
-    # Add optional parameters if provided
-    if request.config:
-        # Extensions (e.g., "php,html,js")
-        if "extensions" in request.config:
-            cmd.extend(["-e", request.config["extensions"]])
-
-        # Match HTTP status codes (default: 200,204,301,302,307,401,403,405)
-        if "match_codes" in request.config:
-            cmd.extend(["-mc", request.config["match_codes"]])
-
-        # Filter HTTP status codes
-        if "filter_codes" in request.config:
-            cmd.extend(["-fc", request.config["filter_codes"]])
-
-        # Match response size
-        if "match_size" in request.config:
-            cmd.extend(["-ms", str(request.config["match_size"])])
-
-        # Filter response size
-        if "filter_size" in request.config:
-            cmd.extend(["-fs", str(request.config["filter_size"])])
-
-        # Threads (default: 40)
-        if "threads" in request.config:
-            cmd.extend(["-t", str(request.config["threads"])])
-
-        # Rate limit (requests per second)
-        if "rate" in request.config:
-            cmd.extend(["-rate", str(request.config["rate"])])
-
-        # Timeout (seconds)
-        if "timeout" in request.config:
-            cmd.extend(["-timeout", str(request.config["timeout"])])
-
-        # Silent mode
-        if request.config.get("silent", False):
-            cmd.append("-s")
+    if config.get("extensions"):
+        cmd.extend(["-e", config["extensions"]])
+    if config.get("match_codes"):
+        cmd.extend(["-mc", config["match_codes"]])
+    if config.get("filter_codes"):
+        cmd.extend(["-fc", config["filter_codes"]])
+    if config.get("match_size"):
+        cmd.extend(["-ms", str(config["match_size"])])
+    if config.get("filter_size"):
+        cmd.extend(["-fs", str(config["filter_size"])])
+    if config.get("threads"):
+        cmd.extend(["-t", str(config["threads"])])
+    if config.get("rate"):
+        cmd.extend(["-rate", str(config["rate"])])
+    if config.get("timeout"):
+        cmd.extend(["-timeout", str(config["timeout"])])
+    if config.get("silent", False):
+        cmd.append("-s")
 
     return cmd
 
