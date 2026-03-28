@@ -15,6 +15,7 @@ from clients.psalm import PsalmClient
 from clients.reconnaissance.amass import AmassClient
 from clients.reconnaissance.bbot import BbotClient
 from clients.reconnaissance.ffuf import FfufClient
+from clients.reconnaissance.httpx import HttpxClient
 from clients.reconnaissance.masscan import MasscanClient
 from clients.reconnaissance.nmap import NmapClient
 from clients.reconnaissance.subfinder import SubfinderClient
@@ -40,6 +41,7 @@ from services.psalm import PsalmService
 from services.reconnaissance.amass import AmassService
 from services.reconnaissance.bbot import BbotService
 from services.reconnaissance.ffuf import FfufService
+from services.reconnaissance.httpx import HttpxService
 from services.reconnaissance.masscan import MasscanService
 from services.reconnaissance.nmap import NmapService
 from services.reconnaissance.subfinder import SubfinderService
@@ -368,3 +370,17 @@ def get_bbot_client():
 @lru_cache(maxsize=None)
 def get_bbot_service():
     return BbotService(get_workspace_repository(), get_bbot_client())
+
+
+@lru_cache(maxsize=None)
+def get_httpx_client():
+    config = get_config()
+    httpx_url = (
+        config.get("reconnaissance", {}).get("httpx", {}).get("service_url", "http://httpx:8112")
+    )
+    return HttpxClient(httpx_url)
+
+
+@lru_cache(maxsize=None)
+def get_httpx_service():
+    return HttpxService(get_workspace_repository(), get_httpx_client())
