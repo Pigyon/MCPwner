@@ -13,6 +13,7 @@ from clients.linguist import LinguistClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
 from clients.reconnaissance.amass import AmassClient
+from clients.reconnaissance.arjun import ArjunClient
 from clients.reconnaissance.bbot import BbotClient
 from clients.reconnaissance.ffuf import FfufClient
 from clients.reconnaissance.httpx import HttpxClient
@@ -41,6 +42,7 @@ from services.linguist import LinguistService
 from services.pmd import PMDService
 from services.psalm import PsalmService
 from services.reconnaissance.amass import AmassService
+from services.reconnaissance.arjun import ArjunService
 from services.reconnaissance.bbot import BbotService
 from services.reconnaissance.ffuf import FfufService
 from services.reconnaissance.httpx import HttpxService
@@ -414,3 +416,15 @@ def get_gau_client():
 @lru_cache(maxsize=None)
 def get_gau_service():
     return GauService(get_workspace_repository(), get_gau_client())
+
+
+@lru_cache(maxsize=None)
+def get_arjun_client():
+    config = get_config()
+    arjun_url = config.get("reconnaissance", {}).get("arjun", {}).get("service_url", "http://arjun:8119")
+    return ArjunClient(arjun_url)
+
+
+@lru_cache(maxsize=None)
+def get_arjun_service():
+    return ArjunService(get_workspace_repository(), get_arjun_client())

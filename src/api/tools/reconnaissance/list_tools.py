@@ -56,7 +56,13 @@ RECONNAISSANCE_TOOLS = {
     },
     "arjun": {
         "name": "Arjun",
-        "description": "HTTP parameter discovery tool",
+        "description": (
+            "HTTP parameter discovery tool for finding hidden query and body parameters. "
+            "Supports chaining: pass source_tool='httpx' (or katana, gau, ffuf, bbot) "
+            "to auto-read URLs from a previous scan's report. "
+            "Also accepts 'targets' list for batch testing or single 'target'. "
+            "Optional: method (GET/POST/JSON), headers, threads, wordlist."
+        ),
         "category": "reconnaissance",
     },
     "bbot": {
