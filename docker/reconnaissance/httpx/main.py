@@ -142,6 +142,43 @@ def _find_latest_report(workspace_root: Path, source_tool: str) -> Optional[Path
     return reports[0] if reports else None
 
 
+def _deduplicate_targets(targets: Set[str]) -> Set[str]:
+    """Remove bare domains/IPs that are already represented by a full URL in the set.
+
+    e.g. if both "scanme.nmap.org" and "http://scanme.nmap.org/" are present,
+    keep only the full URL. Also normalizes by stripping trailing slashes from URLs.
+    """
+    # Normalize: strip trailing slashes from all entries
+    normalized: Set[str] = set()
+    for t in targets:
+        normalized.add(t.rstrip("/"))
+
+    # Collect hostnames that already have a full URL representation
+    covered_hosts: Set[str] = set()
+    for t in normalized:
+        if t.startswith("http://") or t.startswith("https://"):
+            try:
+                # Extract host (without port) from the URL
+                without_scheme = t.split("://", 1)[1]
+                host = without_scheme.split("/")[0].split(":")[0]
+                covered_hosts.add(host)
+            except IndexError:
+                pass
+
+    # Drop bare entries whose host is already covered by a full URL
+    result: Set[str] = set()
+    for t in normalized:
+        if t.startswith("http://") or t.startswith("https://"):
+            result.add(t)
+        else:
+            # bare domain or IP — only keep if not already covered
+            bare_host = t.split(":")[0]  # strip port if present
+            if bare_host not in covered_hosts:
+                result.add(t)
+
+    return result
+
+
 def _write_targets_file(targets: Set[str], workspace_root: Path) -> Path:
     """Write targets to a temporary file and return its path."""
     targets_dir = workspace_root / "tmp" / "httpx"
@@ -197,6 +234,10 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
             "At least one target is required. Provide 'target' (single), "
             "'targets' (list), or 'source_tool' (auto-chain from previous scan) in config."
         )
+
+    # Deduplicate: drop bare domains already covered by a full URL form
+    all_targets = _deduplicate_targets(all_targets)
+    logger.info(f"Final deduplicated target count: {len(all_targets)}")
 
     # Build command
     if len(all_targets) == 1:
