@@ -42,6 +42,7 @@ services:
       - PSALM_SERVICE_URL=http://psalm:8087
       - NODEJSSCAN_SERVICE_URL=http://nodejsscan:8088
       - JOERN_SERVICE_URL=http://joern:8089
+      - YASA_SERVICE_URL=http://yasa:8095
       - WHISPERS_SERVICE_URL=http://whispers:8092
       - DETECT_SECRETS_SERVICE_URL=http://detect-secrets:8093
       - HAWK_SCANNER_SERVICE_URL=http://hawk-scanner:8094
@@ -72,6 +73,7 @@ services:
       - psalm
       - nodejsscan
       - joern
+      - yasa
       - whispers
       - detect-secrets
       - hawk-scanner
@@ -360,6 +362,32 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+
+  yasa:
+    build:
+      context: .
+      dockerfile: docker/sast/yasa/Dockerfile
+    container_name: yasa-scanner
+    user: "0:0"
+    read_only: false
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8095:8095"
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=2g
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8095/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   gitleaks:
     build:

@@ -11,6 +11,7 @@ from clients.codeql import CodeQLClient
 from clients.gosec import GosecClient
 from clients.joern import JoernClient
 from clients.linguist import LinguistClient
+from clients.yasa import YASAClient
 from clients.nodejsscan import NodeJsScanClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
@@ -44,6 +45,7 @@ from services.codeql import CodeQLService
 from services.gosec import GosecService
 from services.joern import JoernService
 from services.linguist import LinguistService
+from services.yasa import YASAService
 from services.nodejsscan import NodeJsScanService
 from services.pmd import PMDService
 from services.psalm import PsalmService
@@ -213,6 +215,18 @@ def get_joern_client():
 @lru_cache(maxsize=None)
 def get_joern_service():
     return JoernService(get_workspace_repository(), get_joern_client())
+
+
+@lru_cache(maxsize=None)
+def get_yasa_client():
+    config = get_config()
+    yasa_url = config.get("yasa", {}).get("service_url", "http://yasa:8090")
+    return YASAClient(yasa_url)
+
+
+@lru_cache(maxsize=None)
+def get_yasa_service():
+    return YASAService(get_workspace_repository(), get_yasa_client())
 
 
 # SCA Clients and Services

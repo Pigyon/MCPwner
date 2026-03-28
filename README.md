@@ -65,13 +65,11 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 
 <br>
 
-|        <img src="readme/brakeman.png" width="100">        | <img src="readme/pmd.png" width="100"> | <img src="readme/nodejsscan.png" width="100" height="100"> |
-| :-------------------------------------------------------: | :------------------------------------: | :-----------------------------------------------------------------------------------------------------: |
-| [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  | [**NodeJsScan**](https://github.com/ajinabraham/NodeJsScan) |
+|        <img src="readme/brakeman.png" width="100">        | <img src="readme/pmd.png" width="100"> | <img src="readme/nodejsscan.png" width="100"> |        <img src="readme/joern.png" width="100">        | <img src="readme/yasa.png" width="100"> |
+| :-------------------------------------------------------: | :------------------------------------: | :-------------------------------------------: | :----------------------------------------------------: | :-------------------------------------: |
+| [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  | [**NodeJsScan**](https://github.com/ajinabraham/NodeJsScan) | [**Joern**](https://github.com/joernio/joern) | [**YASA**](https://github.com/antgroup/YASA-Engine) |
 
-|        <img src="readme/joern.png" width="100">        |
-| :----------------------------------------------------: |
-| [**Joern**](https://github.com/joernio/joern) |## Secrets Scanning Tools
+## Secrets Scanning Tools
 
 |       <img src="readme/gitleaks.png" width="100">       |          <img src="readme/trufflehog.png" width="100">          |      <img src="readme/detect-secrets.png" width="100">       |      <img src="readme/whispers.png" width="100">       |      <img src="readme/hawk-eye.jpeg" width="100">      |
 | :-----------------------------------------------------: | :-------------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------------: |
@@ -334,7 +332,7 @@ MCPwner exposes the following tools through the MCP interface:
 
 **SAST (Static Analysis):**
 
-- `run_sast_scan` - Run static analysis tools (Semgrep, Bandit, Gosec, Brakeman, PMD, Psalm, NodeJsScan, Joern)
+- `run_sast_scan` - Run static analysis tools (Semgrep, Bandit, Gosec, Brakeman, PMD, Psalm, NodeJsScan, Joern, YASA)
 - `get_sast_report` - Retrieve SAST scan results
 - `sast_list_tools` - List available SAST tools
 

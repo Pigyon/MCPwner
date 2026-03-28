@@ -4,7 +4,6 @@ Single source of truth for supported languages across all tools.
 
 from typing import Dict, List
 
-# CodeQL supported languages and their extensions
 CODEQL_LANGUAGES: Dict[str, List[str]] = {
     "cpp": [".cpp", ".cc", ".cxx", ".c", ".h", ".hpp"],
     "csharp": [".cs"],
@@ -84,6 +83,14 @@ JOERN_LANGUAGES: List[str] = [
     "swift",
 ]
 
-# SCA tool supported languages
+YASA_LANGUAGES: List[str] = [
+    "javascript",
+    "typescript",
+    "go",
+    "golang",
+    "java",
+    "python",
+]
+
 PYTHON_LANGUAGES: List[str] = ["python"]
 JAVASCRIPT_LANGUAGES: List[str] = ["javascript", "typescript", "jsx", "tsx"]
