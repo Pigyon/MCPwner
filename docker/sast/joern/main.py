@@ -122,6 +122,50 @@ def scan(request: ScanRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _resolve_report_dir(workspace_path: str) -> Path:
+    """Resolve the report directory for joern given a workspace path."""
+    parts = Path(workspace_path).parts
+    if "workspaces" in parts:
+        idx = parts.index("workspaces")
+        if idx + 1 < len(parts):
+            return Path(*parts[: idx + 2]) / "reports" / "sast" / "joern"
+    return Path(workspace_path).parent / "reports" / "sast" / "joern"
+
+
+@app.get("/reports")
+def list_reports(workspace_path: str):
+    """List all available report timestamps for joern."""
+    report_dir = _resolve_report_dir(workspace_path)
+    if not report_dir.exists():
+        return {"status": "success", "reports": []}
+    reports = sorted(
+        [f.stem for f in report_dir.iterdir() if f.is_file()],
+        reverse=True,
+    )
+    return {"status": "success", "reports": reports}
+
+
+@app.get("/report/{timestamp}")
+def get_report(timestamp: str, workspace_path: str):
+    """Retrieve the full contents of a joern scan report by its timestamp."""
+    report_dir = _resolve_report_dir(workspace_path)
+    for ext in ("json", "sarif"):
+        candidate = report_dir / f"{timestamp}.{ext}"
+        if candidate.exists():
+            try:
+                with open(candidate) as f:
+                    data = json.load(f)
+                return {"status": "success", "report": data, "report_path": str(candidate)}
+            except json.JSONDecodeError:
+                with open(candidate) as f:
+                    raw = f.read()
+                return {"status": "success", "report_raw": raw, "report_path": str(candidate)}
+    raise HTTPException(
+        status_code=404,
+        detail=f"No report found for timestamp '{timestamp}' in {report_dir}",
+    )
+
+
 def _parse_joern_scan_output(output: str) -> list:
     """Parse joern-scan text output into structured JSON.
 
