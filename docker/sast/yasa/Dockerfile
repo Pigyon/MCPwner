@@ -15,7 +15,8 @@ RUN curl -fsSL \
     -o /tmp/yasa.zip \
     && unzip /tmp/yasa.zip -d /opt/yasa \
     && rm /tmp/yasa.zip \
-    && chmod +x /opt/yasa/yasa
+    && chmod +x /opt/yasa/yasa-engine-linux-x64 \
+    && ln -s /opt/yasa/yasa-engine-linux-x64 /opt/yasa/yasa
 
 ENV PATH="/opt/yasa:${PATH}"
 
@@ -28,6 +29,6 @@ WORKDIR /service
 COPY docker/common /service/common
 COPY docker/sast/yasa/main.py .
 
-EXPOSE 8090
+EXPOSE 8095
 
-CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8090"]
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8095"]
