@@ -1,7 +1,15 @@
+import json
+import logging
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
-from common.base_service import create_scanner_app
-from common.models import ScanRequest
+from common.models import HealthResponse, ScanRequest, VersionResponse
+from fastapi import FastAPI, HTTPException
+
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="YASA Service", version="1.0.0")
 
 # YASA language map: normalise incoming language names to what YASA accepts
 _LANG_MAP = {
@@ -15,70 +23,33 @@ _LANG_MAP = {
     "python": "python",
 }
 
-# Languages YASA auto-detects when --language is omitted; we still require it
-# for clarity, but fall back to auto-detection if not provided.
 _SUPPORTED = set(_LANG_MAP.keys())
 
-
-def build_yasa_cmd(request: ScanRequest, output_path: Path):
-    full_scan_path = Path(request.workspace_path) / request.scan_path
-    config = request.config or {}
-
-    # YASA writes findings.sarif into the report directory; output_path IS
-    # that directory (base_service passes a file path, so we use its parent
-    # and rename afterwards in a post-processing step — see note below).
-    # We pass the directory as --report and let YASA name the file itself.
-    report_dir = output_path.parent
-
-    cmd = [
-        "yasa",
-        "--sourcePath", str(full_scan_path),
-        "--report", str(report_dir),
-        "--format", "sarif",
-    ]
-
-    # Language: explicit > config > auto-detect
-    lang = config.get("language", "")
-    if lang:
-        mapped = _LANG_MAP.get(lang.lower())
-        if not mapped:
-            raise ValueError(
-                f"Unsupported language '{lang}'. "
-                f"Supported: {', '.join(sorted(_SUPPORTED))}"
-            )
-        cmd.extend(["--language", mapped])
-
-    if "analyzer" in config:
-        cmd.extend(["--analyzer", config["analyzer"]])
-
-    if "checkerIds" in config:
-        cmd.extend(["--checkerIds", ",".join(config["checkerIds"])])
-
-    if "checkerPackIds" in config:
-        cmd.extend(["--checkerPackIds", ",".join(config["checkerPackIds"])])
-
-    if config.get("ruleConfigFile"):
-        cmd.extend(["--ruleConfigFile", config["ruleConfigFile"]])
-
-    return cmd
+# File-extension based auto-detection for when no language is specified
+_EXT_TO_LANG = {
+    ".js": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
+    ".ts": "javascript",
+    ".tsx": "javascript",
+    ".jsx": "javascript",
+    ".go": "golang",
+    ".java": "java",
+    ".py": "python",
+}
 
 
-# YASA names its output file "findings.sarif" inside the report dir.
-# base_service expects the report at `output_path` exactly, so we subclass
-# the app and override /scan to handle YASA's naming convention.
-
-import json
-import logging
-import subprocess
-from datetime import datetime, timezone
-
-from fastapi import FastAPI, HTTPException
-
-logger = logging.getLogger(__name__)
-
-app = FastAPI(title="YASA Service", version="1.0.0")
-
-from common.models import HealthResponse, VersionResponse
+def _detect_language(source_path: Path) -> str:
+    """Detect dominant language from file extensions in source directory."""
+    counts: dict[str, int] = {}
+    for f in source_path.rglob("*"):
+        if f.is_file() and "node_modules" not in f.parts and ".git" not in f.parts:
+            lang = _EXT_TO_LANG.get(f.suffix.lower())
+            if lang:
+                counts[lang] = counts.get(lang, 0) + 1
+    if not counts:
+        return "javascript"  # safe default
+    return max(counts, key=counts.get)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -91,7 +62,10 @@ def version():
     try:
         result = subprocess.run(
             ["yasa", "--version"],
-            capture_output=True, text=True, timeout=10, check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
         )
         ver = result.stdout.strip() or result.stderr.strip() or "v0.2.33"
         return {"version": ver, "status": "success"}
@@ -127,17 +101,32 @@ def scan(request: ScanRequest):
 
         config = request.config or {}
 
-        # Build command
-        cmd = ["yasa", "--sourcePath", str(full_scan_path),
-               "--report", str(report_dir), "--format", "sarif"]
+        # Build command — YASA requires --language or --analyzer
+        cmd = [
+            "yasa",
+            "--sourcePath",
+            str(full_scan_path),
+            "--report",
+            str(report_dir),
+        ]
 
+        # Language: explicit config > auto-detect from source files
         lang = config.get("language", "")
         if lang:
             mapped = _LANG_MAP.get(lang.lower())
             if not mapped:
-                return {"status": "error",
-                        "error": f"Unsupported language '{lang}'. Supported: {', '.join(sorted(_SUPPORTED))}"}
-            cmd.extend(["--language", mapped])
+                return {
+                    "status": "error",
+                    "error": (
+                        f"Unsupported language '{lang}'. Supported: {', '.join(sorted(_SUPPORTED))}"
+                    ),
+                }
+        else:
+            # Auto-detect from source directory
+            mapped = _detect_language(full_scan_path)
+            logger.info(f"Auto-detected language: {mapped}")
+
+        cmd.extend(["--language", mapped])
 
         if "analyzer" in config:
             cmd.extend(["--analyzer", config["analyzer"]])
@@ -151,13 +140,13 @@ def scan(request: ScanRequest):
         logger.info(f"Executing YASA: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
-        # YASA writes findings.sarif into report_dir
+        # YASA writes its report into report_dir; find whatever file it created
         sarif_file = report_dir / "findings.sarif"
         if not sarif_file.exists():
-            # Try JSON fallback
-            json_file = report_dir / "findings.json"
-            if json_file.exists():
-                sarif_file = json_file
+            for candidate in report_dir.iterdir():
+                if candidate.is_file():
+                    sarif_file = candidate
+                    break
             else:
                 return {
                     "status": "error",
@@ -165,17 +154,31 @@ def scan(request: ScanRequest):
                     "output": result.stdout,
                 }
 
-        # Rename to our timestamped filename for consistency with other tools
-        final_path = report_dir.parent / f"{timestamp}.sarif"
+        # Rename to timestamped filename, preserving extension
+        final_path = report_dir.parent / f"{timestamp}{sarif_file.suffix}"
         sarif_file.rename(final_path)
 
-        # Count findings
+        # Count findings — YASA may output NDJSON (one object per line) or a JSON array/object
         finding_count = 0
         try:
             with open(final_path) as f:
-                data = json.load(f)
-            for run in data.get("runs", []):
-                finding_count += len(run.get("results", []))
+                raw = f.read().strip()
+            # Try standard JSON first
+            try:
+                data = json.loads(raw)
+                if isinstance(data, list):
+                    finding_count = len(data)
+                elif isinstance(data, dict):
+                    for run in data.get("runs", []):
+                        finding_count += len(run.get("results", []))
+            except json.JSONDecodeError:
+                # NDJSON fallback — count non-empty lines that are valid JSON
+                lines = [ln for ln in raw.splitlines() if ln.strip()]
+                finding_count = sum(1 for ln in lines if ln.strip().startswith("{"))
+                # Rewrite as JSON array for consistent downstream consumption
+                parsed = [json.loads(ln) for ln in lines if ln.strip()]
+                with open(final_path, "w") as f:
+                    json.dump(parsed, f, indent=2)
         except Exception as e:
             logger.warning(f"Could not parse finding count: {e}")
 
