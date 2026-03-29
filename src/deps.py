@@ -11,22 +11,21 @@ from clients.codeql import CodeQLClient
 from clients.gosec import GosecClient
 from clients.joern import JoernClient
 from clients.linguist import LinguistClient
-from clients.yasa import YASAClient
 from clients.nodejsscan import NodeJsScanClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
 from clients.reconnaissance.amass import AmassClient
 from clients.reconnaissance.arjun import ArjunClient
-from clients.reconnaissance.kiterunner import KiterunnerClient
-from clients.reconnaissance.wafw00f import Wafw00fClient
 from clients.reconnaissance.bbot import BbotClient
 from clients.reconnaissance.ffuf import FfufClient
-from clients.reconnaissance.httpx import HttpxClient
 from clients.reconnaissance.gau import GauClient
+from clients.reconnaissance.httpx import HttpxClient
 from clients.reconnaissance.katana import KatanaClient
+from clients.reconnaissance.kiterunner import KiterunnerClient
 from clients.reconnaissance.masscan import MasscanClient
 from clients.reconnaissance.nmap import NmapClient
 from clients.reconnaissance.subfinder import SubfinderClient
+from clients.reconnaissance.wafw00f import Wafw00fClient
 from clients.sca.grype import GrypeClient
 from clients.sca.osv_scanner import OSVScannerClient
 from clients.sca.retirejs import RetireJSClient
@@ -37,6 +36,7 @@ from clients.secrets.hawk_scanner import HawkScannerClient
 from clients.secrets.trufflehog import TruffleHogClient
 from clients.secrets.whispers import WhispersClient
 from clients.semgrep import SemgrepClient
+from clients.yasa import YASAClient
 from config.config import load_config
 from repositories.workspace import WorkspaceRepository
 from services.bandit import BanditService
@@ -45,22 +45,21 @@ from services.codeql import CodeQLService
 from services.gosec import GosecService
 from services.joern import JoernService
 from services.linguist import LinguistService
-from services.yasa import YASAService
 from services.nodejsscan import NodeJsScanService
 from services.pmd import PMDService
 from services.psalm import PsalmService
 from services.reconnaissance.amass import AmassService
 from services.reconnaissance.arjun import ArjunService
-from services.reconnaissance.kiterunner import KiterunnerService
-from services.reconnaissance.wafw00f import Wafw00fService
 from services.reconnaissance.bbot import BbotService
 from services.reconnaissance.ffuf import FfufService
-from services.reconnaissance.httpx import HttpxService
 from services.reconnaissance.gau import GauService
+from services.reconnaissance.httpx import HttpxService
 from services.reconnaissance.katana import KatanaService
+from services.reconnaissance.kiterunner import KiterunnerService
 from services.reconnaissance.masscan import MasscanService
 from services.reconnaissance.nmap import NmapService
 from services.reconnaissance.subfinder import SubfinderService
+from services.reconnaissance.wafw00f import Wafw00fService
 from services.sca.grype import GrypeService
 from services.sca.osv_scanner import OSVScannerService
 from services.sca.retirejs import RetireJSService
@@ -72,6 +71,7 @@ from services.secrets.trufflehog import TruffleHogService
 from services.secrets.whispers import WhispersService
 from services.semgrep import SemgrepService
 from services.workspace import WorkspaceService
+from services.yasa import YASAService
 
 
 @lru_cache(maxsize=None)
@@ -220,7 +220,7 @@ def get_joern_service():
 @lru_cache(maxsize=None)
 def get_yasa_client():
     config = get_config()
-    yasa_url = config.get("yasa", {}).get("service_url", "http://yasa:8090")
+    yasa_url = config.get("yasa", {}).get("service_url", "http://yasa:8095")
     return YASAClient(yasa_url)
 
 
@@ -427,9 +427,7 @@ def get_bbot_service():
 @lru_cache(maxsize=None)
 def get_httpx_client():
     config = get_config()
-    httpx_url = (
-        config.get("reconnaissance", {}).get("httpx", {}).get("service_url", "http://httpx:8112")
-    )
+    httpx_url = config.get("reconnaissance", {}).get("httpx", {}).get("service_url", "http://httpx:8112")
     return HttpxClient(httpx_url)
 
 
@@ -479,7 +477,9 @@ def get_arjun_service():
 @lru_cache(maxsize=None)
 def get_wafw00f_client():
     config = get_config()
-    wafw00f_url = config.get("reconnaissance", {}).get("wafw00f", {}).get("service_url", "http://wafw00f:8120")
+    wafw00f_url = (
+        config.get("reconnaissance", {}).get("wafw00f", {}).get("service_url", "http://wafw00f:8120")
+    )
     return Wafw00fClient(wafw00f_url)
 
 
@@ -491,7 +491,11 @@ def get_wafw00f_service():
 @lru_cache(maxsize=None)
 def get_kiterunner_client():
     config = get_config()
-    kiterunner_url = config.get("reconnaissance", {}).get("kiterunner", {}).get("service_url", "http://kiterunner:8121")
+    kiterunner_url = (
+        config.get("reconnaissance", {})
+        .get("kiterunner", {})
+        .get("service_url", "http://kiterunner:8121")
+    )
     return KiterunnerClient(kiterunner_url)
 
 
