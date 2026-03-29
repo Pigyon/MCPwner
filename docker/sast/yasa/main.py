@@ -108,6 +108,8 @@ def scan(request: ScanRequest):
             str(full_scan_path),
             "--report",
             str(report_dir),
+            "--uastSDKPath",
+            "/opt/yasa",
         ]
 
         # Language: explicit config > auto-detect from source files
@@ -128,14 +130,16 @@ def scan(request: ScanRequest):
 
         cmd.extend(["--language", mapped])
 
-        if "analyzer" in config:
-            cmd.extend(["--analyzer", config["analyzer"]])
-        if "checkerIds" in config:
-            cmd.extend(["--checkerIds", ",".join(config["checkerIds"])])
-        if "checkerPackIds" in config:
-            cmd.extend(["--checkerPackIds", ",".join(config["checkerPackIds"])])
-        if config.get("ruleConfigFile"):
-            cmd.extend(["--ruleConfigFile", config["ruleConfigFile"]])
+        # Use built-in rule config for the detected language if none provided
+        _BUILTIN_RULES = {
+            "javascript": "/opt/yasa/example-rule-config/rule_config_js.json",
+            "golang": "/opt/yasa/example-rule-config/rule_config_go.json",
+            "java": "/opt/yasa/example-rule-config/rule_config_java.json",
+            "python": "/opt/yasa/example-rule-config/rule_config_python.json",
+        }
+        rule_config = config.get("ruleConfigFile") or _BUILTIN_RULES.get(mapped)
+        if rule_config:
+            cmd.extend(["--ruleConfigFile", rule_config])
 
         logger.info(f"Executing YASA: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -194,3 +198,47 @@ def scan(request: ScanRequest):
     except Exception as e:
         logger.exception("YASA scan error")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _resolve_report_dir(workspace_path: str) -> Path:
+    """Resolve the report directory for yasa given a workspace path."""
+    parts = Path(workspace_path).parts
+    if "workspaces" in parts:
+        idx = parts.index("workspaces")
+        if idx + 1 < len(parts):
+            return Path(*parts[: idx + 2]) / "reports" / "sast" / "yasa"
+    return Path(workspace_path).parent / "reports" / "sast" / "yasa"
+
+
+@app.get("/reports")
+def list_reports(workspace_path: str):
+    """List all available report timestamps for yasa."""
+    report_dir = _resolve_report_dir(workspace_path)
+    if not report_dir.exists():
+        return {"status": "success", "reports": []}
+    reports = sorted(
+        [f.stem for f in report_dir.iterdir() if f.is_file()],
+        reverse=True,
+    )
+    return {"status": "success", "reports": reports}
+
+
+@app.get("/report/{timestamp}")
+def get_report(timestamp: str, workspace_path: str):
+    """Retrieve the full contents of a yasa scan report by its timestamp."""
+    report_dir = _resolve_report_dir(workspace_path)
+    for ext in ("sarif", "json"):
+        candidate = report_dir / f"{timestamp}.{ext}"
+        if candidate.exists():
+            try:
+                with open(candidate) as f:
+                    data = json.load(f)
+                return {"status": "success", "report": data, "report_path": str(candidate)}
+            except json.JSONDecodeError:
+                with open(candidate) as f:
+                    raw = f.read()
+                return {"status": "success", "report_raw": raw, "report_path": str(candidate)}
+    raise HTTPException(
+        status_code=404,
+        detail=f"No report found for timestamp '{timestamp}' in {report_dir}",
+    )
