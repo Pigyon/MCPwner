@@ -126,7 +126,9 @@ def create_scanner_app(
                 # Some tools (e.g. arjun) don't write output when they find nothing.
                 # If the tool exited cleanly (rc 0) and stderr is empty, treat as 0 findings.
                 if result.returncode == 0 and not result.stderr.strip():
-                    logger.info(f"{tool_name} exited cleanly but produced no report — writing empty result")
+                    logger.info(
+                        f"{tool_name} exited cleanly but produced no report — writing empty result"
+                    )
                     with open(output_path, "w") as f:
                         json.dump([], f)
                 else:
@@ -151,11 +153,8 @@ def create_scanner_app(
                             if isinstance(data, list):
                                 finding_count = len(data)
                             elif isinstance(data, dict):
-                                if "results" in data:
-                                    finding_count = len(data["results"])
-                                else:
-                                    # Single JSON object (e.g. one httpx NDJSON line) = 1 finding
-                                    finding_count = 1
+                                # Single JSON object (e.g. one httpx NDJSON line) = 1 finding
+                                finding_count = len(data["results"]) if "results" in data else 1
                         except json.JSONDecodeError:
                             # Handle NDJSON (Newline Delimited JSON)
                             f.seek(0)
@@ -184,5 +183,52 @@ def create_scanner_app(
         except Exception as e:
             logger.exception("Scan execution error")
             raise HTTPException(status_code=500, detail=str(e))
+
+    # ------------------------------------------------------------------
+    # Report retrieval endpoints
+    # ------------------------------------------------------------------
+
+    def _resolve_report_dir(workspace_path: str) -> Path:
+        """Resolve the report directory for this tool given a workspace path."""
+        parts = Path(workspace_path).parts
+        if "workspaces" in parts:
+            idx = parts.index("workspaces")
+            if idx + 1 < len(parts):
+                return Path(*parts[: idx + 2]) / "reports" / tool_category / tool_name
+        return Path(workspace_path).parent / "reports" / tool_category / tool_name
+
+    @app.get("/reports")
+    def list_reports(workspace_path: str):
+        """List all available report timestamps for this tool."""
+        report_dir = _resolve_report_dir(workspace_path)
+        if not report_dir.exists():
+            return {"status": "success", "reports": []}
+        reports = sorted(
+            [f.stem for f in report_dir.iterdir() if f.is_file()],
+            reverse=True,
+        )
+        return {"status": "success", "reports": reports}
+
+    @app.get("/report/{timestamp}")
+    def get_report(timestamp: str, workspace_path: str):
+        """Retrieve the full contents of a scan report by its timestamp."""
+        report_dir = _resolve_report_dir(workspace_path)
+        # Try known extensions
+        for ext in (report_format, "json", "sarif"):
+            candidate = report_dir / f"{timestamp}.{ext}"
+            if candidate.exists():
+                try:
+                    with open(candidate) as f:
+                        data = json.load(f)
+                    return {"status": "success", "report": data, "report_path": str(candidate)}
+                except json.JSONDecodeError:
+                    # Return raw text if not valid JSON
+                    with open(candidate) as f:
+                        raw = f.read()
+                    return {"status": "success", "report_raw": raw, "report_path": str(candidate)}
+        raise HTTPException(
+            status_code=404,
+            detail=f"No report found for timestamp '{timestamp}' in {report_dir}",
+        )
 
     return app

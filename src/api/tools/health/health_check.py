@@ -9,10 +9,13 @@ from deps import (
     get_brakeman_client,
     get_codeql_client,
     get_gosec_client,
+    get_joern_client,
     get_linguist_client,
+    get_nodejsscan_client,
     get_pmd_client,
     get_psalm_client,
     get_semgrep_client,
+    get_yasa_client,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,7 +54,8 @@ def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:
     Args:
         tool_name: Optional name of a specific tool to check.
                    If not provided, checks all services.
-                   Valid values: codeql, linguist, bandit, brakeman, gosec, pmd, psalm, semgrep
+                   Valid values: codeql, linguist, bandit, brakeman, gosec,
+                   pmd, psalm, semgrep, nodejsscan, joern, yasa
 
     Returns:
         Dictionary with health status
@@ -65,6 +69,9 @@ def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:
         "pmd": get_pmd_client,
         "psalm": get_psalm_client,
         "semgrep": get_semgrep_client,
+        "nodejsscan": get_nodejsscan_client,
+        "joern": get_joern_client,
+        "yasa": get_yasa_client,
     }
 
     # Check specific tool

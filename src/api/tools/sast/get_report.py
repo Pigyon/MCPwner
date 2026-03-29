@@ -7,14 +7,27 @@ from deps import (
     get_bandit_service,
     get_brakeman_service,
     get_gosec_service,
+    get_joern_service,
+    get_nodejsscan_service,
     get_pmd_service,
     get_psalm_service,
     get_semgrep_service,
+    get_yasa_service,
 )
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_TOOLS = ["semgrep", "bandit", "gosec", "brakeman", "pmd", "psalm"]
+SUPPORTED_TOOLS = [
+    "semgrep",
+    "bandit",
+    "gosec",
+    "brakeman",
+    "pmd",
+    "psalm",
+    "nodejsscan",
+    "joern",
+    "yasa",
+]
 
 
 def get_sast_report(tool: str, workspace_id: str) -> Dict[str, Any]:
@@ -57,4 +70,10 @@ def _get_service_for_tool(tool: str):
         return get_pmd_service()
     if tool == "psalm":
         return get_psalm_service()
+    if tool == "nodejsscan":
+        return get_nodejsscan_service()
+    if tool == "joern":
+        return get_joern_service()
+    if tool == "yasa":
+        return get_yasa_service()
     raise ValueError(f"Unknown tool: {tool}")
