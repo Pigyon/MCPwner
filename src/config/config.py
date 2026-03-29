@@ -16,10 +16,16 @@ _SERVICE_URL_ENV_VARS = {
     "BRAKEMAN_SERVICE_URL": ("brakeman", "service_url"),
     "PMD_SERVICE_URL": ("pmd", "service_url"),
     "PSALM_SERVICE_URL": ("psalm", "service_url"),
+    "NODEJSSCAN_SERVICE_URL": ("nodejsscan", "service_url"),
+    "JOERN_SERVICE_URL": ("joern", "service_url"),
+    "YASA_SERVICE_URL": ("yasa", "service_url"),
     "OSV_SCANNER_SERVICE_URL": ("osv_scanner", "service_url"),
     "GRYPE_SERVICE_URL": ("grype", "service_url"),
     "SYFT_SERVICE_URL": ("syft", "service_url"),
     "RETIREJS_SERVICE_URL": ("retirejs", "service_url"),
+    "WHISPERS_SERVICE_URL": ("whispers", "service_url"),
+    "DETECT_SECRETS_SERVICE_URL": ("detect_secrets", "service_url"),
+    "HAWK_SCANNER_SERVICE_URL": ("hawk_scanner", "service_url"),
     "SUBFINDER_SERVICE_URL": ("reconnaissance", "subfinder", "service_url"),
 }
 
