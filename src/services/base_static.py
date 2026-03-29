@@ -19,6 +19,8 @@ class BaseStaticService:
         self.tool_name = client.tool_name
         # Category of the tool (sast, secrets, etc.) - should be set by subclass or inferred
         self.tool_category = "sast"
+        # Cache of last scan result per workspace for reliable report retrieval
+        self._last_scan_results: Dict[str, Dict[str, Any]] = {}
 
     def scan(
         self,
@@ -74,6 +76,15 @@ class BaseStaticService:
                 f"{self.tool_name} scan result: status={result.get('status')}, "
                 f"findings={result.get('finding_count', 'N/A')}"
             )
+            # Cache scan result for reliable report retrieval
+            if result.get("status") == "success":
+                self._last_scan_results[workspace_id] = {
+                    "workspace_path": workspace_path,
+                    "report_path": result.get("report_path"),
+                    "timestamp": result.get("timestamp"),
+                }
+                # Persist to disk for cross-restart reliability
+                self._persist_scan_result(workspace_id)
             return result
         except Exception as e:
             logger.error(f"{self.tool_name} scan failed for workspace {workspace_id}: {e}")
@@ -102,46 +113,121 @@ class BaseStaticService:
                 "error_code": "WORKSPACE_NOT_FOUND",
             }
 
-        # Find most recent report
-        # Note: We use self.tool_category to determine the report path
+        # Find most recent report on the shared filesystem
         report_dir = Path(f"/workspaces/{workspace_id}/reports/{self.tool_category}/{self.tool_name}")
 
-        if not report_dir.exists():
-            return {
-                "status": "error",
-                "error": f"No {self.tool_name} reports found for workspace: {workspace_id}",
-                "error_code": "NO_REPORTS_FOUND",
-            }
+        if report_dir.exists():
+            all_entries = list(report_dir.iterdir())
+            logger.info(
+                f"Report dir {report_dir} exists with {len(all_entries)} entries: "
+                f"{[e.name for e in all_entries[:10]]}"
+            )
+            reports = sorted(
+                list(report_dir.glob("*.sarif")) + list(report_dir.glob("*.json")), reverse=True
+            )
+            if reports:
+                latest_report = reports[0]
+                try:
+                    with open(latest_report, "r") as f:
+                        report_data = json.load(f)
 
-        reports = sorted(
-            list(report_dir.glob("*.sarif")) + list(report_dir.glob("*.json")), reverse=True
+                    return {
+                        "status": "success",
+                        "workspace_id": workspace_id,
+                        "tool": self.tool_name,
+                        "report_path": str(latest_report),
+                        "timestamp": latest_report.stem,
+                        "sarif": report_data,
+                        "report_content": report_data,
+                    }
+                except Exception as e:
+                    logger.warning(f"Failed to read local report {latest_report}: {e}")
+            else:
+                logger.warning(f"Report dir exists but no .sarif/.json files found in {report_dir}")
+        else:
+            logger.warning(f"Report dir does not exist: {report_dir}")
+
+        # Fallback 2: use cached scan result to read report directly
+        cached = self._load_scan_result(workspace_id)
+        logger.info(f"Fallback 2: cached scan result for {workspace_id}: {cached}")
+        if cached and cached.get("report_path"):
+            cached_path = Path(cached["report_path"])
+            if cached_path.exists():
+                try:
+                    with open(cached_path, "r") as f:
+                        report_data = json.load(f)
+                    return {
+                        "status": "success",
+                        "workspace_id": workspace_id,
+                        "tool": self.tool_name,
+                        "report_path": str(cached_path),
+                        "timestamp": cached.get("timestamp", cached_path.stem),
+                        "sarif": report_data,
+                        "report_content": report_data,
+                    }
+                except Exception as e:
+                    logger.warning(f"Failed to read cached report path {cached_path}: {e}")
+
+        # Fallback 3: fetch report via the tool container's HTTP API
+        workspace_path = workspace.path or workspace.local_path
+        if workspace_path and hasattr(self.client, "list_reports"):
+            try:
+                listing = self.client.list_reports(workspace_path)
+                timestamps = listing.get("reports", [])
+                if timestamps:
+                    result = self.client.get_report(workspace_path, timestamps[0])
+                    if result.get("status") == "success":
+                        report_data = result.get("report") or result.get("report_raw", "")
+                        return {
+                            "status": "success",
+                            "workspace_id": workspace_id,
+                            "tool": self.tool_name,
+                            "report_path": result.get("report_path", ""),
+                            "timestamp": timestamps[0],
+                            "sarif": report_data if isinstance(report_data, dict) else None,
+                            "report_content": report_data,
+                        }
+            except Exception as e:
+                logger.warning(f"HTTP fallback for {self.tool_name} report failed: {e}")
+
+        return {
+            "status": "error",
+            "error": f"No {self.tool_name} reports found for workspace: {workspace_id}",
+            "error_code": "NO_REPORTS_FOUND",
+        }
+
+    def _scan_cache_path(self, workspace_id: str) -> Path:
+        """Path to the on-disk scan result cache file."""
+        return Path(
+            f"/workspaces/{workspace_id}/reports/{self.tool_category}/{self.tool_name}/.last_scan.json"
         )
-        if not reports:
-            return {
-                "status": "error",
-                "error": f"No {self.tool_name} reports found for workspace: {workspace_id}",
-                "error_code": "NO_REPORTS_FOUND",
-            }
 
-        latest_report = reports[0]
-
-        # Read and parse SARIF or JSON
+    def _persist_scan_result(self, workspace_id: str) -> None:
+        """Write the cached scan result to disk."""
+        cached = self._last_scan_results.get(workspace_id)
+        if not cached:
+            return
         try:
-            with open(latest_report, "r") as f:
-                report_data = json.load(f)
-
-            return {
-                "status": "success",
-                "workspace_id": workspace_id,
-                "tool": self.tool_name,
-                "report_path": str(latest_report),
-                "timestamp": latest_report.stem,
-                "sarif": report_data,
-                "report_content": report_data,
-            }
+            cache_file = self._scan_cache_path(workspace_id)
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(cache_file, "w") as f:
+                json.dump(cached, f)
         except Exception as e:
-            return {
-                "status": "error",
-                "error": f"Failed to read report: {e}",
-                "error_code": "REPORT_READ_FAILED",
-            }
+            logger.warning(f"Failed to persist scan cache for {workspace_id}: {e}")
+
+    def _load_scan_result(self, workspace_id: str) -> Optional[Dict[str, Any]]:
+        """Load a previously persisted scan result from disk."""
+        # Check in-memory first
+        if workspace_id in self._last_scan_results:
+            return self._last_scan_results[workspace_id]
+        # Try disk
+        try:
+            cache_file = self._scan_cache_path(workspace_id)
+            if cache_file.exists():
+                with open(cache_file) as f:
+                    data = json.load(f)
+                self._last_scan_results[workspace_id] = data
+                return data
+        except Exception as e:
+            logger.warning(f"Failed to load scan cache for {workspace_id}: {e}")
+        return None

@@ -64,6 +64,34 @@ class BaseScanClient:
         response.raise_for_status()
         return response.json()
 
+    def list_reports(self, workspace_path: str) -> Dict[str, Any]:
+        """List available report timestamps via HTTP."""
+        try:
+            response = requests.get(
+                f"{self.service_url}/reports",
+                params={"workspace_path": workspace_path},
+                timeout=30,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"{self.tool_name} list_reports failed: {e}")
+            return {"status": "error", "error": str(e), "reports": []}
+
+    def get_report(self, workspace_path: str, timestamp: str) -> Dict[str, Any]:
+        """Retrieve a specific report by timestamp via HTTP."""
+        try:
+            response = requests.get(
+                f"{self.service_url}/report/{timestamp}",
+                params={"workspace_path": workspace_path},
+                timeout=60,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"{self.tool_name} get_report failed: {e}")
+            return {"status": "error", "error": str(e)}
+
 
 class BaseSASTClient(BaseScanClient):
     """Base HTTP client for SAST services."""
