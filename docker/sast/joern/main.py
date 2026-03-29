@@ -3,7 +3,6 @@ import logging
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 from common.models import HealthResponse, ScanRequest, VersionResponse
 from fastapi import FastAPI, HTTPException
@@ -41,9 +40,7 @@ def scan(request: ScanRequest):
         full_scan_path = Path(request.workspace_path) / request.scan_path
 
         if not full_scan_path.exists():
-            raise HTTPException(
-                status_code=404, detail=f"Scan path does not exist: {full_scan_path}"
-            )
+            raise HTTPException(status_code=404, detail=f"Scan path does not exist: {full_scan_path}")
 
         # Build output path
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
@@ -64,7 +61,7 @@ def scan(request: ScanRequest):
         config = request.config or {}
 
         # Determine scan mode: joern-scan (quick, uses query DB) or joern --script (custom)
-        use_scan = config.get("mode", "scan") == "scan"
+        use_scan = config.get("mode", "script") == "scan"
 
         if use_scan:
             # Use joern-scan for automated scanning with the query database
@@ -138,7 +135,7 @@ def _parse_joern_scan_output(output: str) -> list:
             continue
         try:
             # "Result: 8.0 : Dangerous function gets() used: /path/file.c:6:main"
-            rest = line[len("Result:"):].strip()
+            rest = line[len("Result:") :].strip()
             score_str, rest = rest.split(":", 1)
             score = float(score_str.strip())
             # rest = " Dangerous function gets() used: /path/file.c:6:main"
@@ -159,13 +156,15 @@ def _parse_joern_scan_output(output: str) -> list:
                 line_number = ""
                 function_name = ""
 
-            findings.append({
-                "score": score,
-                "title": title,
-                "filepath": filepath,
-                "line": line_number,
-                "function": function_name,
-            })
+            findings.append(
+                {
+                    "score": score,
+                    "title": title,
+                    "filepath": filepath,
+                    "line": line_number,
+                    "function": function_name,
+                }
+            )
         except (ValueError, IndexError) as e:
             logger.warning(f"Failed to parse joern-scan line: {line}: {e}")
             continue

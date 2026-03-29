@@ -353,7 +353,7 @@ services:
     volumes:
       - workspaces:/workspaces
     tmpfs:
-      - /tmp:noexec,nosuid,size=2g
+      - /tmp:exec,size=2g
     networks:
       - mcpwner-internal
     healthcheck:
