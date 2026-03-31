@@ -1,25 +1,25 @@
+# Stage 1: Build gau
 FROM golang:1.21-alpine AS builder
 
 RUN go install github.com/lc/gau/v2/cmd/gau@v2.2.4
 
+# Stage 2: Install Python deps
+FROM python:3.11-alpine AS deps
+
+COPY docker/reconnaissance/gau/requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# Stage 3: Lean runtime
 FROM alpine:3.19
 
-# Install Python and runtime dependencies
-RUN apk add --no-cache python3 py3-pip curl
+RUN apk add --no-cache python3 curl
 
-# Copy gau binary from builder
 COPY --from=builder /go/bin/gau /usr/local/bin/gau
+COPY --from=deps /install /usr
 
 WORKDIR /app
 
-# Copy requirements and install dependencies
-COPY docker/reconnaissance/gau/requirements.txt .
-RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
-
-# Copy common modules
 COPY docker/common /app/common
-
-# Copy service code
 COPY docker/reconnaissance/gau/main.py .
 
 EXPOSE 8115

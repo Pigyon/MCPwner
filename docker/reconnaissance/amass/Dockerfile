@@ -1,32 +1,28 @@
+# Stage 1: Build amass
 FROM golang:1.24-alpine AS builder
 
-# Install Amass v5.0.1
 RUN apk add --no-cache git && \
     go install -v github.com/owasp-amass/amass/v5/...@v5.0.1
 
-FROM alpine:latest
+# Stage 2: Install Python deps
+FROM python:3.11-alpine AS deps
 
-# Install Python, curl, and runtime dependencies
-RUN apk add --no-cache python3 py3-pip ca-certificates curl
+COPY docker/reconnaissance/amass/requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Copy Amass binary from builder
+# Stage 3: Lean runtime
+FROM alpine:3.19
+
+RUN apk add --no-cache python3 ca-certificates curl
+
 COPY --from=builder /go/bin/amass /usr/local/bin/amass
+COPY --from=deps /install /usr
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements and install dependencies
-COPY docker/reconnaissance/amass/requirements.txt .
-RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
-
-# Copy common modules
 COPY docker/common /app/common
-
-# Copy service code
 COPY docker/reconnaissance/amass/main.py .
 
-# Expose port
 EXPOSE 8111
 
-# Run the service
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8111"]

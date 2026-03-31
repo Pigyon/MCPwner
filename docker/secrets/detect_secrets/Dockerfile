@@ -1,22 +1,21 @@
-FROM python:3.11-slim
+# Stage 1: Install Python deps
+FROM python:3.11-alpine AS builder
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements and install dependencies
 COPY docker/secrets/detect_secrets/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# Stage 2: Lean runtime
+FROM python:3.11-alpine
+
+RUN apk add --no-cache git
+
+COPY --from=builder /install /usr/local
 
 WORKDIR /service
 
-# Copy service files
 COPY docker/common /service/common
 COPY docker/secrets/detect_secrets/main.py .
 
-# Expose service port
 EXPOSE 8093
 
-# Run the FastAPI service
 CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8093"]
