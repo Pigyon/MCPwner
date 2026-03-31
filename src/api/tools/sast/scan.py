@@ -9,6 +9,7 @@ from deps import (
     get_gosec_service,
     get_joern_service,
     get_nodejsscan_service,
+    get_opengrep_service,
     get_pmd_service,
     get_psalm_service,
     get_semgrep_service,
@@ -17,7 +18,18 @@ from deps import (
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_TOOLS = ["semgrep", "bandit", "gosec", "brakeman", "pmd", "psalm", "nodejsscan", "joern", "yasa"]
+SUPPORTED_TOOLS = [
+    "semgrep",
+    "bandit",
+    "gosec",
+    "brakeman",
+    "pmd",
+    "psalm",
+    "nodejsscan",
+    "joern",
+    "yasa",
+    "opengrep",
+]
 
 
 def run_sast_scan(
@@ -73,4 +85,6 @@ def _get_service_for_tool(tool: str):
         return get_joern_service()
     if tool == "yasa":
         return get_yasa_service()
+    if tool == "opengrep":
+        return get_opengrep_service()
     raise ValueError(f"Unknown tool: {tool}")
