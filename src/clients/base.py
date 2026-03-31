@@ -18,6 +18,7 @@ class BaseScanClient:
         workspace_path: str,
         scan_path: Optional[str] = None,
         config: Optional[Dict[str, Any]] = None,
+        report_base: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Execute scan via HTTP.
@@ -26,6 +27,7 @@ class BaseScanClient:
             workspace_path: Path to the workspace directory
             scan_path: Optional relative path within workspace to scan
             config: Optional configuration (rules, exclude patterns)
+            report_base: Optional override for report output base directory
 
         Returns:
             Dictionary with scan results including finding count and report path
@@ -35,6 +37,8 @@ class BaseScanClient:
             payload["scan_path"] = scan_path
         # Always include config (even if None) so the service can give a clear error
         payload["config"] = config if config is not None else {}
+        if report_base:
+            payload["report_base"] = report_base
 
         logger.info(f"Sending scan request to {self.service_url}/scan with payload: {payload}")
         try:
@@ -64,12 +68,15 @@ class BaseScanClient:
         response.raise_for_status()
         return response.json()
 
-    def list_reports(self, workspace_path: str) -> Dict[str, Any]:
+    def list_reports(self, workspace_path: str, report_base: Optional[str] = None) -> Dict[str, Any]:
         """List available report timestamps via HTTP."""
         try:
+            params = {"workspace_path": workspace_path}
+            if report_base:
+                params["report_base"] = report_base
             response = requests.get(
                 f"{self.service_url}/reports",
-                params={"workspace_path": workspace_path},
+                params=params,
                 timeout=30,
             )
             response.raise_for_status()
@@ -78,12 +85,17 @@ class BaseScanClient:
             logger.error(f"{self.tool_name} list_reports failed: {e}")
             return {"status": "error", "error": str(e), "reports": []}
 
-    def get_report(self, workspace_path: str, timestamp: str) -> Dict[str, Any]:
+    def get_report(
+        self, workspace_path: str, timestamp: str, report_base: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Retrieve a specific report by timestamp via HTTP."""
         try:
+            params = {"workspace_path": workspace_path}
+            if report_base:
+                params["report_base"] = report_base
             response = requests.get(
                 f"{self.service_url}/report/{timestamp}",
-                params={"workspace_path": workspace_path},
+                params=params,
                 timeout=60,
             )
             response.raise_for_status()

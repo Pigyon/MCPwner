@@ -66,36 +66,44 @@ def create_scanner_app(
 
             # Create output directory
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
-            workspace_base = Path(request.workspace_path).parent
-            # Handle case where workspace path might be deeper or different
-            # We want /workspaces/{id}/reports/sast/{tool}
-            # Assuming request.workspace_path is /workspaces/{id} or /workspaces/{id}/source
 
-            # Simple heuristic: find 'reports' sibling or child
-            if "reports" in str(full_scan_path):
-                # Already inside a structure with reports? Unlikely for source
-                pass
-
-            # Standard MCPwner structure: /workspaces/{id}/source -> /workspaces/{id}/reports
-            # If workspace_path is /workspaces/{id}, then reports is /workspaces/{id}/reports
-            # If workspace_path is /workspaces/{id}/source, then reports is /workspaces/{id}/reports
-
-            # Let's assume standard structure where reports is at workspace root
-            # We need to find the workspace root.
-            # If path contains /workspaces/<id>, we can extract it.
-
-            parts = Path(request.workspace_path).parts
-            if "workspaces" in parts:
-                idx = parts.index("workspaces")
-                if idx + 1 < len(parts):
-                    workspace_root = Path(*parts[: idx + 2])
-                    output_dir = workspace_root / "reports" / tool_category / tool_name
-                else:
-                    # Fallback
-                    output_dir = Path(request.workspace_path) / "reports" / tool_category / tool_name
+            # Determine report output directory.
+            # If report_base is provided (e.g. for local_path workspaces), use it directly.
+            if request.report_base:
+                output_dir = Path(request.report_base) / "reports" / tool_category / tool_name
             else:
-                # Fallback for local testing etc
-                output_dir = Path(request.workspace_path).parent / "reports" / tool_category / tool_name
+                workspace_base = Path(request.workspace_path).parent
+                # Handle case where workspace path might be deeper or different
+                # We want /workspaces/{id}/reports/sast/{tool}
+                # Assuming request.workspace_path is /workspaces/{id} or /workspaces/{id}/source
+
+                # Simple heuristic: find 'reports' sibling or child
+                if "reports" in str(full_scan_path):
+                    # Already inside a structure with reports? Unlikely for source
+                    pass
+
+                # Standard MCPwner structure: /workspaces/{id}/source -> /workspaces/{id}/reports
+                # If workspace_path is /workspaces/{id}, then reports is /workspaces/{id}/reports
+                # If workspace_path is /workspaces/{id}/source, then reports is /workspaces/{id}/reports
+
+                # Let's assume standard structure where reports is at workspace root
+                # We need to find the workspace root.
+                # If path contains /workspaces/<id>, we can extract it.
+
+                parts = Path(request.workspace_path).parts
+                if "workspaces" in parts:
+                    idx = parts.index("workspaces")
+                    if idx + 1 < len(parts):
+                        workspace_root = Path(*parts[: idx + 2])
+                        output_dir = workspace_root / "reports" / tool_category / tool_name
+                    else:
+                        # Fallback
+                        output_dir = Path(request.workspace_path) / "reports" / tool_category / tool_name
+                else:
+                    # Fallback for local testing etc
+                    output_dir = (
+                        Path(request.workspace_path).parent / "reports" / tool_category / tool_name
+                    )
 
             output_dir.mkdir(parents=True, exist_ok=True)
             output_path = output_dir / f"{timestamp}.{report_format}"
@@ -188,8 +196,10 @@ def create_scanner_app(
     # Report retrieval endpoints
     # ------------------------------------------------------------------
 
-    def _resolve_report_dir(workspace_path: str) -> Path:
+    def _resolve_report_dir(workspace_path: str, report_base: str = None) -> Path:
         """Resolve the report directory for this tool given a workspace path."""
+        if report_base:
+            return Path(report_base) / "reports" / tool_category / tool_name
         parts = Path(workspace_path).parts
         if "workspaces" in parts:
             idx = parts.index("workspaces")
@@ -198,9 +208,9 @@ def create_scanner_app(
         return Path(workspace_path).parent / "reports" / tool_category / tool_name
 
     @app.get("/reports")
-    def list_reports(workspace_path: str):
+    def list_reports(workspace_path: str, report_base: str = None):
         """List all available report timestamps for this tool."""
-        report_dir = _resolve_report_dir(workspace_path)
+        report_dir = _resolve_report_dir(workspace_path, report_base)
         if not report_dir.exists():
             return {"status": "success", "reports": []}
         reports = sorted(
@@ -210,9 +220,9 @@ def create_scanner_app(
         return {"status": "success", "reports": reports}
 
     @app.get("/report/{timestamp}")
-    def get_report(timestamp: str, workspace_path: str):
+    def get_report(timestamp: str, workspace_path: str, report_base: str = None):
         """Retrieve the full contents of a scan report by its timestamp."""
-        report_dir = _resolve_report_dir(workspace_path)
+        report_dir = _resolve_report_dir(workspace_path, report_base)
         # Try known extensions
         for ext in (report_format, "json", "sarif"):
             candidate = report_dir / f"{timestamp}.{ext}"
