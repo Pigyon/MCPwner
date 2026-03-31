@@ -43,6 +43,7 @@ services:
       - NODEJSSCAN_SERVICE_URL=http://nodejsscan:8088
       - JOERN_SERVICE_URL=http://joern:8089
       - YASA_SERVICE_URL=http://yasa:8095
+      - OPENGREP_SERVICE_URL=http://opengrep:8096
       - WHISPERS_SERVICE_URL=http://whispers:8092
       - DETECT_SECRETS_SERVICE_URL=http://detect-secrets:8093
       - HAWK_SCANNER_SERVICE_URL=http://hawk-scanner:8094
@@ -74,6 +75,7 @@ services:
       - nodejsscan
       - joern
       - yasa
+      - opengrep
       - whispers
       - detect-secrets
       - hawk-scanner
@@ -384,6 +386,32 @@ services:
       - mcpwner-internal
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8095/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  opengrep:
+    build:
+      context: .
+      dockerfile: docker/sast/opengrep/Dockerfile
+    container_name: opengrep-scanner
+    user: "0:0"
+    read_only: false
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8096:8096"
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=2g
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
       interval: 30s
       timeout: 10s
       retries: 3

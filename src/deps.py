@@ -12,6 +12,7 @@ from clients.gosec import GosecClient
 from clients.joern import JoernClient
 from clients.linguist import LinguistClient
 from clients.nodejsscan import NodeJsScanClient
+from clients.opengrep import OpengrepClient
 from clients.pmd import PMDClient
 from clients.psalm import PsalmClient
 from clients.reconnaissance.amass import AmassClient
@@ -46,6 +47,7 @@ from services.gosec import GosecService
 from services.joern import JoernService
 from services.linguist import LinguistService
 from services.nodejsscan import NodeJsScanService
+from services.opengrep import OpengrepService
 from services.pmd import PMDService
 from services.psalm import PsalmService
 from services.reconnaissance.amass import AmassService
@@ -227,6 +229,18 @@ def get_yasa_client():
 @lru_cache(maxsize=None)
 def get_yasa_service():
     return YASAService(get_workspace_repository(), get_yasa_client())
+
+
+@lru_cache(maxsize=None)
+def get_opengrep_client():
+    config = get_config()
+    opengrep_url = config.get("opengrep", {}).get("service_url", "http://opengrep:8096")
+    return OpengrepClient(opengrep_url)
+
+
+@lru_cache(maxsize=None)
+def get_opengrep_service():
+    return OpengrepService(get_workspace_repository(), get_opengrep_client())
 
 
 # SCA Clients and Services

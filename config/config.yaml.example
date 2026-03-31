@@ -72,6 +72,11 @@ yasa:
   # YASA service URL (internal Docker network)
   service_url: "http://yasa:8095"
 
+# Opengrep Service
+opengrep:
+  # Opengrep service URL (internal Docker network)
+  service_url: "http://opengrep:8096"
+
 # Workspace settings
 workspace:
   # Maximum number of concurrent workspaces

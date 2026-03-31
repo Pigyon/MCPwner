@@ -8,6 +8,7 @@ from config.languages import (
     GOSEC_LANGUAGES,
     JOERN_LANGUAGES,
     NODEJSSCAN_LANGUAGES,
+    OPENGREP_LANGUAGES,
     PMD_LANGUAGES,
     PSALM_LANGUAGES,
     SEMGREP_LANGUAGES,
@@ -61,14 +62,27 @@ SAST_TOOLS = {
     },
     "joern": {
         "name": "Joern",
-        "description": "Code property graph based multi-language SAST platform for deep vulnerability analysis",
+        "description": (
+            "Code property graph based multi-language SAST platform for deep vulnerability analysis"
+        ),
         "languages": JOERN_LANGUAGES,
         "category": "sast",
     },
     "yasa": {
         "name": "YASA",
-        "description": "Multi-language SAST engine with UAST-based taint analysis for JavaScript/TypeScript, Java, Go, and Python",
+        "description": (
+            "Multi-language SAST engine with UAST-based taint"
+            " analysis for JavaScript/TypeScript, Java, Go, and Python"
+        ),
         "languages": YASA_LANGUAGES,
+        "category": "sast",
+    },
+    "opengrep": {
+        "name": "Opengrep",
+        "description": (
+            "Open-source multi-language SAST engine supporting 30+ languages with pattern-based analysis"
+        ),
+        "languages": OPENGREP_LANGUAGES,
         "category": "sast",
     },
 }

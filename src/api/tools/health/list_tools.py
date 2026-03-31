@@ -17,6 +17,10 @@ def list_tools() -> dict:
             "brakeman",
             "pmd",
             "psalm",
+            "nodejsscan",
+            "joern",
+            "yasa",
+            "opengrep",
         ],
         "planned": ["owasp-zap"],
     }
