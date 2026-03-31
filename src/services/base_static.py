@@ -71,7 +71,18 @@ class BaseStaticService:
             logger.info(
                 f"Executing {self.tool_name} scan on workspace {workspace_id}, path: {workspace_path}"
             )
-            result = self.client.scan(workspace_path=workspace_path, scan_path=scan_path, config=config)
+            # For local_path workspaces, pass report_base so containers write reports
+            # to the workspace base dir instead of deriving from workspace_path
+            report_base = None
+            if workspace.is_local_path() and workspace.workspace_base_dir:
+                report_base = workspace.workspace_base_dir
+
+            result = self.client.scan(
+                workspace_path=workspace_path,
+                scan_path=scan_path,
+                config=config,
+                report_base=report_base,
+            )
             logger.info(
                 f"{self.tool_name} scan result: status={result.get('status')}, "
                 f"findings={result.get('finding_count', 'N/A')}"
@@ -95,6 +106,16 @@ class BaseStaticService:
                 "error_code": "SCAN_FAILED",
             }
 
+    def _get_reports_base(self, workspace_id: str) -> str:
+        """Get the base directory for reports for a given workspace.
+
+        Uses workspace.get_reports_base_dir() if available, falls back to /workspaces/{id}.
+        """
+        workspace = self.repository.find_by_id(workspace_id)
+        if workspace:
+            return workspace.get_reports_base_dir()
+        return f"/workspaces/{workspace_id}"
+
     def get_latest_report(self, workspace_id: str) -> Dict[str, Any]:
         """
         Get the most recent report for a workspace.
@@ -114,7 +135,8 @@ class BaseStaticService:
             }
 
         # Find most recent report on the shared filesystem
-        report_dir = Path(f"/workspaces/{workspace_id}/reports/{self.tool_category}/{self.tool_name}")
+        reports_base = self._get_reports_base(workspace_id)
+        report_dir = Path(f"{reports_base}/reports/{self.tool_category}/{self.tool_name}")
 
         if report_dir.exists():
             all_entries = list(report_dir.iterdir())
@@ -172,10 +194,15 @@ class BaseStaticService:
         workspace_path = workspace.path or workspace.local_path
         if workspace_path and hasattr(self.client, "list_reports"):
             try:
-                listing = self.client.list_reports(workspace_path)
+                report_base = None
+                if workspace.is_local_path() and workspace.workspace_base_dir:
+                    report_base = workspace.workspace_base_dir
+                listing = self.client.list_reports(workspace_path, report_base=report_base)
                 timestamps = listing.get("reports", [])
                 if timestamps:
-                    result = self.client.get_report(workspace_path, timestamps[0])
+                    result = self.client.get_report(
+                        workspace_path, timestamps[0], report_base=report_base
+                    )
                     if result.get("status") == "success":
                         report_data = result.get("report") or result.get("report_raw", "")
                         return {
@@ -198,9 +225,8 @@ class BaseStaticService:
 
     def _scan_cache_path(self, workspace_id: str) -> Path:
         """Path to the on-disk scan result cache file."""
-        return Path(
-            f"/workspaces/{workspace_id}/reports/{self.tool_category}/{self.tool_name}/.last_scan.json"
-        )
+        reports_base = self._get_reports_base(workspace_id)
+        return Path(f"{reports_base}/reports/{self.tool_category}/{self.tool_name}/.last_scan.json")
 
     def _persist_scan_result(self, workspace_id: str) -> None:
         """Write the cached scan result to disk."""

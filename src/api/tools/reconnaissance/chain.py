@@ -5,41 +5,45 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from deps import get_workspace_service
-from api.tools.reconnaissance.scan import SUPPORTED_TOOLS, CHAINABLE_TOOLS, _get_service_for_tool
+from api.tools.reconnaissance.scan import CHAINABLE_TOOLS, SUPPORTED_TOOLS, _get_service_for_tool
+from deps import get_workspace_repository, get_workspace_service
 
 logger = logging.getLogger(__name__)
 
 # Valid chain edges: which tools can feed into which
 CHAIN_EDGES = {
     "subfinder": ["httpx", "katana", "gau", "wafw00f", "kiterunner", "amass"],
-    "amass":     ["httpx", "katana", "gau", "wafw00f", "kiterunner"],
-    "bbot":      ["httpx", "katana", "gau", "wafw00f", "kiterunner", "arjun"],
-    "httpx":     ["katana", "arjun", "wafw00f", "kiterunner", "gau", "ffuf"],
-    "katana":    ["arjun", "kiterunner", "ffuf"],
-    "gau":       ["arjun", "kiterunner", "ffuf"],
-    "ffuf":      [],
-    "arjun":     [],
-    "wafw00f":   [],
+    "amass": ["httpx", "katana", "gau", "wafw00f", "kiterunner"],
+    "bbot": ["httpx", "katana", "gau", "wafw00f", "kiterunner", "arjun"],
+    "httpx": ["katana", "arjun", "wafw00f", "kiterunner", "gau", "ffuf"],
+    "katana": ["arjun", "kiterunner", "ffuf"],
+    "gau": ["arjun", "kiterunner", "ffuf"],
+    "ffuf": [],
+    "arjun": [],
+    "wafw00f": [],
     "kiterunner": [],
-    "nmap":      ["httpx"],
-    "masscan":   ["httpx"],
+    "nmap": ["httpx"],
+    "masscan": ["httpx"],
 }
 
 # Predefined common chains
 PRESET_CHAINS = {
     "subdomain-to-params": ["subfinder", "httpx", "katana", "arjun"],
-    "subdomain-to-waf":    ["subfinder", "httpx", "wafw00f"],
-    "subdomain-to-api":    ["subfinder", "httpx", "kiterunner"],
-    "subdomain-to-urls":   ["subfinder", "gau", "arjun"],
-    "osint-to-crawl":      ["bbot", "httpx", "katana"],
-    "network-to-http":     ["nmap", "httpx"],
+    "subdomain-to-waf": ["subfinder", "httpx", "wafw00f"],
+    "subdomain-to-api": ["subfinder", "httpx", "kiterunner"],
+    "subdomain-to-urls": ["subfinder", "gau", "arjun"],
+    "osint-to-crawl": ["bbot", "httpx", "katana"],
+    "network-to-http": ["nmap", "httpx"],
 }
 
 
 def _report_has_findings(workspace_id: str, tool: str) -> bool:
     """Check whether a tool's latest report in the workspace has at least one entry."""
-    report_dir = Path(f"/workspaces/{workspace_id}/reports/reconnaissance/{tool}")
+    # Resolve the reports base directory from workspace metadata
+    repo = get_workspace_repository()
+    workspace = repo.find_by_id(workspace_id)
+    reports_base = workspace.get_reports_base_dir() if workspace else f"/workspaces/{workspace_id}"
+    report_dir = Path(f"{reports_base}/reports/reconnaissance/{tool}")
     if not report_dir.exists():
         return False
     reports = sorted(report_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -136,7 +140,9 @@ def run_reconnaissance_chain(
             if i == 0:
                 # First tool always gets the explicit target
                 tool_config["target"] = target
-            elif tool in CHAINABLE_TOOLS and "target" not in tool_config and "targets" not in tool_config:
+            elif (
+                tool in CHAINABLE_TOOLS and "target" not in tool_config and "targets" not in tool_config
+            ):
                 # Try to chain from the last tool that produced findings
                 if last_tool_with_findings:
                     tool_config["source_tool"] = last_tool_with_findings
@@ -175,7 +181,9 @@ def run_reconnaissance_chain(
                         last_tool_with_findings = tool
                         logger.info(f"{tool}: produced findings, will be used as source for next step")
                     else:
-                        logger.info(f"{tool}: succeeded but 0 findings — next step will use target fallback")
+                        logger.info(
+                            f"{tool}: succeeded but 0 findings — next step will use target fallback"
+                        )
 
             except Exception as e:
                 logger.error(f"Chain step {tool} raised exception: {e}")

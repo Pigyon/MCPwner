@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List
 
-from deps import get_codeql_service, get_workspace_service
+from deps import get_codeql_service, get_workspace_repository, get_workspace_service
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,10 @@ def execute_query(
         # Create temporary SARIF output file path (in the shared workspace volume)
         # We assume /workspaces is shared between mcpwner and codeql-executor
         sarif_filename = f"{workspace_id}_{database_id}_{int(time.time())}.sarif"
-        sarif_output = f"/workspaces/{workspace_id}/{sarif_filename}"
+        repo = get_workspace_repository()
+        ws = repo.find_by_id(workspace_id)
+        reports_base = ws.get_reports_base_dir() if ws else f"/workspaces/{workspace_id}"
+        sarif_output = f"{reports_base}/{sarif_filename}"
 
         try:
             start_time = time.time()
@@ -203,6 +206,16 @@ def sanitize_path(path: str, workspace_id: str) -> str:
     Returns:
         Sanitized relative path
     """
+    # Try to resolve via workspace metadata for local_path workspaces
+    try:
+        repo = get_workspace_repository()
+        ws = repo.find_by_id(workspace_id)
+        if ws and ws.path and path.startswith(ws.path):
+            relative = path[len(ws.path) :]
+            return relative.lstrip("/")
+    except Exception:
+        pass
+
     # Remove /workspaces/{workspace_id}/ prefix
     prefix = f"/workspaces/{workspace_id}/"
     if path.startswith(prefix):
