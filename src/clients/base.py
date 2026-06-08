@@ -40,15 +40,26 @@ class BaseScanClient:
         if report_base:
             payload["report_base"] = report_base
 
+        # Use a shorter timeout by default (50s) to prevent Cursor's 60s MCP timeout from killing the connection.
+        # If it times out, the scan continues in the background tool container.
+        timeout_seconds = config.get("mcp_timeout", 50) if config else 50
+        
         logger.info(f"Sending scan request to {self.service_url}/scan with payload: {payload}")
         try:
-            response = requests.post(f"{self.service_url}/scan", json=payload, timeout=600)
+            response = requests.post(f"{self.service_url}/scan", json=payload, timeout=timeout_seconds)
             if not response.ok:
                 body = response.text[:500]
                 raise RuntimeError(
                     f"{self.tool_name} service returned HTTP {response.status_code}: {body}"
                 )
             return response.json()
+        except requests.exceptions.ReadTimeout:
+            logger.warning(f"{self.tool_name} scan exceeded {timeout_seconds}s timeout. It is likely still running in the background.")
+            return {
+                "status": "backgrounded",
+                "message": f"Scan exceeded {timeout_seconds}s MCP timeout and is continuing in the background.",
+                "next_steps": f"Use the get_reconnaissance_report tool later to check if the report is ready."
+            }
         except requests.exceptions.ConnectionError as e:
             logger.error(f"Cannot connect to {self.tool_name} service at {self.service_url}: {e}")
             raise RuntimeError(

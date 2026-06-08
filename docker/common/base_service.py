@@ -121,12 +121,26 @@ def create_scanner_app(
 
             # Execute scan
             logger.info(f"Executing {tool_name} scan: {' '.join(cmd)}")
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=False,  # Don't raise on non-zero exit code as scanners often return 1 for findings
-            )
+            # A hung tool must not block the
+            # request thread forever. Bound it with a timeout (10-minute default,
+            # overridable per-request via config.timeout_seconds).
+            timeout_seconds = (request.config or {}).get("timeout_seconds", 600)
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    check=False,  # Don't raise on non-zero exit code as scanners often return 1 for findings
+                    timeout=timeout_seconds,
+                )
+            except subprocess.TimeoutExpired as e:
+                logger.error(f"{tool_name} scan timed out after {timeout_seconds}s")
+                stdout = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+                return {
+                    "status": "error",
+                    "error": f"Scan timed out after {timeout_seconds}s",
+                    "output": stdout,
+                }
 
             # Check if report was created
             if not output_path.exists():
