@@ -7,10 +7,8 @@ validation, timeout handling, and error management.
 
 import re
 import shutil
-import signal
+import subprocess
 from pathlib import Path
-
-from git import GitCommandError, Repo
 
 
 class RepositoryError(Exception):
@@ -20,11 +18,7 @@ class RepositoryError(Exception):
 
 
 class CloneTimeoutError(RepositoryError):
-    """Raised when clone operation times out.
-
-    Note: clone timeout uses signal.SIGALRM, which only works on the main thread
-    on Unix. Clones must therefore run on the main thread.
-    """
+    """Raised when a clone operation exceeds its timeout."""
 
     pass
 
@@ -111,40 +105,37 @@ def clone_repository(
     target_path = Path(base_path) / workspace_id / "source"
     target_path.mkdir(parents=True, exist_ok=True)
 
-    # Set up timeout handler
-    def timeout_handler(_signum, _frame):
-        raise CloneTimeoutError(f"Clone operation exceeded {timeout} seconds timeout")
-
-    # Clone with timeout
-    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(timeout)
-
+    # Shallow clone via a subprocess with a hard timeout. subprocess.run(timeout=)
+    # is thread-safe, unlike signal.alarm — MCP tool calls run on a worker thread,
+    # where signal-based timeouts raise "signal only works in main thread".
     try:
-        Repo.clone_from(validated_url, str(target_path), depth=1, single_branch=True)
-        signal.alarm(0)  # Cancel alarm
+        subprocess.run(
+            ["git", "clone", "--depth", "1", "--single-branch", validated_url, str(target_path)],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=timeout,
+        )
         return str(target_path.absolute())
 
-    except CloneTimeoutError:
-        signal.alarm(0)
+    except subprocess.TimeoutExpired:
         _cleanup_partial_clone(target_path)
-        raise
+        raise CloneTimeoutError(f"Clone operation exceeded {timeout} seconds timeout")
 
-    except GitCommandError as e:
-        signal.alarm(0)
+    except subprocess.CalledProcessError as e:
         _cleanup_partial_clone(target_path)
-
-        # Parse error message for specific issues
-        error_msg = str(e).lower()
-        if "not found" in error_msg or "404" in error_msg:
+        error_msg = (e.stderr or "").lower()
+        if "not found" in error_msg or "404" in error_msg or "repository not found" in error_msg:
             raise RepositoryError(f"Repository not found: {validated_url}")
-        if "network" in error_msg or "connection" in error_msg or "timeout" in error_msg:
+        if (
+            "could not resolve" in error_msg
+            or "network" in error_msg
+            or "connection" in error_msg
+            or "timed out" in error_msg
+        ):
             raise RepositoryError(f"Network error while cloning: {validated_url}")
-        raise RepositoryError(f"Failed to clone repository: {e}")
+        raise RepositoryError(f"Failed to clone repository: {e.stderr.strip() or e}")
 
     except Exception as e:
-        signal.alarm(0)
         _cleanup_partial_clone(target_path)
         raise RepositoryError(f"Unexpected error during clone: {e}")
-
-    finally:
-        signal.signal(signal.SIGALRM, old_handler)
