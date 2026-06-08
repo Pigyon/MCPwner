@@ -9,6 +9,10 @@ logger = logging.getLogger(__name__)
 class BaseScanClient:
     """Base HTTP client for scan services (SAST, SCA, etc.)."""
 
+    # Name of the MCP tool used to retrieve this category's reports. Overridden
+    # per category so backgrounded-scan hints point at the correct tool.
+    report_tool: str = "the matching get_report"
+
     def __init__(self, service_url: str, tool_name: str):
         self.service_url = service_url.rstrip("/")
         self.tool_name = tool_name
@@ -58,7 +62,7 @@ class BaseScanClient:
             return {
                 "status": "backgrounded",
                 "message": f"Scan exceeded {timeout_seconds}s MCP timeout and is continuing in the background.",
-                "next_steps": f"Use the get_reconnaissance_report tool later to check if the report is ready."
+                "next_steps": f"Use the {self.report_tool} tool later to check if the report is ready.",
             }
         except requests.exceptions.ConnectionError as e:
             logger.error(f"Cannot connect to {self.tool_name} service at {self.service_url}: {e}")
@@ -119,10 +123,10 @@ class BaseScanClient:
 class BaseSASTClient(BaseScanClient):
     """Base HTTP client for SAST services."""
 
-    pass
+    report_tool = "get_sast_report"
 
 
 class BaseSCAClient(BaseScanClient):
     """Base HTTP client for SCA services."""
 
-    pass
+    report_tool = "get_sca_report"

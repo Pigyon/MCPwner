@@ -3,11 +3,17 @@
 import logging
 from typing import Any, Dict
 
-from deps import get_gitleaks_service, get_trufflehog_service
+from deps import (
+    get_detect_secrets_service,
+    get_gitleaks_service,
+    get_hawk_scanner_service,
+    get_trufflehog_service,
+    get_whispers_service,
+)
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_TOOLS = ["gitleaks", "trufflehog"]
+SUPPORTED_TOOLS = ["gitleaks", "trufflehog", "whispers", "detect-secrets", "hawk-scanner"]
 
 
 def get_secrets_report(tool: str, workspace_id: str) -> Dict[str, Any]:
@@ -42,4 +48,10 @@ def _get_service_for_tool(tool: str):
         return get_gitleaks_service()
     if tool == "trufflehog":
         return get_trufflehog_service()
+    if tool == "whispers":
+        return get_whispers_service()
+    if tool == "detect-secrets":
+        return get_detect_secrets_service()
+    if tool == "hawk-scanner":
+        return get_hawk_scanner_service()
     raise ValueError(f"Unknown tool: {tool}")

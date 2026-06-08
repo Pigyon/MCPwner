@@ -293,7 +293,19 @@ def scan(request: ScanRequest):
         )
 
         logger.info(f"Executing bbot scan: {' '.join(cmd)}")
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        timeout_seconds = (request.config or {}).get("timeout_seconds", 600)
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, check=False, timeout=timeout_seconds
+            )
+        except subprocess.TimeoutExpired as e:
+            logger.error(f"bbot scan timed out after {timeout_seconds}s")
+            stdout = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+            return {
+                "status": "error",
+                "error": f"Scan timed out after {timeout_seconds}s",
+                "output": stdout,
+            }
 
         # bbot writes JSON output to {output_dir}/{scan_name}/output.json
         bbot_json = Path(bbot_output_dir) / scan_name / "output.json"

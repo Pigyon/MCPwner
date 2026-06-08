@@ -18,14 +18,16 @@ VERSION_CMD = ["detect-secrets", "--version"]
 
 def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     """Build Detect-Secrets scan command."""
-    # detect-secrets prints to stdout, so we use shell redirection
-    cmd_str = f"detect-secrets scan --all-files {request.workspace_path} > {output_path}"
-
+    source = request.workspace_path
     if request.scan_path:
-        full_source = Path(request.workspace_path) / request.scan_path
-        cmd_str = f"detect-secrets scan --all-files {full_source} > {output_path}"
+        source = str(Path(request.workspace_path) / request.scan_path)
 
-    return ["sh", "-c", cmd_str]
+    # detect-secrets prints to stdout, so we need shell redirection. Pass the
+    # source and output paths as positional args ($1, $2) instead of
+    # interpolating them into the command string, so they can never be parsed
+    # as shell metacharacters (command-injection safe).
+    cmd_str = 'detect-secrets scan --all-files "$1" > "$2"'
+    return ["sh", "-c", cmd_str, "sh", source, str(output_path)]
 
 
 app = create_scanner_app(

@@ -278,14 +278,26 @@ def scan(request: ScanRequest):
         # Build command (will create XML file)
         cmd = scan_cmd_builder(request, output_path)
 
-        # Execute scan
+        # Execute scan. A hung tool must not block the request thread forever;
+        # bound it with a timeout (10-minute default, overridable per-request).
+        timeout_seconds = (request.config or {}).get("timeout_seconds", 600)
         logger.info(f"Executing {TOOL_NAME} scan: {' '.join(cmd)}")
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=False,  # Don't raise on non-zero exit code
-        )
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False,  # Don't raise on non-zero exit code
+                timeout=timeout_seconds,
+            )
+        except subprocess.TimeoutExpired as e:
+            logger.error(f"{TOOL_NAME} scan timed out after {timeout_seconds}s")
+            stdout = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+            return {
+                "status": "error",
+                "error": f"Scan timed out after {timeout_seconds}s",
+                "output": stdout,
+            }
 
         # Check if XML report was created
         xml_path = output_path.with_suffix(".xml")
