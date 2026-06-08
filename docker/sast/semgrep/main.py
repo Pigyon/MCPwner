@@ -1,20 +1,27 @@
+import os
 from pathlib import Path
 
 from common.base_service import create_scanner_app
 from common.models import ScanRequest
 
+# Ruleset bundled into the image at build time (see Dockerfile). Used as the
+# default so scans run offline; 'auto' would require network access to the
+# semgrep registry, which the internal SAST network forbids.
+DEFAULT_CONFIG = os.environ.get("SEMGREP_DEFAULT_CONFIG", "auto")
+
 
 def build_semgrep_cmd(request: ScanRequest, output_path: Path):
     full_scan_path = Path(request.workspace_path) / request.scan_path
 
-    cmd = ["semgrep", "scan", "--sarif", "--output", str(output_path)]
+    # --metrics off prevents semgrep from phoning home (would fail/stall offline).
+    cmd = ["semgrep", "scan", "--metrics", "off", "--sarif", "--output", str(output_path)]
 
     config = request.config or {}
     if "rules" in config:
         for rule in config["rules"]:
             cmd.extend(["--config", rule])
     else:
-        cmd.extend(["--config", "auto"])
+        cmd.extend(["--config", DEFAULT_CONFIG])
 
     if "exclude" in config:
         for pattern in config["exclude"]:

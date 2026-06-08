@@ -1,7 +1,12 @@
 # Stage 1: Install brakeman gem
 FROM ruby:3.2-slim AS builder
 
-RUN gem install brakeman --no-document
+# build-essential is needed to compile the prism gem's native extension.
+# Brakeman 7+ defaults to the Prism parser and aborts if the gem is absent
+# ("Asked to use Prism, but failed to load"); Ruby 3.2 doesn't bundle it.
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential && \
+    gem install brakeman prism --no-document && \
+    rm -rf /var/lib/apt/lists/*
 
 # Stage 2: Slim runtime
 FROM ruby:3.2-slim
