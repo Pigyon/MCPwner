@@ -5,12 +5,12 @@ from typing import List
 
 from clients.base import BaseSCAClient
 from repositories.workspace import WorkspaceRepository
-from services.base_static import BaseStaticService
+from services.base_scan import BaseScanService
 
 logger = logging.getLogger(__name__)
 
 
-class BaseSCAService(BaseStaticService):
+class BaseSCAService(BaseScanService):
     """Base service for SCA operations."""
 
     SUPPORTED_LANGUAGES: List[str] = []

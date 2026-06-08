@@ -1,6 +1,10 @@
 """Cleanup workspace tool."""
 
+import logging
+
 from deps import get_workspace_service
+
+logger = logging.getLogger(__name__)
 
 
 def cleanup_workspace(
@@ -33,5 +37,6 @@ def cleanup_workspace(
         return service.cleanup_workspace(
             workspace_id, delete_files=delete_files, delete_metadata=delete_metadata
         )
-    except ValueError as e:
+    except Exception as e:
+        logger.error(f"Failed to cleanup workspace {workspace_id}: {e}")
         return {"status": "error", "error": str(e)}

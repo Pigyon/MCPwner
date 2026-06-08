@@ -2,10 +2,10 @@
 
 from clients.base_reconnaissance import BaseReconnaissanceClient
 from repositories.workspace import WorkspaceRepository
-from services.base_static import BaseStaticService
+from services.base_scan import BaseScanService
 
 
-class BaseReconnaissanceService(BaseStaticService):
+class BaseReconnaissanceService(BaseScanService):
     """Base service for Reconnaissance operations."""
 
     def __init__(self, repository: WorkspaceRepository, client: BaseReconnaissanceClient):

@@ -1,7 +1,7 @@
 """List available tools."""
 
 
-def list_tools() -> dict:
+def health_list_tools() -> dict:
     """
     List available and planned security tools.
 

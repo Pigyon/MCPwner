@@ -42,7 +42,7 @@ def docker_compose_up():
         try:
             # Send a simple ping request
             response = requests.post(
-                "http://localhost:13371/sse",
+                "http://localhost:13370/sse",
                 json={"jsonrpc": "2.0", "id": 1, "method": "ping", "params": {}},
                 timeout=5,
             )

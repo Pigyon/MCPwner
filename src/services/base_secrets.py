@@ -1,9 +1,9 @@
 from clients.base_secrets import BaseSecretsClient
 from repositories.workspace import WorkspaceRepository
-from services.base_static import BaseStaticService
+from services.base_scan import BaseScanService
 
 
-class BaseSecretsService(BaseStaticService):
+class BaseSecretsService(BaseScanService):
     """Base service for Secrets operations."""
 
     def __init__(self, repository: WorkspaceRepository, client: BaseSecretsClient):

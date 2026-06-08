@@ -7,7 +7,7 @@ from api.tools.codeql.execute_query import execute_query
 from api.tools.codeql.list_databases import list_databases
 from api.tools.codeql.list_query_packs import list_query_packs
 
-router = MCPRouter(prefix=None)
+router = MCPRouter()
 
 router.tool()(detect_languages)
 router.tool()(create_codeql_database)

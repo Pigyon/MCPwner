@@ -4,7 +4,7 @@ import asyncio
 import functools
 import inspect
 import logging
-from typing import Callable, List, Optional
+from typing import Callable, List
 
 from fastmcp import FastMCP
 
@@ -38,33 +38,19 @@ def _ensure_async(func: Callable) -> Callable:
 
 class MCPRouter:
     """
-    Router for organizing MCP tools with optional prefix.
+    Router for grouping related MCP tools.
 
-    This class provides a way to group related tools together and optionally
-    namespace them with a prefix.
+    Tools are registered with the FastMCP instance under their function name
+    (the project's naming convention bakes any namespace into the function name,
+    e.g. ``run_sast_scan`` / ``sast_list_tools``).
     """
 
-    def __init__(self, prefix: Optional[str] = None):
-        """
-        Initialize router with optional prefix.
-
-        Args:
-            prefix: Optional prefix for tool names (e.g., "codeql")
-        """
-        self.prefix = prefix
+    def __init__(self):
         self._tools: List[Callable] = []
         self._routers: List["MCPRouter"] = []
 
-    def tool(self, name: Optional[str] = None):
-        """
-        Decorator to register a tool function.
-
-        Args:
-            name: Optional explicit name for the tool (ignored in this version)
-
-        Returns:
-            Decorator function
-        """
+    def tool(self):
+        """Decorator to register a tool function under its own name."""
 
         def decorator(func: Callable) -> Callable:
             self._tools.append(func)
@@ -88,10 +74,9 @@ class MCPRouter:
         Args:
             mcp: FastMCP instance
         """
-        logger.info(f"Registering {len(self._tools)} tools for prefix '{self.prefix}'")
+        logger.info(f"Registering {len(self._tools)} tools")
         for tool_func in self._tools:
-            # Use prefixed name if prefix is set, otherwise use the function name as-is
-            name = f"{self.prefix}_{tool_func.__name__}" if self.prefix else tool_func.__name__
+            name = tool_func.__name__
             logger.debug(f"  Registering tool: {name}")
             try:
                 mcp.tool(name=name)(_ensure_async(tool_func))

@@ -57,9 +57,9 @@ async def test_all_tools_discoverable(docker_compose_up):
 
         # Complete list of ALL expected tools based on routers
         expected_tools = [
-            # Health tools (no prefix)
+            # Health tools (health_ prefix)
             "health_check",
-            "list_tools",
+            "health_list_tools",
             # Workspace tools (workspace_ prefix removed)
             "create_workspace",
             "list_workspaces",
