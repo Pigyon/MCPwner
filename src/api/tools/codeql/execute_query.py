@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from deps import get_codeql_service, get_workspace_repository, get_workspace_service
 
@@ -15,9 +15,9 @@ def execute_query(
     workspace_id: str,
     database_id: str,
     query_pack: str = "security-extended",
-    query_name: str = None,
+    query_name: Optional[str] = None,
     query_type: str = "builtin",
-    custom_query: str = None,
+    custom_query: Optional[str] = None,
     enrich_context: bool = True,
 ) -> dict:
     """

@@ -6,28 +6,23 @@ from typing import Any, Dict
 
 import yaml
 
-# Mapping from environment variable names to config paths (section, key)
-_SERVICE_URL_ENV_VARS = {
+from config.tools import TOOL_REGISTRY
+
+
+def _env_var_name(tool_name: str) -> str:
+    """Map a tool name to its service-URL env var (e.g. osv-scanner -> OSV_SCANNER_SERVICE_URL)."""
+    return tool_name.upper().replace("-", "_") + "_SERVICE_URL"
+
+
+# Mapping from environment variable names to config paths. Derived from the tool
+# registry so every tool gets a consistent <NAME>_SERVICE_URL override, plus the
+# bespoke CodeQL/Linguist services that live outside the registry.
+_SERVICE_URL_ENV_VARS: Dict[str, tuple] = {
     "CODEQL_SERVICE_URL": ("codeql", "service_url"),
     "LINGUIST_SERVICE_URL": ("linguist", "service_url"),
-    "SEMGREP_SERVICE_URL": ("semgrep", "service_url"),
-    "BANDIT_SERVICE_URL": ("bandit", "service_url"),
-    "GOSEC_SERVICE_URL": ("gosec", "service_url"),
-    "BRAKEMAN_SERVICE_URL": ("brakeman", "service_url"),
-    "PMD_SERVICE_URL": ("pmd", "service_url"),
-    "PSALM_SERVICE_URL": ("psalm", "service_url"),
-    "NODEJSSCAN_SERVICE_URL": ("nodejsscan", "service_url"),
-    "JOERN_SERVICE_URL": ("joern", "service_url"),
-    "YASA_SERVICE_URL": ("yasa", "service_url"),
-    "OSV_SCANNER_SERVICE_URL": ("osv_scanner", "service_url"),
-    "GRYPE_SERVICE_URL": ("grype", "service_url"),
-    "SYFT_SERVICE_URL": ("syft", "service_url"),
-    "RETIREJS_SERVICE_URL": ("retirejs", "service_url"),
-    "WHISPERS_SERVICE_URL": ("whispers", "service_url"),
-    "DETECT_SECRETS_SERVICE_URL": ("detect_secrets", "service_url"),
-    "HAWK_SCANNER_SERVICE_URL": ("hawk_scanner", "service_url"),
-    "SUBFINDER_SERVICE_URL": ("reconnaissance", "subfinder", "service_url"),
 }
+for _name, _spec in TOOL_REGISTRY.items():
+    _SERVICE_URL_ENV_VARS[_env_var_name(_name)] = (*_spec.config_path, "service_url")
 
 
 class ConfigError(Exception):
@@ -73,23 +68,19 @@ def load_config(config_path: str = "config/config.yaml") -> Dict[str, Any]:
 
 
 def _apply_env_overrides(config: Dict[str, Any]) -> None:
-    """Override service URLs from environment variables if set."""
-    for env_var, path_tuple in _SERVICE_URL_ENV_VARS.items():
+    """Override service URLs from environment variables if set.
+
+    Walks each mapping's path (any depth, e.g. reconnaissance.subfinder.service_url),
+    creating intermediate dicts as needed.
+    """
+    for env_var, path in _SERVICE_URL_ENV_VARS.items():
         value = os.environ.get(env_var)
-        if value:
-            # Handle nested paths (e.g., reconnaissance.subfinder.service_url)
-            if len(path_tuple) == 2:
-                section, key = path_tuple
-                if section not in config:
-                    config[section] = {}
-                config[section][key] = value
-            elif len(path_tuple) == 3:
-                section, subsection, key = path_tuple
-                if section not in config:
-                    config[section] = {}
-                if subsection not in config[section]:
-                    config[section][subsection] = {}
-                config[section][subsection][key] = value
+        if not value:
+            continue
+        node = config
+        for key in path[:-1]:
+            node = node.setdefault(key, {})
+        node[path[-1]] = value
 
 
 def _validate_config(config: Dict[str, Any]) -> None:

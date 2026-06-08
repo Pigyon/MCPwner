@@ -20,8 +20,8 @@ from repositories.workspace import WorkspaceRepository
 from services.base_reconnaissance import BaseReconnaissanceService
 from services.base_sast import BaseSASTService
 from services.base_sca import BaseSCAService
+from services.base_scan import BaseScanService
 from services.base_secrets import BaseSecretsService
-from services.base_static import BaseStaticService
 from services.codeql import CodeQLService
 from services.linguist import LinguistService
 from services.workspace import WorkspaceService
@@ -75,7 +75,7 @@ def get_client(name: str) -> BaseScanClient:
 
 
 @lru_cache(maxsize=None)
-def get_service(name: str) -> BaseStaticService:
+def get_service(name: str) -> BaseScanService:
     """Get the service singleton for a registry tool."""
     spec = TOOL_REGISTRY[name]
     return _SERVICE_BASES[spec.category](get_workspace_repository(), get_client(name))
@@ -92,11 +92,17 @@ def get_workspace_service():
     return WorkspaceService(get_workspace_repository())
 
 
+def _bespoke_service_url(section: str, default: str) -> str:
+    """Resolve a non-registry tool's service URL from config, falling back to default."""
+    node = get_config().get(section, {})
+    url = node.get("service_url") if isinstance(node, dict) else None
+    return url or default
+
+
 @lru_cache(maxsize=None)
 def get_linguist_client():
     """Get Linguist client singleton."""
-    config = get_config()
-    return LinguistClient(config["linguist"]["service_url"])
+    return LinguistClient(_bespoke_service_url("linguist", "http://linguist:8081"))
 
 
 @lru_cache(maxsize=None)
@@ -108,8 +114,7 @@ def get_linguist_service():
 @lru_cache(maxsize=None)
 def get_codeql_client():
     """Get CodeQL client singleton."""
-    config = get_config()
-    return CodeQLClient(config["codeql"]["service_url"])
+    return CodeQLClient(_bespoke_service_url("codeql", "http://codeql:8080"))
 
 
 @lru_cache(maxsize=None)

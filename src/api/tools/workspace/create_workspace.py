@@ -1,7 +1,6 @@
 """Create workspace tool."""
 
 import logging
-import sys
 
 from deps import get_workspace_service
 
@@ -26,11 +25,12 @@ def create_workspace(source_type: str, source: str) -> dict:
     Returns:
         Dictionary with workspace_id, source_type, source, and created_at
     """
-    print(
-        f"[MCP SERVER] create_workspace called: type={source_type}, source={source}",
-        file=sys.stderr,
-    )
-    service = get_workspace_service()
-    result = service.create_workspace(source_type, source)
-    logger.info(f"Workspace created: {result['workspace_id']}")
-    return result
+    logger.info(f"create_workspace called: type={source_type}, source={source}")
+    try:
+        service = get_workspace_service()
+        result = service.create_workspace(source_type, source)
+        logger.info(f"Workspace created: {result['workspace_id']}")
+        return result
+    except Exception as e:
+        logger.error(f"Failed to create workspace: {e}")
+        return {"status": "error", "error": str(e)}

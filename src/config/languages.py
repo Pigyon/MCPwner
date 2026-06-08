@@ -35,7 +35,6 @@ SEMGREP_LANGUAGES: List[str] = [
     "jsx",
     "scala",
     "swift",
-    "php",
     "terraform",
     "generic",
     "json",

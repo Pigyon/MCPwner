@@ -5,12 +5,12 @@ from typing import List
 
 from clients.base import BaseSASTClient
 from repositories.workspace import WorkspaceRepository
-from services.base_static import BaseStaticService
+from services.base_scan import BaseScanService
 
 logger = logging.getLogger(__name__)
 
 
-class BaseSASTService(BaseStaticService):
+class BaseSASTService(BaseScanService):
     """Base service for SAST operations."""
 
     SUPPORTED_LANGUAGES: List[str] = []

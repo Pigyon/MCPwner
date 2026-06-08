@@ -1,4 +1,4 @@
-"""Base static analysis service."""
+"""Base scan service shared by all tool categories (SAST, SCA, Secrets, Reconnaissance)."""
 
 import json
 import logging
@@ -10,8 +10,13 @@ from repositories.workspace import WorkspaceRepository
 logger = logging.getLogger(__name__)
 
 
-class BaseStaticService:
-    """Base service for Static Analysis operations (SAST, Secrets, etc.)."""
+class BaseScanService:
+    """Base service for scan operations across all categories.
+
+    Concrete category bases (SAST / SCA / Secrets / Reconnaissance) set
+    ``tool_category``; the scanning, report-retrieval and caching logic here is
+    category-agnostic.
+    """
 
     def __init__(self, repository: WorkspaceRepository, client: Any):
         self.repository = repository
