@@ -5,6 +5,14 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+# HTTP timeouts (seconds). The scan timeout is deliberately kept under an IDE's
+# typical ~60s MCP timeout so a long scan backgrounds in the tool container
+# instead of having the MCP connection killed.
+SCAN_TIMEOUT_SECONDS = 50
+VERSION_TIMEOUT_SECONDS = 10
+LIST_REPORTS_TIMEOUT_SECONDS = 30
+GET_REPORT_TIMEOUT_SECONDS = 60
+
 
 class BaseScanClient:
     """Base HTTP client for scan services (SAST, SCA, etc.)."""
@@ -44,9 +52,9 @@ class BaseScanClient:
         if report_base:
             payload["report_base"] = report_base
 
-        # Use a shorter timeout by default (50s) to prevent Cursor's 60s MCP timeout from killing the connection.
-        # If it times out, the scan continues in the background tool container.
-        timeout_seconds = config.get("mcp_timeout", 50) if config else 50
+        # Use a shorter timeout by default to prevent an IDE's ~60s MCP timeout from
+        # killing the connection. If it times out, the scan continues in the background.
+        timeout_seconds = config.get("mcp_timeout", SCAN_TIMEOUT_SECONDS) if config else SCAN_TIMEOUT_SECONDS
         
         logger.info(f"Sending scan request to {self.service_url}/scan with payload: {payload}")
         try:
@@ -79,7 +87,7 @@ class BaseScanClient:
 
     def get_version(self) -> Dict[str, Any]:
         """Get tool version via HTTP."""
-        response = requests.get(f"{self.service_url}/version", timeout=10)
+        response = requests.get(f"{self.service_url}/version", timeout=VERSION_TIMEOUT_SECONDS)
         response.raise_for_status()
         return response.json()
 
@@ -92,7 +100,7 @@ class BaseScanClient:
             response = requests.get(
                 f"{self.service_url}/reports",
                 params=params,
-                timeout=30,
+                timeout=LIST_REPORTS_TIMEOUT_SECONDS,
             )
             response.raise_for_status()
             return response.json()
@@ -111,7 +119,7 @@ class BaseScanClient:
             response = requests.get(
                 f"{self.service_url}/report/{timestamp}",
                 params=params,
-                timeout=60,
+                timeout=GET_REPORT_TIMEOUT_SECONDS,
             )
             response.raise_for_status()
             return response.json()

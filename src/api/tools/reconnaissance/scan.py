@@ -11,6 +11,9 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_TOOLS = tools_for_category("reconnaissance")
 
+# Sentinel workspace_id meaning "auto-create a virtual workspace for me".
+AUTO_WORKSPACE = "auto"
+
 # Tools that support source_tool chaining (target is optional when source_tool is set)
 CHAINABLE_TOOLS = [
     "httpx",
@@ -113,7 +116,7 @@ def run_reconnaissance_scan(
     try:
         # Auto-create virtual workspace if not provided
 
-        if not workspace_id or workspace_id == "auto":
+        if not workspace_id or workspace_id == AUTO_WORKSPACE:
             logger.info("No workspace_id provided, creating virtual workspace for enumeration scan")
 
             workspace_service = get_workspace_service()

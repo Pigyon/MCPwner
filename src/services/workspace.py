@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 from models import Workspace
 from repositories.workspace import WorkspaceRepository
 from workspace.local_mount import LocalMountError, setup_local_mount
-from workspace.repository import RepositoryError, clone_repository
+from workspace.git_clone import RepositoryError, clone_repository
 
 logger = logging.getLogger(__name__)
 
@@ -186,6 +186,20 @@ class WorkspaceService:
         """Delete workspace."""
         return self.repository.delete(workspace_id)
 
+    def _safe_rmtree(self, path: Path, result: Dict[str, Any], success_detail: str) -> None:
+        """Remove a directory, recording the outcome on ``result``.
+
+        Sets ``deleted_files`` on success, or ``status='error'`` (and logs) on failure.
+        """
+        try:
+            shutil.rmtree(path)
+            result["deleted_files"] = True
+            result["details"].append(success_detail)
+        except Exception as e:
+            result["status"] = "error"
+            result["details"].append(f"Failed to delete files: {e}")
+            logger.error(f"Failed to delete {path}: {e}")
+
     def cleanup_workspace(
         self,
         workspace_id: str,
@@ -225,16 +239,12 @@ class WorkspaceService:
                 if workspace.is_local_path() and workspace.workspace_base_dir:
                     ws_base = Path(workspace.workspace_base_dir)
                     if ws_base.exists():
-                        try:
-                            shutil.rmtree(ws_base)
-                            result["deleted_files"] = True
-                            result["details"].append(
-                                f"Deleted workspace reports directory: {ws_base} "
-                                f"(source code at {workspace.path} preserved)"
-                            )
-                        except Exception as e:
-                            result["status"] = "error"
-                            result["details"].append(f"Failed to delete reports dir: {e}")
+                        self._safe_rmtree(
+                            ws_base,
+                            result,
+                            f"Deleted workspace reports directory: {ws_base} "
+                            f"(source code at {workspace.path} preserved)",
+                        )
                     else:
                         result["details"].append("No workspace reports directory found to delete")
                 else:
@@ -244,27 +254,17 @@ class WorkspaceService:
                 # Virtual workspaces can be safely deleted (only contain reports)
                 workspace_dir = Path(base_path) / workspace_id
                 if workspace_dir.exists():
-                    try:
-                        shutil.rmtree(workspace_dir)
-                        result["deleted_files"] = True
-                        result["details"].append(f"Deleted virtual workspace directory: {workspace_dir}")
-                    except Exception as e:
-                        result["status"] = "error"
-                        result["details"].append(f"Failed to delete files: {e}")
-                        logger.error(f"Failed to delete workspace directory {workspace_dir}: {e}")
+                    self._safe_rmtree(
+                        workspace_dir, result, f"Deleted virtual workspace directory: {workspace_dir}"
+                    )
                 else:
                     result["details"].append("No workspace directory found to delete")
             else:
                 workspace_dir = Path(base_path) / workspace_id
                 if workspace_dir.exists():
-                    try:
-                        shutil.rmtree(workspace_dir)
-                        result["deleted_files"] = True
-                        result["details"].append(f"Deleted workspace directory: {workspace_dir}")
-                    except Exception as e:
-                        result["status"] = "error"
-                        result["details"].append(f"Failed to delete files: {e}")
-                        logger.error(f"Failed to delete workspace directory {workspace_dir}: {e}")
+                    self._safe_rmtree(
+                        workspace_dir, result, f"Deleted workspace directory: {workspace_dir}"
+                    )
                 else:
                     result["details"].append("No workspace directory found to delete")
         else:

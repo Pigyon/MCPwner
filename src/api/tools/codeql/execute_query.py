@@ -1,4 +1,4 @@
-"""Execute CodeQL query tool with context enrichment."""
+"""Execute CodeQL query tool."""
 
 import json
 import logging
@@ -10,6 +10,9 @@ from deps import get_codeql_service, get_workspace_repository, get_workspace_ser
 
 logger = logging.getLogger(__name__)
 
+# Maximum serialized size of query results returned to the LLM.
+MAX_RESULT_BYTES = 10 * 1024 * 1024
+
 
 def execute_query(
     workspace_id: str,
@@ -18,10 +21,9 @@ def execute_query(
     query_name: Optional[str] = None,
     query_type: str = "builtin",
     custom_query: Optional[str] = None,
-    enrich_context: bool = True,
 ) -> dict:
     """
-    Execute CodeQL query on database with optional context enrichment.
+    Execute CodeQL query on database.
 
     Args:
         workspace_id: UUID of the workspace
@@ -30,7 +32,6 @@ def execute_query(
         query_name: Optional specific query name within pack
         query_type: Type of query - "builtin" or "custom" (default: "builtin")
         custom_query: Custom CodeQL query code (required if query_type="custom")
-        enrich_context: Whether to enrich findings with function context (default: True)
 
     Returns:
         Dictionary with query results and findings
@@ -105,17 +106,9 @@ def execute_query(
             # Extract findings
             findings = parse_sarif(sarif_data, workspace_id)
 
-            # Enrich with function context if requested
-            if enrich_context:
-                # Context extraction is disabled due to stability issues
-                # context_db_path = f"/workspaces/{workspace_id}/context.db"
-                # if Path(context_db_path).exists():
-                #     findings = enrich_findings_with_context(findings, context_db_path)
-                pass
-
-            # Enforce 10MB result size limit
+            # Enforce result size limit
             result_json = json.dumps(findings)
-            if len(result_json) > 10 * 1024 * 1024:
+            if len(result_json) > MAX_RESULT_BYTES:
                 return {
                     "status": "error",
                     "error": "Results exceed 10MB size limit",
@@ -156,7 +149,6 @@ def parse_sarif(sarif_data: Dict[str, Any], workspace_id: str) -> List[Dict[str,
     findings = []
 
     for run in sarif_data.get("runs", []):
-        _ = run.get("tool", {}).get("driver", {}).get("name", "CodeQL")  # tool_name unused
         rules = {rule["id"]: rule for rule in run.get("tool", {}).get("driver", {}).get("rules", [])}
 
         for result in run.get("results", []):
@@ -228,71 +220,3 @@ def sanitize_path(path: str, workspace_id: str) -> str:
             return parts[3]
 
     return path
-
-
-# def enrich_findings_with_context(
-#     findings: List[Dict[str, Any]], context_db_path: str
-# ) -> List[Dict[str, Any]]:
-#     """
-#     Enrich findings with function context from context database.
-#
-#     Args:
-#         findings: List of finding dictionaries
-#         context_db_path: Path to context database
-#
-#     Returns:
-#         Enriched findings list
-#     """
-#     repo = SQLiteContextRepository(context_db_path)
-#
-#     for finding in findings:
-#         file = finding.get("file")
-#         line = finding.get("start_line")
-#
-#         if file and line:
-#             try:
-#                 function = repo.code_elements.get_by_location(file, line)
-#                 if function:
-#                     finding["function_context"] = {
-#                         "name": function.name,
-#                         "qualified_name": function.qualified_name,
-#                         "start_line": function.start_line,
-#                         "end_line": function.end_line,
-#                         "code": function.code,
-#                     }
-#             except Exception:
-#                 # Skip context enrichment on error
-#                 pass
-#
-#     return findings
-
-
-def _parse_custom_query_csv(csv_path: str, workspace_id: str) -> List[Dict[str, Any]]:
-    """
-    Parse CSV output from custom query.
-
-    Args:
-        csv_path: Path to CSV file
-        workspace_id: Workspace ID for path sanitization
-
-    Returns:
-        List of finding dictionaries
-    """
-    import csv
-
-    findings = []
-
-    try:
-        with open(csv_path, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                # Sanitize file paths if present
-                if "file" in row:
-                    row["file"] = sanitize_path(row["file"], workspace_id)
-
-                findings.append(dict(row))
-    except Exception:
-        # Return empty list on parse error
-        pass
-
-    return findings
