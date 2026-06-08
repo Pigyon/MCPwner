@@ -1,25 +1,14 @@
-# Stage 1: Build PHP extensions and install Composer
-# Pin by digest for byte-for-byte reproducibility (tag 6.9.1 as of 2026-06-06)
-FROM ghcr.io/danog/psalm:6.9.1@sha256:99992b00695c29ceebf152d705a26e512ba24f4fd968908d5add8c25c05aeef3 AS builder
+# Pinned by digest for byte-for-byte reproducibility (tag 6.9.1 as of 2026-06-06)
+FROM ghcr.io/danog/psalm:6.9.1@sha256:99992b00695c29ceebf152d705a26e512ba24f4fd968908d5add8c25c05aeef3
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
-
+# Install the zip PHP extension (and its libzip runtime dependency) plus composer
+# in this same stage so zip.so can actually load — copying only the .so from a
+# builder stage leaves libzip.so.4 missing and every php invocation warns.
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions zip
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Stage 2: Runtime
-FROM ghcr.io/danog/psalm:6.9.1@sha256:99992b00695c29ceebf152d705a26e512ba24f4fd968908d5add8c25c05aeef3
-
-# Copy built PHP extensions from builder
-COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
-COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
-COPY --from=builder /usr/bin/composer /usr/bin/composer
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \

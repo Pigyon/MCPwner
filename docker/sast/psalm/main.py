@@ -74,6 +74,9 @@ def build_psalm_cmd(request: ScanRequest, output_path: Path):
         "--report=" + str(output_path),
         "--output-format=sarif",
         "--root=" + str(full_scan_path),
+        # Disable the on-disk cache: psalm runs non-root on a read-only rootfs and
+        # otherwise crashes trying to create its cache directory.
+        "--no-cache",
     ]
 
     # Psalm runs from the project root usually

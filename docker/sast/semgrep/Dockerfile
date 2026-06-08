@@ -18,6 +18,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy installed Python packages from builder
 COPY --from=builder /install /usr/local
 
+# Bundle the official ruleset at build time (build has network access) so the
+# scanner works fully offline at runtime — the SAST network is internal:true and
+# 'semgrep --config auto' would otherwise need to reach semgrep.dev.
+ARG SEMGREP_RULES_REF=develop
+RUN git clone --depth 1 --branch "${SEMGREP_RULES_REF}" \
+    https://github.com/semgrep/semgrep-rules /opt/semgrep-rules && \
+    rm -rf /opt/semgrep-rules/.git
+ENV SEMGREP_DEFAULT_CONFIG=/opt/semgrep-rules
+
 WORKDIR /service
 
 COPY docker/common /service/common

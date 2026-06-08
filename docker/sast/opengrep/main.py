@@ -1,10 +1,15 @@
 import logging
+import os
 from pathlib import Path
 
 from common.base_service import create_scanner_app
 from common.models import ScanRequest
 
 logger = logging.getLogger(__name__)
+
+# Ruleset bundled into the image at build time (see Dockerfile); used by default
+# so scans run offline instead of fetching the registry ('auto').
+DEFAULT_CONFIG = os.environ.get("OPENGREP_DEFAULT_CONFIG", "auto")
 
 
 def build_opengrep_cmd(request: ScanRequest, output_path: Path):
@@ -18,7 +23,7 @@ def build_opengrep_cmd(request: ScanRequest, output_path: Path):
         for rule in config["rules"]:
             cmd.extend(["--config", rule])
     else:
-        cmd.extend(["--config", "auto"])
+        cmd.extend(["--config", DEFAULT_CONFIG])
 
     if "exclude" in config:
         for pattern in config["exclude"]:
