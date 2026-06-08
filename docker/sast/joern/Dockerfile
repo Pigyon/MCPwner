@@ -4,7 +4,9 @@ FROM eclipse-temurin:21-jdk-jammy AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends wget unzip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget -q https://github.com/joernio/joern/releases/latest/download/joern-install.sh \
+# Pin to a specific release for reproducible builds
+ENV JOERN_VERSION=v4.0.554
+RUN wget -q https://github.com/joernio/joern/releases/download/${JOERN_VERSION}/joern-install.sh \
     && chmod +x joern-install.sh \
     && ./joern-install.sh --install-dir=/opt/joern \
     && rm joern-install.sh

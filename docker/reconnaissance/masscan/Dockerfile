@@ -31,4 +31,4 @@ COPY docker/reconnaissance/masscan/main.py .
 
 EXPOSE 8117
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8117"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8117"]

@@ -10,11 +10,18 @@ FROM ruby:3.2-slim
 COPY --from=builder /usr/local/bundle /usr/local/bundle
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 python3-pip && \
+    apt-get install -y --no-install-recommends python3 python3-venv && \
     rm -rf /var/lib/apt/lists/*
 
+# Install the Python deps into an isolated virtualenv instead of
+# --break-system-packages (PEP 668). A venv is self-contained on its own
+# sys.path, which also avoids Debian's site-packages/dist-packages split that
+# breaks the bare --prefix=/install copy pattern on system-python bases.
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 COPY docker/sast/brakeman/requirements.txt .
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+RUN python3 -m venv "$VIRTUAL_ENV" && \
+    pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /service
 

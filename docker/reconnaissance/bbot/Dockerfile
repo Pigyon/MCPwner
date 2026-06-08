@@ -11,11 +11,12 @@ COPY docker/common /app/common
 # Copy service code
 COPY docker/reconnaissance/bbot/main.py .
 
-# Pre-install all module dependencies so scans don't stall
-RUN bbot --install-all-deps || true
+# Pre-install all module dependencies so scans don't stall.
+# Let this fail the build loudly rather than silently shipping a broken scanner.
+RUN bbot --install-all-deps
 
 EXPOSE 8118
 
 # Override the bbot entrypoint so we can run uvicorn
 ENTRYPOINT []
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8118"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8118"]

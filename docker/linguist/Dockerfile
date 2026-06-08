@@ -1,12 +1,20 @@
+FROM python:3.12-alpine AS deps
+
+COPY docker/linguist/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r /tmp/requirements.txt
+
+# Stage 2: Runtime
 FROM crazymax/linguist:9.2.0
 
 # Switch to root for installation
 USER root
 
-# Install Python and FastAPI/uvicorn for the HTTP service
-COPY docker/linguist/requirements.txt /tmp/requirements.txt
-RUN apk add --no-cache python3 py3-pip curl && \
-    pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt
+# Bring in the pre-built Python deps. On Alpine, site-packages under /usr IS on
+# the default sys.path, so copying the prefix here works without
+# --break-system-packages and without a venv (Alpine strips ensurepip, so
+# `python3 -m venv` cannot bootstrap pip).
+RUN apk add --no-cache python3 curl
+COPY --from=deps /install /usr
 
 WORKDIR /service
 

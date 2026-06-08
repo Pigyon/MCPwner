@@ -1,5 +1,5 @@
 # Stage 1: Install Python deps
-FROM python:3.11-alpine AS deps
+FROM python:3.12-alpine AS deps
 
 COPY docker/sast/gosec/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt

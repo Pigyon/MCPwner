@@ -19,4 +19,4 @@ COPY docker/reconnaissance/wafw00f/main.py .
 
 EXPOSE 8120
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8120"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8120"]

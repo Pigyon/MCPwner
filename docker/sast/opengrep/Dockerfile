@@ -7,10 +7,10 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # Stage 2: Runtime on vendor image
 FROM ipvsix/opengrep:1.16.4
 
-RUN apk add --no-cache python3 curl
+RUN apk add --no-cache curl
 
-# Copy pre-built Python packages
-COPY --from=deps /install /usr
+# Copy pre-built Python packages (opengrep base has python3.11 at /usr/local)
+COPY --from=deps /install /usr/local
 
 WORKDIR /service
 

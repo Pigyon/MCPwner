@@ -10,12 +10,14 @@ COPY docker/reconnaissance/gau/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Stage 3: Lean runtime
-FROM alpine:3.19
+# Use python:3.11-alpine (matches the deps builder) to avoid a Python ABI
+# mismatch between apk's python3 and the pip-compiled packages.
+FROM python:3.11-alpine
 
-RUN apk add --no-cache python3 curl
+RUN apk add --no-cache curl
 
 COPY --from=builder /go/bin/gau /usr/local/bin/gau
-COPY --from=deps /install /usr
+COPY --from=deps /install /usr/local
 
 WORKDIR /app
 
@@ -24,4 +26,4 @@ COPY docker/reconnaissance/gau/main.py .
 
 EXPOSE 8115
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8115"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8115"]

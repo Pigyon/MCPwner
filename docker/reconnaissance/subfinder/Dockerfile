@@ -1,5 +1,5 @@
 # Stage 1: Install Python deps
-FROM python:3.11-alpine AS deps
+FROM python:3.12-alpine AS deps
 
 COPY docker/reconnaissance/subfinder/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
@@ -18,4 +18,4 @@ COPY docker/reconnaissance/subfinder/main.py .
 EXPOSE 8110
 
 ENTRYPOINT []
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8110"]
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8110"]
