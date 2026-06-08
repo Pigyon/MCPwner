@@ -74,68 +74,101 @@ def scan(request: ScanRequest):
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Amass outputs text, we'll convert to JSON
-        txt_path = output_dir / f"{timestamp}.txt"
         json_path = output_dir / f"{timestamp}.json"
 
-        # Build Amass command
-        cmd = ["amass", "enum", "-d", domain, "-o", str(txt_path)]
+        # Amass v5 stores results in a graph database, not a flat text file.
+        # In v5 the `-o` flag only captures terminal stdout/stderr (the progress
+        # bar) — NOT discovered names — and the old `amass db` subcommand was
+        # removed. The correct flow is:
+        #   1. `amass enum`  populates the engine's graph DB
+        #   2. `amass subs -names`  reads discovered FQDNs back out of that DB
+        # The amass *engine* owns a single graph DB at $HOME/.config/amass;
+        # client-side `-dir`/`HOME` overrides do NOT relocate it, so both
+        # commands use the default location and we scope results by `-d domain`.
 
-        # Add optional parameters
+        # Default timeout of 30 minutes to prevent indefinite hangs
+        timeout_min = 30
+
+        # Build enum command. `-silent` suppresses the progress bar that would
+        # otherwise flood the logs; the graph DB is still populated.
+        enum_cmd = ["amass", "enum", "-d", domain, "-silent", "-nocolor"]
+
+        # Add optional parameters (note: `-passive` is the default in v5 and the
+        # flag is deprecated, so it is intentionally not forwarded).
         if request.config:
-            if request.config.get("passive", False):
-                cmd.append("-passive")
+            if request.config.get("active", False):
+                enum_cmd.append("-active")
             if request.config.get("brute", False):
-                cmd.append("-brute")
-            # Default timeout of 30 minutes to prevent indefinite hangs
+                enum_cmd.append("-brute")
             timeout_min = request.config.get("timeout", 30)
-            cmd.extend(["-timeout", str(timeout_min)])
             if "max_dns_queries" in request.config:
-                cmd.extend(["-max-dns-queries", str(request.config["max_dns_queries"])])
-        else:
-            # Always set a default timeout
-            cmd.extend(["-timeout", "30"])
+                enum_cmd.extend(["-dns-qps", str(request.config["max_dns_queries"])])
 
-        # Execute scan
-        logger.info(f"Executing Amass scan: {' '.join(cmd)}")
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=False,
+        # amass -timeout is in minutes; it governs amass's own enumeration loop.
+        enum_cmd.extend(["-timeout", str(timeout_min)])
+
+        # Hard wall-clock ceiling on the subprocess itself: if amass ignores its
+        # own -timeout (or hangs on network I/O), the request thread must not
+        # block forever. Allow a 60s buffer over amass's internal timeout.
+        subprocess_timeout = int(timeout_min) * 60 + 60
+
+        # Execute enumeration (populates the graph DB)
+        logger.info(f"Executing Amass scan: {' '.join(enum_cmd)}")
+        try:
+            subprocess.run(
+                enum_cmd,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=subprocess_timeout,
+            )
+        except subprocess.TimeoutExpired:
+            # Not fatal: amass may have already written partial results to the
+            # graph DB before the wall-clock ceiling fired. Fall through and try
+            # to extract whatever was discovered.
+            logger.warning(
+                f"Amass enum hit the {subprocess_timeout}s wall-clock ceiling; "
+                f"extracting any partial results from the graph DB."
+            )
+
+        # Extract discovered names from the graph DB via `amass subs -names`.
+        subs_cmd = ["amass", "subs", "-names", "-d", domain, "-nocolor"]
+        try:
+            subs_result = subprocess.run(
+                subs_cmd, capture_output=True, text=True, check=False, timeout=120
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "status": "error",
+                "error": "Amass result extraction (amass subs) timed out",
+            }
+
+        # A non-zero exit from `amass subs` is not necessarily fatal — it also
+        # occurs when simply no names were discovered. Log it but still attempt
+        # to parse stdout (an empty result is a valid "0 findings" outcome).
+        if subs_result.returncode != 0:
+            logger.warning(
+                f"amass subs exited {subs_result.returncode}: "
+                f"{subs_result.stderr.strip()[:300]}"
+            )
+
+        # Each stdout line is a discovered FQDN. When nothing is found, amass
+        # prints a human sentinel ("No names were discovered") instead — filter
+        # that and any non-hostname noise (a valid FQDN has no spaces and a dot).
+        subdomains = sorted(
+            {
+                line.strip()
+                for line in subs_result.stdout.splitlines()
+                if line.strip() and " " not in line.strip() and "." in line.strip()
+            }
         )
 
-        # Check if text output was created
-        if not txt_path.exists():
-            logger.error(f"Scan failed: {result.stderr}")
-            return {
-                "status": "error",
-                "error": f"Scan failed to generate report. Stderr: {result.stderr}",
-                "output": result.stdout,
-            }
+        json_data = [{"subdomain": s} for s in subdomains]
+        with open(json_path, "w") as f:
+            json.dump(json_data, f, indent=2)
 
-        # Convert text output to JSON
-        try:
-            with open(txt_path, "r") as f:
-                subdomains = [line.strip() for line in f if line.strip()]
-
-            json_data = [{"subdomain": subdomain} for subdomain in subdomains]
-
-            with open(json_path, "w") as f:
-                json.dump(json_data, f, indent=2)
-
-            finding_count = len(subdomains)
-            logger.info(f"Converted {finding_count} subdomains to JSON format")
-
-            # Remove temporary text file
-            txt_path.unlink()
-
-        except Exception as e:
-            logger.error(f"Failed to convert output to JSON: {e}")
-            return {
-                "status": "error",
-                "error": f"Failed to convert output: {e}",
-            }
+        finding_count = len(subdomains)
+        logger.info(f"Amass discovered {finding_count} name(s) for {domain}")
 
         return {
             "status": "success",

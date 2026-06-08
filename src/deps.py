@@ -325,7 +325,7 @@ def get_trufflehog_service():
 def get_detect_secrets_client():
     config = get_config()
     detect_secrets_url = config.get("detect_secrets", {}).get(
-        "service_url", "http://detect-secrets:8092"
+        "service_url", "http://detect-secrets:8093"
     )
     return DetectSecretsClient(detect_secrets_url)
 
@@ -338,7 +338,7 @@ def get_detect_secrets_service():
 @lru_cache(maxsize=None)
 def get_whispers_client():
     config = get_config()
-    whispers_url = config.get("whispers", {}).get("service_url", "http://whispers:8093")
+    whispers_url = config.get("whispers", {}).get("service_url", "http://whispers:8092")
     return WhispersClient(whispers_url)
 
 
