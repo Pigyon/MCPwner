@@ -28,10 +28,17 @@ class CodeQLClient:
                     "source_path": source_path,
                     "db_path": db_path,
                 },
-                timeout=600,
+                timeout=50,  # 50s timeout to prevent Cursor MCP client crash
             )
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ReadTimeout:
+            logger.warning(f"CodeQL database creation exceeded 50s timeout. It is likely still running in the background.")
+            return {
+                "status": "backgrounded",
+                "message": "Database creation exceeded 50s MCP timeout and is continuing in the background.",
+                "database_path": db_path
+            }
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to create database: {e}")
             if hasattr(e, "response") and e.response is not None:
@@ -56,9 +63,16 @@ class CodeQLClient:
             payload["query_name"] = query_name
 
         try:
-            response = requests.post(f"{self.service_url}/query/execute", json=payload, timeout=600)
+            response = requests.post(f"{self.service_url}/query/execute", json=payload, timeout=50)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ReadTimeout:
+            logger.warning(f"CodeQL query execution exceeded 50s timeout. It is likely still running in the background.")
+            return {
+                "status": "backgrounded",
+                "message": "Query execution exceeded 50s MCP timeout and is continuing in the background.",
+                "output_path": output_path
+            }
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to execute query: {e}")
             if hasattr(e, "response") and e.response is not None:

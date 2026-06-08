@@ -15,6 +15,16 @@ from workspace.repository import RepositoryError, clone_repository
 
 logger = logging.getLogger(__name__)
 
+# Scanner containers run as mixed UIDs (root, scanner, 1000) with cap_drop: ALL,
+# so workspace dirs must be world-writable on the shared /workspaces volume.
+_SHARED_DIR_MODE = 0o777
+
+
+def _ensure_shared_dir(path: Path) -> Path:
+    path.mkdir(parents=True, exist_ok=True)
+    path.chmod(_SHARED_DIR_MODE)
+    return path
+
 
 def _validate_local_codebase(source: str) -> str:
     """Validate a local codebase path for direct use (no copy).
@@ -73,12 +83,8 @@ class WorkspaceService:
         # Handle virtual workspace (for tools that don't have source code)
         if source_type == "virtual":
             try:
-                workspace_dir = Path(base_path) / workspace.workspace_id
-                workspace_dir.mkdir(parents=True, exist_ok=True)
-
-                # Create reports directory structure
-                reports_dir = workspace_dir / "reports"
-                reports_dir.mkdir(exist_ok=True)
+                workspace_dir = _ensure_shared_dir(Path(base_path) / workspace.workspace_id)
+                _ensure_shared_dir(workspace_dir / "reports")
 
                 workspace.path = str(workspace_dir)
                 workspace.workspace_base_dir = str(workspace_dir)
@@ -92,8 +98,10 @@ class WorkspaceService:
         elif source_type == "github":
             try:
                 repo_path = clone_repository(source, workspace.workspace_id, base_path)
+                workspace_base = _ensure_shared_dir(Path(base_path) / workspace.workspace_id)
+                _ensure_shared_dir(workspace_base / "reports")
                 workspace.path = repo_path
-                workspace.workspace_base_dir = str(Path(base_path) / workspace.workspace_id)
+                workspace.workspace_base_dir = str(workspace_base)
                 self.repository.save(workspace)
                 logger.info(f"Successfully cloned GitHub repo to {repo_path}")
             except RepositoryError as e:
@@ -122,10 +130,12 @@ class WorkspaceService:
                     ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"),
                 )
 
+                workspace_base = _ensure_shared_dir(Path(base_path) / workspace.workspace_id)
+                _ensure_shared_dir(workspace_base / "reports")
                 workspace.local_path = source_path
                 workspace.mount_path = destination_path
                 workspace.path = destination_path
-                workspace.workspace_base_dir = str(Path(base_path) / workspace.workspace_id)
+                workspace.workspace_base_dir = str(workspace_base)
                 self.repository.save(workspace)
                 logger.info(f"Successfully set up local workspace at {destination_path}")
             except LocalMountError as e:
@@ -138,10 +148,8 @@ class WorkspaceService:
                 validated_path = _validate_local_codebase(source)
 
                 # Create a workspace base dir for reports/metadata only
-                workspace_base = Path(base_path) / workspace.workspace_id
-                workspace_base.mkdir(parents=True, exist_ok=True)
-                reports_dir = workspace_base / "reports"
-                reports_dir.mkdir(exist_ok=True)
+                workspace_base = _ensure_shared_dir(Path(base_path) / workspace.workspace_id)
+                _ensure_shared_dir(workspace_base / "reports")
 
                 workspace.path = validated_path
                 workspace.local_path = validated_path
