@@ -132,10 +132,12 @@ services:
       - no-new-privileges:true
     networks:
       - mcpwner-internal
+      - mcpwner-recon   # internet: autobuild needs to resolve build dependencies
     environment:
-      - CODEQL_EXTRACTOR_JAVASCRIPT_OPTION_INSTALL_DEPENDENCIES=false
-      - LGTM_INDEX_INSTALL_DEPENDENCIES=false
-    read_only: true
+      # With internet available, let CodeQL install dependencies for richer analysis 
+      - CODEQL_EXTRACTOR_JAVASCRIPT_OPTION_INSTALL_DEPENDENCIES=true
+      - LGTM_INDEX_INSTALL_DEPENDENCIES=true
+    read_only: false  # autobuild writes build artifacts / dependency caches
     deploy:
       resources:
         limits:
@@ -194,6 +196,12 @@ services:
     container_name: semgrep-scanner
     env_file:
       - docker/common/python.env
+    environment:
+      # Internet available: use the curated Semgrep Registry ruleset ('auto')
+      # instead of the bundled offline copy. 'auto' requires metrics to be
+      # enabled (it queries the registry), so override the image's off default.
+      - SEMGREP_DEFAULT_CONFIG=auto
+      - SEMGREP_SEND_METRICS=auto
     read_only: false
     restart: unless-stopped
     cap_drop:
@@ -213,6 +221,7 @@ services:
       - /tmp:noexec,nosuid,size=1g
     networks:
       - mcpwner-internal
+      - mcpwner-recon   # internet: fetch rules from the Semgrep Registry
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8082/health\")"]
       interval: 60s
@@ -452,6 +461,9 @@ services:
     container_name: opengrep-scanner
     env_file:
       - docker/common/python.env
+    environment:
+      # Internet available: use the curated registry ruleset ('auto').
+      - OPENGREP_DEFAULT_CONFIG=auto
     read_only: false
     restart: unless-stopped
     cap_drop:
@@ -464,6 +476,7 @@ services:
       - /tmp:noexec,nosuid,size=2g
     networks:
       - mcpwner-internal
+      - mcpwner-recon   # internet: fetch rules from the registry
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8096/health\")"]
       interval: 60s

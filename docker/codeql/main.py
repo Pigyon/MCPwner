@@ -103,16 +103,23 @@ def create_database(request: CreateDatabaseRequest):
             "--overwrite",
         ]
 
-        # For interpreted languages (javascript, typescript, python, ruby), disable autobuild
-        # to avoid build failures in environments without build tools (npm, pip, etc.)
+        # Pick an extraction strategy that needs no build tools or network, since
+        # the SAST network is internet-less.
+        lang = request.language.lower()
+        interpreted = {"javascript", "typescript", "python", "ruby"}
+        # Compiled languages that CodeQL can extract without building (CodeQL >= 2.16).
+        build_mode_none = {"java", "csharp", "kotlin"}
         logger.info(f"Checking language: '{request.language}'")
 
-        if request.language.lower() in ["javascript", "typescript", "python", "ruby"]:
+        if lang in interpreted:
             logger.info("Disabling autobuild for interpreted language")
             cmd.append(f"--command={str(Path('/bin/true'))}")
             cmd.append("--no-run-unnecessary-builds")
+        elif lang in build_mode_none:
+            logger.info(f"Using --build-mode=none for '{lang}' (no build/network needed)")
+            cmd.append("--build-mode=none")
         else:
-            logger.info(f"Language '{request.language}' not in interpreted list")
+            logger.info(f"Language '{lang}' uses the default autobuilder (needs build tools)")
 
         # Add verbosity to debug autobuild failures
         # cmd.append("-v")

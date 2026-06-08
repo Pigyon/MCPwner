@@ -43,7 +43,7 @@ def create_scanner_app(
                 version_cmd,
                 capture_output=True,
                 text=True,
-                timeout=5,
+                timeout=20,  # some CLIs (e.g. semgrep) are slow to start up
                 check=True,
             )
             return {"version": result.stdout.strip(), "status": "success"}
