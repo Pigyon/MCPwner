@@ -4,6 +4,7 @@ Masscan Service - Fast Port Scanner
 
 import logging
 import socket
+import time
 from pathlib import Path
 from typing import List
 
@@ -33,12 +34,25 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         socket.inet_aton(target)
         resolved_target = target
     except socket.error:
-        # Not an IP, try to resolve hostname
-        try:
-            resolved_target = socket.gethostbyname(target)
-            logger.info(f"Resolved {target} to {resolved_target}")
-        except socket.gaierror as e:
-            raise ValueError(f"Failed to resolve hostname {target}: {e}")
+        # Not an IP, try to resolve hostname. Docker's embedded DNS resolver
+        # (127.0.0.11) occasionally returns transient "Temporary failure in
+        # name resolution" errors under load, so retry a few times with a
+        # short backoff before giving up.
+        resolved_target = None
+        last_error = None
+        for attempt in range(3):
+            try:
+                resolved_target = socket.gethostbyname(target)
+                logger.info(f"Resolved {target} to {resolved_target}")
+                break
+            except socket.gaierror as e:
+                last_error = e
+                logger.warning(
+                    f"DNS resolution for {target} failed (attempt {attempt + 1}/3): {e}"
+                )
+                time.sleep(1)
+        if resolved_target is None:
+            raise ValueError(f"Failed to resolve hostname {target}: {last_error}")
 
     # Get ports (default to common ports)
     ports = "1-1000"
