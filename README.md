@@ -29,16 +29,6 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 
 > **Note**: This project is under active development. Learn more about MCPs [here](https://modelcontextprotocol.io).
 
-## Key Features
-
-- 🔧 **Unified Interface**: Single MCP server integrating multiple security tools (SAST, SCA, secrets detection, reconnaissance)
-- 🤖 **LLM Integration**: Structured output formats (SARIF/JSON) for direct consumption by AI assistants
-- 🔍 **Continuous Analysis**: Correlate findings across multiple tools to identify attack paths and 0-day vulnerabilities
-- 🏗️ **Multi-Agent Architecture**: Designed for specialized agents collaborating across security phases
-- 🐳 **Containerized Execution**: Isolated tool environments for reproducible scans
-- 💾 **Automatic Persistence**: Workspace and database metadata survives container restarts
-- 🔌 **Extensible**: Plugin architecture for adding new security tools
-
 ## Integrated Tools
 
 <div align="center">
@@ -91,17 +81,10 @@ The following tools are planned for future releases:
 
 - OWASP ZAP, SQLmap, NoSQLMap, Dalfox, Nikto, SSTImap, Commix, jwt_tool, Wapiti, Nuclei,
 
-### OSINT
-
-- Shodan API, Censys API, crt.sh, Altdns, Lazys3, Bucket Stream
 
 ### Infrastructure & IaC Security
 
 - Prowler, Checkov, KICS, Terrascan, TFSec, Hadolint
-
-### Exploitation & PoC Development
-
-- Metasploit, Interactsh, Frida
 
 ## Usage Examples
 
@@ -368,27 +351,9 @@ MCPwner exposes the following tools through the MCP interface:
 - `health_check` - Check server and tool availability
 - `list_tools` - List all available tools and their status
 
-## Contributing
-
-Contributions are welcome! Please review the [contribution guidelines](CONTRIBUTING.md) before submitting pull requests.
-
-**Priority Areas:**
-
-- Testing infrastructure (e2e and unit tests)
-- Container lifecycle management and optimization
-- Multi-stage Docker builds for reduced image sizes
-- Enhanced error handling and timeout mechanisms
-- Additional security tool integrations
-
-**Contribution Guidelines:**
-
-- Submit focused pull requests with manageable scope
-- Include tests for new features
-- Follow existing code style and patterns
-- Update documentation as needed
-
-See the [Future Tools](#future-tools) section for our development roadmap.
 
 ## Security Considerations
 
 MCPwner executes security tools that may perform intrusive operations. Only use on systems and codebases you own or have explicit permission to test - unauthorized access is illegal. Restrict MCP server access to authorized users and consider network isolation for production deployments. Review tool configurations before running scans as some tools can generate significant network traffic or system load. Log tool execution and results, keeping in mind that security scans can trigger alerts in monitoring systems. Follow responsible disclosure practices when reporting vulnerabilities discovered using MCPwner. Keep Docker images updated and scan containers for vulnerabilities regularly. Never commit API keys, tokens, or credentials to configuration files - use environment variables or secret management systems instead.
+
+Also, you should be responsible for your owns ecurity when running these tools and accessing 3rd party libraries, it's suggested to eun everything sandboxed and with no special auth (minimized and hardened where feasible)
