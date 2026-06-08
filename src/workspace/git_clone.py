@@ -5,6 +5,7 @@ This module provides functionality for cloning GitHub repositories with
 validation, timeout handling, and error management.
 """
 
+import os
 import re
 import shutil
 import subprocess
@@ -115,6 +116,9 @@ def clone_repository(
             text=True,
             check=True,
             timeout=timeout,
+            # Never prompt for credentials: a missing/private repo should fail fast
+            # with "repository not found" rather than hang or return an opaque auth error.
+            env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
         )
         return str(target_path.absolute())
 
@@ -125,8 +129,19 @@ def clone_repository(
     except subprocess.CalledProcessError as e:
         _cleanup_partial_clone(target_path)
         error_msg = (e.stderr or "").lower()
-        if "not found" in error_msg or "404" in error_msg or "repository not found" in error_msg:
-            raise RepositoryError(f"Repository not found: {validated_url}")
+        # GitHub returns 404 for missing *or* private repos and then asks for
+        # credentials; with prompts disabled git reports a username/auth error.
+        if (
+            "not found" in error_msg
+            or "404" in error_msg
+            or "repository not found" in error_msg
+            or "could not read username" in error_msg
+            or "authentication failed" in error_msg
+            or "terminal prompts disabled" in error_msg
+        ):
+            raise RepositoryError(
+                f"Repository not found or is private (no credentials configured): {validated_url}"
+            )
         if (
             "could not resolve" in error_msg
             or "network" in error_msg

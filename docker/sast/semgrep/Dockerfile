@@ -18,6 +18,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy installed Python packages from builder
 COPY --from=builder /install /usr/local
 
+# Keep semgrep fully offline: don't phone home for update checks (which otherwise
+# hangs 'semgrep --version' past the health-check timeout) or metrics.
+ENV SEMGREP_ENABLE_VERSION_CHECK=0 \
+    SEMGREP_SEND_METRICS=off
+
 # Bundle the official ruleset at build time (build has network access) so the
 # scanner works fully offline at runtime — the SAST network is internal:true and
 # 'semgrep --config auto' would otherwise need to reach semgrep.dev.

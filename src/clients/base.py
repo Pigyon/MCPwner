@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 # typical ~60s MCP timeout so a long scan backgrounds in the tool container
 # instead of having the MCP connection killed.
 SCAN_TIMEOUT_SECONDS = 50
-VERSION_TIMEOUT_SECONDS = 10
+# Generous enough for slow JVM-based tools (e.g. joern's `--version` ~14s).
+VERSION_TIMEOUT_SECONDS = 30
 LIST_REPORTS_TIMEOUT_SECONDS = 30
 GET_REPORT_TIMEOUT_SECONDS = 60
 
