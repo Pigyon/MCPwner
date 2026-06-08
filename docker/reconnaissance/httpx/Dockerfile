@@ -18,4 +18,4 @@ COPY docker/reconnaissance/httpx/main.py .
 EXPOSE 8112
 
 ENTRYPOINT []
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8112"]
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8112"]

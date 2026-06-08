@@ -11,12 +11,14 @@ COPY docker/reconnaissance/amass/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Stage 3: Lean runtime
-FROM alpine:3.19
+# Use python:3.11-alpine (matches the deps builder) to avoid a Python ABI
+# mismatch between apk's python3 and the pip-compiled packages.
+FROM python:3.11-alpine
 
-RUN apk add --no-cache python3 ca-certificates curl
+RUN apk add --no-cache ca-certificates curl
 
 COPY --from=builder /go/bin/amass /usr/local/bin/amass
-COPY --from=deps /install /usr
+COPY --from=deps /install /usr/local
 
 WORKDIR /app
 
@@ -25,4 +27,4 @@ COPY docker/reconnaissance/amass/main.py .
 
 EXPOSE 8111
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8111"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8111"]

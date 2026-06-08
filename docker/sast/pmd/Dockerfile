@@ -1,5 +1,5 @@
 # Stage 1: Install Python deps
-FROM python:3.11-alpine AS deps
+FROM python:3.12-alpine AS deps
 
 COPY docker/sast/pmd/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
@@ -19,5 +19,5 @@ COPY docker/sast/pmd/main.py .
 
 EXPOSE 8086
 
-ENTRYPOINT ["/usr/bin/python3"]
-CMD ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8086"]
+ENTRYPOINT []
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8086"]

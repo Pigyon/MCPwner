@@ -19,11 +19,11 @@ COPY --from=deps /install /usr
 
 # Download wordlists (with fallbacks)
 RUN mkdir -p /usr/share/wordlists && \
-    (wget -q -T 10 http://ffuf.me/wordlist/common.txt -O /usr/share/wordlists/common.txt || \
+    (wget -q -T 10 https://ffuf.me/wordlist/common.txt -O /usr/share/wordlists/common.txt || \
      printf '%s\n' admin api test login index config backup data files images js css static uploads downloads docs help about contact search profile settings dashboard users accounts services products cart checkout payment orders reports logs status health metrics api/v1 api/v2 admin/login admin/dashboard .git .env .htaccess robots.txt sitemap.xml favicon.ico wp-admin wp-content wp-includes > /usr/share/wordlists/common.txt) && \
-    (wget -q -T 10 http://ffuf.me/wordlist/parameters.txt -O /usr/share/wordlists/parameters.txt || \
+    (wget -q -T 10 https://ffuf.me/wordlist/parameters.txt -O /usr/share/wordlists/parameters.txt || \
      printf '%s\n' id user username password email token api_key session page limit offset sort order filter search query type category tag status action callback redirect url path file name value data json xml format method version > /usr/share/wordlists/parameters.txt) && \
-    (wget -q -T 10 http://ffuf.me/wordlist/subdomains.txt -O /usr/share/wordlists/subdomains.txt || \
+    (wget -q -T 10 https://ffuf.me/wordlist/subdomains.txt -O /usr/share/wordlists/subdomains.txt || \
      printf '%s\n' www mail ftp admin api dev test staging prod production blog shop store app mobile static cdn images media assets docs help support portal dashboard status monitor metrics logs > /usr/share/wordlists/subdomains.txt) && \
     chmod 644 /usr/share/wordlists/*.txt
 
@@ -34,4 +34,4 @@ COPY docker/reconnaissance/ffuf/main.py .
 
 EXPOSE 8114
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8114"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8114"]

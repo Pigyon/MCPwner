@@ -1,9 +1,12 @@
 # Stage 1: Download kiterunner binary
 FROM alpine:3.19 AS builder
 
+ENV KITERUNNER_VERSION=1.0.2
+ENV KITERUNNER_SHA256=6f0b70aabf747de592445a690281897eebbc45927e9264185d34ffb11637613b
 RUN apk add --no-cache curl tar \
-    && curl -sL https://github.com/assetnote/kiterunner/releases/download/v1.0.2/kiterunner_1.0.2_linux_amd64.tar.gz \
+    && curl -sL https://github.com/assetnote/kiterunner/releases/download/v${KITERUNNER_VERSION}/kiterunner_${KITERUNNER_VERSION}_linux_amd64.tar.gz \
        -o /tmp/kiterunner.tar.gz \
+    && echo "${KITERUNNER_SHA256}  /tmp/kiterunner.tar.gz" | sha256sum -c - \
     && tar -xzf /tmp/kiterunner.tar.gz -C /usr/local/bin/ \
     && chmod +x /usr/local/bin/kr \
     && rm /tmp/kiterunner.tar.gz
@@ -29,4 +32,4 @@ COPY docker/reconnaissance/kiterunner/main.py .
 
 EXPOSE 8121
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8121"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8121"]
