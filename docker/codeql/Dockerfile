@@ -22,6 +22,18 @@ RUN apt-get update && \
 
 ENV PATH=$PATH:/usr/local/go/bin
 
+# The vendor base ships CodeQL 2.15.5, which has no `--build-mode=none` and so
+# can only build compiled languages (Java/C#) via an autobuilder that needs
+# Maven + internet — impossible on the internal, network-less SAST network.
+# Install the official CodeQL bundle (CLI + all query packs + extractors) which
+# supports build-mode=none, and put it first on PATH. Downloaded at build time.
+ARG CODEQL_BUNDLE_URL=https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.20.3/codeql-bundle-linux64.tar.gz
+RUN curl -fsSL "$CODEQL_BUNDLE_URL" -o /tmp/codeql-bundle.tar.gz && \
+    mkdir -p /opt && tar -xzf /tmp/codeql-bundle.tar.gz -C /opt && \
+    rm /tmp/codeql-bundle.tar.gz && \
+    chmod -R a+rX /opt/codeql
+ENV PATH=/opt/codeql:$PATH
+
 # Ensure codeql binaries are world-executable so cap_drop:ALL (which removes
 # DAC_OVERRIDE) doesn't cause "Permission denied" at runtime.
 RUN chmod -R a+rX /usr/local/codeql-home/codeql/
