@@ -5,8 +5,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from api.tools.reconnaissance.scan import CHAINABLE_TOOLS, SUPPORTED_TOOLS, _get_service_for_tool
-from deps import get_workspace_repository, get_workspace_service
+from api.tools.reconnaissance.scan import CHAINABLE_TOOLS, SUPPORTED_TOOLS
+from deps import get_service, get_workspace_repository, get_workspace_service
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +157,7 @@ def run_reconnaissance_chain(
                 tool_config["target"] = target
 
             try:
-                service = _get_service_for_tool(tool)
+                service = get_service(tool)
                 result = service.scan(workspace_id, None, tool_config)
 
                 finding_count = result.get("finding_count", 0)

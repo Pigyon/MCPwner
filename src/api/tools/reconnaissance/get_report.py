@@ -1,115 +1,22 @@
 """Get Reconnaissance report tool."""
 
-import logging
 from typing import Any, Dict
 
-from deps import (
-    get_amass_service,
-    get_arjun_service,
-    get_bbot_service,
-    get_ffuf_service,
-    get_gau_service,
-    get_httpx_service,
-    get_katana_service,
-    get_kiterunner_service,
-    get_masscan_service,
-    get_nmap_service,
-    get_subfinder_service,
-    get_wafw00f_service,
-)
+from api.tools.common import get_report
+from config.tools import tools_for_category
 
-logger = logging.getLogger(__name__)
-
-
-SUPPORTED_TOOLS = [
-    "subfinder",
-    "amass",
-    "httpx",
-    "katana",
-    "ffuf",
-    "nmap",
-    "masscan",
-    "bbot",
-    "arjun",
-    "gau",
-    "wafw00f",
-    "kiterunner",
-]
+SUPPORTED_TOOLS = tools_for_category("reconnaissance")
 
 
 def get_reconnaissance_report(tool: str, workspace_id: str) -> Dict[str, Any]:
     """
-
     Get the latest Reconnaissance report for a workspace.
 
-
     Args:
-
         tool: Name of the reconnaissance tool
-
         workspace_id: UUID of the workspace
 
-
     Returns:
-
         Report metadata and content
     """
-
-    if tool not in SUPPORTED_TOOLS:
-        return {
-            "status": "error",
-            "error": f"Unsupported tool: {tool}",
-            "supported_tools": SUPPORTED_TOOLS,
-        }
-
-    try:
-        service = _get_service_for_tool(tool)
-
-        return service.get_latest_report(workspace_id)
-
-    except Exception as e:
-        logger.error(f"Failed to get report for {tool}: {e}")
-
-        return {"status": "error", "error": str(e)}
-
-
-def _get_service_for_tool(tool: str):
-    """Get the appropriate service instance for a tool."""
-
-    if tool == "subfinder":
-        return get_subfinder_service()
-
-    if tool == "amass":
-        return get_amass_service()
-
-    if tool == "httpx":
-        return get_httpx_service()
-
-    if tool == "katana":
-        return get_katana_service()
-
-    if tool == "ffuf":
-        return get_ffuf_service()
-
-    if tool == "nmap":
-        return get_nmap_service()
-
-    if tool == "masscan":
-        return get_masscan_service()
-
-    if tool == "bbot":
-        return get_bbot_service()
-
-    if tool == "gau":
-        return get_gau_service()
-
-    if tool == "arjun":
-        return get_arjun_service()
-
-    if tool == "wafw00f":
-        return get_wafw00f_service()
-
-    if tool == "kiterunner":
-        return get_kiterunner_service()
-
-    raise ValueError(f"Unknown tool: {tool}")
+    return get_report("reconnaissance", tool, workspace_id)

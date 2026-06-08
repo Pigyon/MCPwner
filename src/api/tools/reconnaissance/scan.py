@@ -3,39 +3,13 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from deps import (
-    get_amass_service,
-    get_arjun_service,
-    get_bbot_service,
-    get_ffuf_service,
-    get_gau_service,
-    get_httpx_service,
-    get_katana_service,
-    get_kiterunner_service,
-    get_masscan_service,
-    get_nmap_service,
-    get_subfinder_service,
-    get_wafw00f_service,
-    get_workspace_service,
-)
+from config.tools import tools_for_category
+from deps import get_service, get_workspace_service
 
 logger = logging.getLogger(__name__)
 
 
-SUPPORTED_TOOLS = [
-    "subfinder",
-    "amass",
-    "httpx",
-    "katana",
-    "ffuf",
-    "nmap",
-    "masscan",
-    "bbot",
-    "arjun",
-    "gau",
-    "wafw00f",
-    "kiterunner",
-]
+SUPPORTED_TOOLS = tools_for_category("reconnaissance")
 
 # Tools that support source_tool chaining (target is optional when source_tool is set)
 CHAINABLE_TOOLS = [
@@ -152,7 +126,7 @@ def run_reconnaissance_scan(
 
             logger.info(f"Created virtual workspace: {workspace_id}")
 
-        service = _get_service_for_tool(tool)
+        service = get_service(tool)
 
         result = service.scan(workspace_id, scan_path, config)
 
@@ -167,45 +141,3 @@ def run_reconnaissance_scan(
         logger.error(f"Scan failed for {tool}: {e}")
 
         return {"status": "error", "error": str(e)}
-
-
-def _get_service_for_tool(tool: str):
-    """Get the appropriate service instance for a tool."""
-
-    if tool == "subfinder":
-        return get_subfinder_service()
-
-    if tool == "amass":
-        return get_amass_service()
-
-    if tool == "httpx":
-        return get_httpx_service()
-
-    if tool == "katana":
-        return get_katana_service()
-
-    if tool == "ffuf":
-        return get_ffuf_service()
-
-    if tool == "nmap":
-        return get_nmap_service()
-
-    if tool == "masscan":
-        return get_masscan_service()
-
-    if tool == "bbot":
-        return get_bbot_service()
-
-    if tool == "gau":
-        return get_gau_service()
-
-    if tool == "arjun":
-        return get_arjun_service()
-
-    if tool == "wafw00f":
-        return get_wafw00f_service()
-
-    if tool == "kiterunner":
-        return get_kiterunner_service()
-
-    raise ValueError(f"Unknown tool: {tool}")

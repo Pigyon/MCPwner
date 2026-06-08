@@ -1,13 +1,11 @@
 """Generic SCA report retrieval tool."""
 
-import logging
 from typing import Any, Dict
 
-from deps import get_grype_service, get_osv_scanner_service, get_retirejs_service, get_syft_service
+from api.tools.common import get_report
+from config.tools import tools_for_category
 
-logger = logging.getLogger(__name__)
-
-SUPPORTED_TOOLS = ["osv-scanner", "grype", "retirejs", "syft"]
+SUPPORTED_TOOLS = tools_for_category("sca")
 
 
 def get_sca_report(tool: str, workspace_id: str) -> Dict[str, Any]:
@@ -21,34 +19,4 @@ def get_sca_report(tool: str, workspace_id: str) -> Dict[str, Any]:
     Returns:
         Report data including SARIF content if available
     """
-    if tool not in SUPPORTED_TOOLS:
-        return {
-            "status": "error",
-            "error": f"Unsupported tool: {tool}",
-            "supported_tools": SUPPORTED_TOOLS,
-        }
-
-    try:
-        service = _get_service_for_tool(tool)
-        if not service:
-            return {
-                "status": "error",
-                "error": f"Service for tool '{tool}' is not implemented yet.",
-            }
-        return service.get_latest_report(workspace_id)
-    except Exception as e:
-        logger.error(f"Failed to get report for {tool}: {e}")
-        return {"status": "error", "error": str(e)}
-
-
-def _get_service_for_tool(tool: str):
-    """Get the appropriate service instance for a tool."""
-    if tool == "osv-scanner":
-        return get_osv_scanner_service()
-    if tool == "grype":
-        return get_grype_service()
-    if tool == "retirejs":
-        return get_retirejs_service()
-    if tool == "syft":
-        return get_syft_service()
-    raise ValueError(f"Unknown tool: {tool}")
+    return get_report("sca", tool, workspace_id)
