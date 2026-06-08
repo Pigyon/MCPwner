@@ -72,24 +72,9 @@ def create_scanner_app(
             if request.report_base:
                 output_dir = Path(request.report_base) / "reports" / tool_category / tool_name
             else:
-                workspace_base = Path(request.workspace_path).parent
-                # Handle case where workspace path might be deeper or different
-                # We want /workspaces/{id}/reports/sast/{tool}
-                # Assuming request.workspace_path is /workspaces/{id} or /workspaces/{id}/source
-
-                # Simple heuristic: find 'reports' sibling or child
-                if "reports" in str(full_scan_path):
-                    # Already inside a structure with reports? Unlikely for source
-                    pass
-
-                # Standard MCPwner structure: /workspaces/{id}/source -> /workspaces/{id}/reports
-                # If workspace_path is /workspaces/{id}, then reports is /workspaces/{id}/reports
-                # If workspace_path is /workspaces/{id}/source, then reports is /workspaces/{id}/reports
-
-                # Let's assume standard structure where reports is at workspace root
-                # We need to find the workspace root.
-                # If path contains /workspaces/<id>, we can extract it.
-
+                # Standard MCPwner layout: reports live at the workspace root,
+                # i.e. /workspaces/{id}/reports/{category}/{tool}. Derive the
+                # workspace root from the path if it contains 'workspaces'.
                 parts = Path(request.workspace_path).parts
                 if "workspaces" in parts:
                     idx = parts.index("workspaces")

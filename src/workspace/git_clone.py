@@ -6,6 +6,7 @@ validation, timeout handling, and error management.
 """
 
 import re
+import shutil
 import signal
 from pathlib import Path
 
@@ -18,10 +19,20 @@ class RepositoryError(Exception):
     pass
 
 
-class TimeoutError(RepositoryError):
-    """Raised when clone operation times out."""
+class CloneTimeoutError(RepositoryError):
+    """Raised when clone operation times out.
+
+    Note: clone timeout uses signal.SIGALRM, which only works on the main thread
+    on Unix. Clones must therefore run on the main thread.
+    """
 
     pass
+
+
+def _cleanup_partial_clone(target_path: Path) -> None:
+    """Remove a partially-cloned directory, ignoring errors."""
+    if target_path.exists():
+        shutil.rmtree(target_path, ignore_errors=True)
 
 
 def validate_github_url(source: str) -> str:
@@ -91,7 +102,7 @@ def clone_repository(
 
     Raises:
         RepositoryError: If clone fails (network, not found, invalid URL)
-        TimeoutError: If clone operation exceeds timeout
+        CloneTimeoutError: If clone operation exceeds timeout
     """
     # Validate and normalize URL
     validated_url = validate_github_url(github_url)
@@ -102,7 +113,7 @@ def clone_repository(
 
     # Set up timeout handler
     def timeout_handler(_signum, _frame):
-        raise TimeoutError(f"Clone operation exceeded {timeout} seconds timeout")
+        raise CloneTimeoutError(f"Clone operation exceeded {timeout} seconds timeout")
 
     # Clone with timeout
     old_handler = signal.signal(signal.SIGALRM, timeout_handler)
@@ -113,22 +124,14 @@ def clone_repository(
         signal.alarm(0)  # Cancel alarm
         return str(target_path.absolute())
 
-    except TimeoutError:
+    except CloneTimeoutError:
         signal.alarm(0)
-        # Clean up partial clone
-        if target_path.exists():
-            import shutil
-
-            shutil.rmtree(target_path, ignore_errors=True)
+        _cleanup_partial_clone(target_path)
         raise
 
     except GitCommandError as e:
         signal.alarm(0)
-        # Clean up partial clone
-        if target_path.exists():
-            import shutil
-
-            shutil.rmtree(target_path, ignore_errors=True)
+        _cleanup_partial_clone(target_path)
 
         # Parse error message for specific issues
         error_msg = str(e).lower()
@@ -140,11 +143,7 @@ def clone_repository(
 
     except Exception as e:
         signal.alarm(0)
-        # Clean up partial clone
-        if target_path.exists():
-            import shutil
-
-            shutil.rmtree(target_path, ignore_errors=True)
+        _cleanup_partial_clone(target_path)
         raise RepositoryError(f"Unexpected error during clone: {e}")
 
     finally:

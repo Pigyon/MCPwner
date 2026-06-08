@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from api.tools.reconnaissance.scan import CHAINABLE_TOOLS, SUPPORTED_TOOLS
+from api.tools.reconnaissance.scan import AUTO_WORKSPACE, CHAINABLE_TOOLS, SUPPORTED_TOOLS
 from deps import get_service, get_workspace_repository, get_workspace_service
 
 logger = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ def run_reconnaissance_chain(
     configs = configs or {}
 
     try:
-        if not workspace_id or workspace_id == "auto":
+        if not workspace_id or workspace_id == AUTO_WORKSPACE:
             workspace_service = get_workspace_service()
             workspace_result = workspace_service.create_workspace(
                 source_type="virtual", source=f"chain-{'-'.join(chain[:3])}"
