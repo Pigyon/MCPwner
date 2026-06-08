@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -9,6 +10,11 @@ from config.tools import ToolCategory
 from repositories.workspace import WorkspaceRepository
 
 logger = logging.getLogger(__name__)
+
+# Report dirs live on the shared /workspaces volume and are written by tool
+# containers that may run under a different UID than this server. Pre-create them
+# world-writable so any container (root or non-root) can drop its report file in.
+_REPORT_DIR_MODE = 0o777
 
 
 class BaseScanService:
@@ -83,6 +89,10 @@ class BaseScanService:
             if workspace.is_local_path() and workspace.workspace_base_dir:
                 report_base = workspace.workspace_base_dir
 
+            # Pre-create the tool's report dir so a non-root tool container can write
+            # into it (it owns the volume as UID 1000).
+            self._ensure_report_dir(workspace_id)
+
             result = self.client.scan(
                 workspace_path=workspace_path,
                 scan_path=scan_path,
@@ -121,6 +131,19 @@ class BaseScanService:
         if workspace:
             return workspace.get_reports_base_dir()
         return f"/workspaces/{workspace_id}"
+
+    def _ensure_report_dir(self, workspace_id: str) -> None:
+        """Create this tool's report dir world-writable so tool containers (which
+        may run as a different UID) can write their report into it."""
+        report_dir = Path(
+            f"{self._get_reports_base(workspace_id)}/reports/{self.tool_category}/{self.tool_name}"
+        )
+        try:
+            report_dir.mkdir(parents=True, exist_ok=True)
+            os.chmod(report_dir, _REPORT_DIR_MODE)
+        except OSError as e:
+            # Non-fatal: the tool container will still attempt to create it.
+            logger.warning(f"Could not pre-create report dir {report_dir}: {e}")
 
     def get_latest_report(self, workspace_id: str) -> Dict[str, Any]:
         """
