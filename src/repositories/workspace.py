@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from models import CodeQLDatabase, Workspace
 
@@ -33,24 +33,46 @@ class WorkspaceRepository:
         # Load existing data on initialization
         self._load_from_disk()
 
+    @staticmethod
+    def _sanitize_timestamp(value: Any) -> Any:
+        """Repair legacy '+00:00Z' timestamps (invalid double timezone) to '...Z'."""
+        if isinstance(value, str) and value.endswith("+00:00Z"):
+            return value[: -len("+00:00Z")] + "Z"
+        return value
+
     def _load_from_disk(self) -> None:
-        """Load workspace and database metadata from disk."""
+        """Load workspace and database metadata from disk.
+
+        Each record is parsed independently so a single corrupt entry only drops
+        itself (logged) instead of wiping the entire cache.
+        """
         try:
-            # Load workspaces
             if self.workspaces_file.exists():
                 with open(self.workspaces_file, "r") as f:
                     data = json.load(f)
-                    self._workspaces = {ws_id: Workspace(**ws_data) for ws_id, ws_data in data.items()}
+                for ws_id, ws_data in data.items():
+                    if isinstance(ws_data, dict) and "created_at" in ws_data:
+                        ws_data["created_at"] = self._sanitize_timestamp(ws_data["created_at"])
+                    try:
+                        self._workspaces[ws_id] = Workspace(**ws_data)
+                    except Exception as e:
+                        logger.error(f"Skipping unparseable workspace {ws_id}: {e}")
                 logger.info(f"Loaded {len(self._workspaces)} workspaces from disk")
 
-            # Load databases
             if self.databases_file.exists():
                 with open(self.databases_file, "r") as f:
                     data = json.load(f)
-                    self._databases = {
-                        ws_id: [CodeQLDatabase(**db_data) for db_data in db_list]
-                        for ws_id, db_list in data.items()
-                    }
+                for ws_id, db_list in data.items():
+                    dbs = []
+                    for db_data in db_list:
+                        if isinstance(db_data, dict) and "created_at" in db_data:
+                            db_data["created_at"] = self._sanitize_timestamp(db_data["created_at"])
+                        try:
+                            dbs.append(CodeQLDatabase(**db_data))
+                        except Exception as e:
+                            logger.error(f"Skipping unparseable database for {ws_id}: {e}")
+                    if dbs:
+                        self._databases[ws_id] = dbs
                 logger.info(f"Loaded database metadata for {len(self._databases)} workspaces")
         except Exception as e:
             logger.error(f"Failed to load metadata from disk: {e}")
