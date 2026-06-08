@@ -4,6 +4,7 @@ import logging
 from typing import List
 
 from clients.base import BaseSASTClient
+from config.tools import ToolCategory
 from repositories.workspace import WorkspaceRepository
 from services.base_scan import BaseScanService
 
@@ -17,7 +18,7 @@ class BaseSASTService(BaseScanService):
 
     def __init__(self, repository: WorkspaceRepository, client: BaseSASTClient):
         super().__init__(repository, client)
-        self.tool_category = "sast"
+        self.tool_category = ToolCategory.SAST.value
 
     def is_language_supported(self, language: str) -> bool:
         """

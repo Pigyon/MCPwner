@@ -4,6 +4,7 @@ import logging
 from typing import List
 
 from clients.base import BaseSCAClient
+from config.tools import ToolCategory
 from repositories.workspace import WorkspaceRepository
 from services.base_scan import BaseScanService
 
@@ -17,7 +18,7 @@ class BaseSCAService(BaseScanService):
 
     def __init__(self, repository: WorkspaceRepository, client: BaseSCAClient):
         super().__init__(repository, client)
-        self.tool_category = "sca"
+        self.tool_category = ToolCategory.SCA.value
 
     def is_language_supported(self, language: str) -> bool:
         """
