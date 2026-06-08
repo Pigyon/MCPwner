@@ -1,9 +1,20 @@
 """Domain models for MCPwner using Pydantic."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, field_serializer
+
+
+def _iso_z(dt: datetime) -> str:
+    """Serialize a datetime as ISO-8601 UTC with a 'Z' suffix.
+
+    Uses 'Z' instead of '+00:00' (and never both — emitting '+00:00Z' produces an
+    invalid timestamp that pydantic refuses to parse back).
+    """
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 class Workspace(BaseModel):
@@ -22,7 +33,7 @@ class Workspace(BaseModel):
 
     @field_serializer("created_at")
     def serialize_created_at(self, dt: datetime, _info):
-        return dt.isoformat() + "Z"
+        return _iso_z(dt)
 
     def is_github_clone(self) -> bool:
         """Check if workspace is a GitHub clone."""
@@ -67,7 +78,7 @@ class CodeQLDatabase(BaseModel):
 
     @field_serializer("created_at")
     def serialize_created_at(self, dt: datetime, _info):
-        return dt.isoformat() + "Z"
+        return _iso_z(dt)
 
 
 class CodeElement(BaseModel):
