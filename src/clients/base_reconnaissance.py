@@ -6,4 +6,4 @@ from clients.base import BaseScanClient
 class BaseReconnaissanceClient(BaseScanClient):
     """Base HTTP client for Reconnaissance services."""
 
-    pass
+    report_tool = "get_reconnaissance_report"

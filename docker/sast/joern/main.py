@@ -60,6 +60,10 @@ def scan(request: ScanRequest):
 
         config = request.config or {}
 
+        # A hung tool must not block the request thread forever; bound it with a
+        # timeout (10-minute default, overridable per-request).
+        timeout_seconds = config.get("timeout_seconds", 600)
+
         # Determine scan mode: joern-scan (quick, uses query DB) or joern --script (custom)
         use_scan = config.get("mode", "script") == "scan"
 
@@ -74,7 +78,18 @@ def scan(request: ScanRequest):
                 cmd.extend(["--names", config["names"]])
 
             logger.info(f"Executing joern-scan: {' '.join(cmd)}")
-            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            try:
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, check=False, timeout=timeout_seconds
+                )
+            except subprocess.TimeoutExpired as e:
+                logger.error(f"joern-scan timed out after {timeout_seconds}s")
+                stdout = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+                return {
+                    "status": "error",
+                    "error": f"Scan timed out after {timeout_seconds}s",
+                    "output": stdout,
+                }
 
             # Parse joern-scan text output into JSON
             findings = _parse_joern_scan_output(result.stdout)
@@ -95,7 +110,18 @@ def scan(request: ScanRequest):
             ]
 
             logger.info(f"Executing joern script: {' '.join(cmd)}")
-            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            try:
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, check=False, timeout=timeout_seconds
+                )
+            except subprocess.TimeoutExpired as e:
+                logger.error(f"joern script timed out after {timeout_seconds}s")
+                stdout = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+                return {
+                    "status": "error",
+                    "error": f"Scan timed out after {timeout_seconds}s",
+                    "output": stdout,
+                }
 
             if not output_path.exists():
                 return {

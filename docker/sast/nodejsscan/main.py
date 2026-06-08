@@ -63,7 +63,19 @@ def scan(request: ScanRequest):
         cmd = ["nodejsscan", "--json", "-o", str(output_path), str(full_scan_path)]
 
         logger.info(f"Executing nodejsscan: {' '.join(cmd)}")
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        timeout_seconds = (request.config or {}).get("timeout_seconds", 600)
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, check=False, timeout=timeout_seconds
+            )
+        except subprocess.TimeoutExpired as e:
+            logger.error(f"nodejsscan scan timed out after {timeout_seconds}s")
+            stdout = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+            return {
+                "status": "error",
+                "error": f"Scan timed out after {timeout_seconds}s",
+                "output": stdout,
+            }
 
         if not output_path.exists():
             return {

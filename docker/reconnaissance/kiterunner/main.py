@@ -233,7 +233,19 @@ def scan(request: ScanRequest):
         output_path = output_dir / f"{timestamp}.json"
 
         logger.info(f"Executing kiterunner: {' '.join(cmd)}")
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        timeout_seconds = config.get("timeout_seconds", 600)
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, check=False, timeout=timeout_seconds
+            )
+        except subprocess.TimeoutExpired as e:
+            logger.error(f"{TOOL_NAME} scan timed out after {timeout_seconds}s")
+            stdout = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+            return {
+                "status": "error",
+                "error": f"Scan timed out after {timeout_seconds}s",
+                "output": stdout,
+            }
 
         # kr outputs JSON lines to stdout; write them to the report file
         stdout = result.stdout.strip()

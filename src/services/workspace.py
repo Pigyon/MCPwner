@@ -300,8 +300,13 @@ class WorkspaceService:
 
             if workspace.created_at < cutoff_time:
                 try:
-                    result = self.cleanup_workspace(workspace.workspace_id, base_path)
-                    if result["status"] == "cleaned":
+                    result = self.cleanup_workspace(
+                        workspace.workspace_id,
+                        delete_files=True,
+                        delete_metadata=True,
+                        base_path=base_path,
+                    )
+                    if result["status"] == "success":
                         cleaned.append(workspace.workspace_id)
                     else:
                         skipped.append(workspace.workspace_id)
