@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from config.tools import ToolCategory
 from repositories.workspace import WorkspaceRepository
 
 logger = logging.getLogger(__name__)
@@ -22,8 +23,8 @@ class BaseScanService:
         self.repository = repository
         self.client = client
         self.tool_name = client.tool_name
-        # Category of the tool (sast, secrets, etc.) - should be set by subclass or inferred
-        self.tool_category = "sast"
+        # Category of the tool (sast, secrets, etc.) - overridden by subclass
+        self.tool_category = ToolCategory.SAST.value
         # Cache of last scan result per workspace for reliable report retrieval
         self._last_scan_results: Dict[str, Dict[str, Any]] = {}
 
