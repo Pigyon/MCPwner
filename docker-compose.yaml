@@ -164,6 +164,9 @@ services:
     container_name: linguist-detector
     env_file:
       - docker/common/python.env
+    # Run as UID 1000 to match the owner of cloned workspaces, otherwise
+    # libgit2/Rugged rejects the repo ("not owned by current user").
+    user: "1000:1000"
     read_only: false
     restart: unless-stopped
     cap_drop:
