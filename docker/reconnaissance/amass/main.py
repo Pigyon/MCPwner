@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from common.models import ScanRequest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ def version():
         return {"version": result.stdout.strip() or result.stderr.strip(), "status": "success"}
     except Exception as e:
         logger.error(f"Failed to get version: {e}")
-        return {"status": "error", "error": str(e)}, 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/scan")
