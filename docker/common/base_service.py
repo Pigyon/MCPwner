@@ -3,7 +3,7 @@ import logging
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, List
+from typing import Callable, Dict, List
 
 from common.models import HealthResponse, ScanRequest, VersionResponse
 from fastapi import FastAPI, HTTPException
@@ -35,9 +35,17 @@ def create_scanner_app(
         """Health check endpoint."""
         return {"status": "healthy", "service": tool_name}
 
+    # Resolved once per container. The version CLI can be slow to cold-start
+    # (e.g. semgrep/opengrep); caching it avoids re-spawning a subprocess on every
+    # health check, where a transient cold-start timeout would otherwise surface
+    # as a 500 and mark a perfectly healthy service "unavailable".
+    _version_cache: Dict[str, str] = {}
+
     @app.get("/version", response_model=VersionResponse)
     def version():
-        """Get tool version."""
+        """Get tool version (cached after the first successful resolution)."""
+        if "value" in _version_cache:
+            return {"version": _version_cache["value"], "status": "success"}
         try:
             result = subprocess.run(
                 version_cmd,
@@ -46,7 +54,8 @@ def create_scanner_app(
                 timeout=20,  # some CLIs (e.g. semgrep) are slow to start up
                 check=True,
             )
-            return {"version": result.stdout.strip(), "status": "success"}
+            _version_cache["value"] = result.stdout.strip()
+            return {"version": _version_cache["value"], "status": "success"}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 

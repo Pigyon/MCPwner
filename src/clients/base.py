@@ -9,8 +9,12 @@ logger = logging.getLogger(__name__)
 # typical ~60s MCP timeout so a long scan backgrounds in the tool container
 # instead of having the MCP connection killed.
 SCAN_TIMEOUT_SECONDS = 50
-# Generous enough for slow JVM-based tools (e.g. joern's `--version` ~14s).
-VERSION_TIMEOUT_SECONDS = 30
+# Generous enough for slow JVM-based tools (e.g. joern's `--version` ~16s cold
+# start). Joern caches its version after the first resolution, but allow a wide
+# margin for the first call when many tools' health checks run concurrently.
+VERSION_TIMEOUT_SECONDS = 45
+# The /health endpoint is static (no CLI invocation), so a tight timeout is fine.
+HEALTH_TIMEOUT_SECONDS = 10
 LIST_REPORTS_TIMEOUT_SECONDS = 30
 GET_REPORT_TIMEOUT_SECONDS = 60
 
@@ -89,6 +93,16 @@ class BaseScanClient:
     def get_version(self) -> Dict[str, Any]:
         """Get tool version via HTTP."""
         response = requests.get(f"{self.service_url}/version", timeout=VERSION_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        return response.json()
+
+    def get_health(self) -> Dict[str, Any]:
+        """Liveness check via the cheap static /health endpoint.
+
+        Unlike /version, this does not execute the tool's CLI, so it stays fast and
+        reliable even while the CLI is slow to cold-start.
+        """
+        response = requests.get(f"{self.service_url}/health", timeout=HEALTH_TIMEOUT_SECONDS)
         response.raise_for_status()
         return response.json()
 

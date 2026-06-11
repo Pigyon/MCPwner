@@ -90,3 +90,9 @@ class CodeQLClient:
         response = requests.get(f"{self.service_url}/version", timeout=10)
         response.raise_for_status()
         return response.json()
+
+    def get_health(self) -> Dict[str, Any]:
+        """Liveness check via the cheap static /health endpoint (no CLI invocation)."""
+        response = requests.get(f"{self.service_url}/health", timeout=10)
+        response.raise_for_status()
+        return response.json()
