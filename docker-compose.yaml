@@ -147,7 +147,6 @@ services:
           memory: 1g
     volumes:
       - workspaces:/workspaces
-      - ./docker/codeql_service.py:/service/codeql_service.py:ro
       # Local directory mounts can be added dynamically:
       # - /path/to/local/dir:/workspaces/{workspace_id}/source:ro
     tmpfs:
