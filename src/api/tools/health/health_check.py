@@ -39,6 +39,11 @@ def _check_service(name: str, client: Any) -> Dict[str, Any]:
     """
     Check health of a specific service.
 
+    Liveness is decided by the cheap static ``/health`` endpoint. The version
+    string (resolved via ``/version``, which executes the tool's CLI and can be
+    slow to cold-start) is best-effort: a slow CLI must not make a running
+    service report as unavailable.
+
     Args:
         name: Service name
         client: Service client instance
@@ -53,12 +58,23 @@ def _check_service(name: str, client: Any) -> Dict[str, Any]:
             "version": version_info.get("version", "unknown"),
             "details": version_info,
         }
-    except Exception as e:
-        logger.error(f"Health check failed for {name}: {e}")
-        return {
-            "status": "unavailable",
-            "error": str(e),
-        }
+    except Exception as version_error:
+        # /version runs the CLI and can transiently time out (cold start) even when
+        # the service is up. Fall back to /health to decide liveness.
+        try:
+            client.get_health()
+            logger.warning(f"{name} /version unavailable but /health is OK: {version_error}")
+            return {
+                "status": "healthy",
+                "version": "unknown",
+                "note": f"version unavailable: {version_error}",
+            }
+        except Exception as health_error:
+            logger.error(f"Health check failed for {name}: {health_error}")
+            return {
+                "status": "unavailable",
+                "error": str(health_error),
+            }
 
 
 def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:

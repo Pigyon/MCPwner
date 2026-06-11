@@ -67,6 +67,12 @@ class LinguistClient:
         response.raise_for_status()
         return response.json()
 
+    def get_health(self) -> Dict[str, Any]:
+        """Liveness check via the cheap static /health endpoint (no CLI invocation)."""
+        response = requests.get(f"{self.service_url}/health", timeout=10)
+        response.raise_for_status()
+        return response.json()
+
     def _map_to_codeql_language(self, linguist_name: str) -> str:
         """
         Map linguist language names to CodeQL language names.
