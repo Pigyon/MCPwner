@@ -142,7 +142,11 @@ def _find_latest_report(workspace_root: Path, source_tool: str) -> Optional[Path
     report_dir = workspace_root / "reports" / "reconnaissance" / source_tool
     if not report_dir.exists():
         return None
-    reports = sorted(report_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    reports = sorted(
+        (p for p in report_dir.glob("*.json") if not p.name.startswith(".")),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
     return reports[0] if reports else None
 
 

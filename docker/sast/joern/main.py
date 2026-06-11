@@ -13,6 +13,42 @@ app = FastAPI(title="Joern Service", version="1.0.0")
 
 SCAN_SCRIPT = "/service/scan.sc"
 
+# `joern --version` cold-starts the JVM (~16s). The health check hits /version
+# on every tool at once, so an uncached call here regularly exceeds the client's
+# 30s version timeout under load. Cache the result after the first resolution so
+# subsequent health checks are instant.
+_version_cache: dict = {"value": None}
+
+
+def _resolve_version() -> str:
+    if _version_cache["value"] is None:
+        result = subprocess.run(
+            ["joern", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=True,
+        )
+        _version_cache["value"] = result.stdout.strip() or "unknown"
+    return _version_cache["value"]
+
+
+@app.on_event("startup")
+def _warm_version_cache() -> None:
+    """Resolve the JVM-backed version once at startup so the first health
+    check doesn't pay the ~16s cold start. Runs in a background thread so it
+    doesn't block uvicorn from serving /health immediately."""
+    import threading
+
+    def _warm():
+        try:
+            _resolve_version()
+            logger.info(f"Joern version cached: {_version_cache['value']}")
+        except Exception as e:
+            logger.warning(f"Could not warm joern version cache at startup: {e}")
+
+    threading.Thread(target=_warm, daemon=True).start()
+
 
 @app.get("/health", response_model=HealthResponse)
 def health():
@@ -22,14 +58,7 @@ def health():
 @app.get("/version", response_model=VersionResponse)
 def version():
     try:
-        result = subprocess.run(
-            ["joern", "--version"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=True,
-        )
-        return {"version": result.stdout.strip(), "status": "success"}
+        return {"version": _resolve_version(), "status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -98,13 +127,54 @@ def scan(request: ScanRequest):
 
             finding_count = len(findings)
         else:
-            # Use joern --script for custom CPG analysis
+            # Custom CPG analysis. Build the CPG up-front with joern-parse so we
+            # can pass frontend-specific flags, then run the analysis script
+            # against the prebuilt CPG. This is necessary because Joern's default
+            # Java extraction runs delombok when a Lombok dependency is present
+            # (e.g. WebGoat), and a delombok failure silently yields an EMPTY CPG
+            # (0 methods/calls → 0 findings). Disabling delombok parses the raw
+            # source directly and keeps all the security-relevant call sites.
+            cpg_path = output_dir / f"{timestamp}.cpg.bin"
+
+            parse_cmd = [
+                "joern-parse",
+                str(full_scan_path),
+                "--output",
+                str(cpg_path),
+            ]
+            # Only Java projects need the delombok override; passing
+            # --delombok-mode to non-Java frontends would error.
+            has_java = any(Path(full_scan_path).rglob("*.java"))
+            if has_java:
+                parse_cmd += ["--frontend-args", "--delombok-mode", "no-delombok"]
+
+            logger.info(f"Building CPG: {' '.join(parse_cmd)}")
+            try:
+                parse_result = subprocess.run(
+                    parse_cmd, capture_output=True, text=True, check=False, timeout=timeout_seconds
+                )
+            except subprocess.TimeoutExpired as e:
+                logger.error(f"joern-parse timed out after {timeout_seconds}s")
+                stdout = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+                return {
+                    "status": "error",
+                    "error": f"CPG build timed out after {timeout_seconds}s",
+                    "output": stdout,
+                }
+
+            if not cpg_path.exists():
+                return {
+                    "status": "error",
+                    "error": f"Joern failed to build CPG. Stderr: {parse_result.stderr}",
+                    "output": parse_result.stdout,
+                }
+
             cmd = [
                 "joern",
                 "--script",
                 SCAN_SCRIPT,
                 "--param",
-                f"inputPath={full_scan_path}",
+                f"cpgPath={cpg_path}",
                 "--param",
                 f"outFile={output_path}",
             ]
@@ -133,6 +203,13 @@ def scan(request: ScanRequest):
             with open(output_path, "r") as f:
                 data = json.load(f)
             finding_count = len(data) if isinstance(data, list) else 0
+
+            # The intermediate CPG can be large; remove it so it doesn't get
+            # picked up as a report or bloat the workspace volume.
+            try:
+                cpg_path.unlink(missing_ok=True)
+            except OSError:
+                pass
 
         return {
             "status": "success",

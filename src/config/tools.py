@@ -94,6 +94,30 @@ _SPECS: Tuple[ToolSpec, ...] = (
 TOOL_REGISTRY: Dict[str, ToolSpec] = {spec.name: spec for spec in _SPECS}
 
 
+# User-facing aliases → canonical registry names. Lets callers use common
+# alternative spellings without hitting an "unsupported tool" error (e.g. the
+# Hawk-Eye / hawk_scanner secrets scanner is registered as "hawk-scanner").
+TOOL_ALIASES: Dict[str, str] = {
+    "hawkeye": "hawk-scanner",
+    "hawk-eye": "hawk-scanner",
+    "hawk_eye": "hawk-scanner",
+    "hawk": "hawk-scanner",
+    "detect_secrets": "detect-secrets",
+    "osv": "osv-scanner",
+    "osv_scanner": "osv-scanner",
+}
+
+
+def resolve_tool_name(name: str) -> str:
+    """Map a user-supplied tool name to its canonical registry name.
+
+    Falls back to the original name (so genuinely unknown tools still produce a
+    clear "unsupported tool" error downstream)."""
+    if not name:
+        return name
+    return TOOL_ALIASES.get(name.strip().lower(), name)
+
+
 def tools_for_category(category: str) -> List[str]:
     """Return tool names for a category, in registry (LLM-facing) order."""
     return [spec.name for spec in _SPECS if spec.category == category]

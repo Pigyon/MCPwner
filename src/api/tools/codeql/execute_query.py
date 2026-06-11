@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 # Maximum serialized size of query results returned to the LLM.
 MAX_RESULT_BYTES = 10 * 1024 * 1024
 
+# A CodeQL analysis often exceeds the 50s HTTP client timeout and finishes in
+# the background. How long to keep polling the shared volume for the SARIF
+# output before giving up (the codeql subprocess itself caps at 600s).
+QUERY_BACKGROUND_WAIT_SECONDS = 600
+QUERY_POLL_INTERVAL_SECONDS = 3
+
 
 def execute_query(
     workspace_id: str,
@@ -82,12 +88,34 @@ def execute_query(
             # The service call should handle the execution remotely
             # We pass the output_path where we expect the result to be written
             # Since both containers share /workspaces, the executor writes it there, and we read it here.
-            codeql_service.execute_query(
+            exec_result = codeql_service.execute_query(
                 workspace_id=workspace_id,
                 database_id=database_id,
                 query_pack=query_pack,
                 output_path=sarif_output,
             )
+
+            # A real CodeQL analysis (e.g. security-extended on a large repo)
+            # routinely takes longer than the 50s HTTP client timeout, so the
+            # service call returns status="backgrounded" while the query keeps
+            # running in the codeql-executor container and writes the SARIF on
+            # completion. Poll the shared volume for the output instead of
+            # failing immediately on a not-yet-written file.
+            if not Path(sarif_output).exists():
+                backgrounded = (
+                    isinstance(exec_result, dict)
+                    and exec_result.get("status") == "backgrounded"
+                )
+                wait_timeout = QUERY_BACKGROUND_WAIT_SECONDS if backgrounded else 30
+                logger.info(
+                    f"SARIF not yet present; polling up to {wait_timeout}s "
+                    f"(backgrounded={backgrounded})"
+                )
+                deadline = time.time() + wait_timeout
+                while time.time() < deadline:
+                    if Path(sarif_output).exists():
+                        break
+                    time.sleep(QUERY_POLL_INTERVAL_SECONDS)
 
             duration = time.time() - start_time
 
@@ -95,13 +123,26 @@ def execute_query(
             if not Path(sarif_output).exists():
                 return {
                     "status": "error",
-                    "error": f"SARIF output file was not created at {sarif_output}",
+                    "error": (
+                        f"SARIF output file was not created at {sarif_output}. "
+                        f"The query may still be running after {round(duration)}s."
+                    ),
                     "duration_seconds": round(duration, 2),
                 }
 
-            # Parse SARIF output
-            with open(sarif_output, "r", encoding="utf-8") as f:
-                sarif_data = json.load(f)
+            # Parse SARIF output. When the query finished in the background the
+            # file may have only just appeared, so retry briefly in case we
+            # caught it mid-write.
+            sarif_data = None
+            for attempt in range(5):
+                try:
+                    with open(sarif_output, "r", encoding="utf-8") as f:
+                        sarif_data = json.load(f)
+                    break
+                except (json.JSONDecodeError, ValueError):
+                    if attempt == 4:
+                        raise
+                    time.sleep(2)
 
             # Extract findings
             findings = parse_sarif(sarif_data, workspace_id)

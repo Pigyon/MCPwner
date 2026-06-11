@@ -3,9 +3,6 @@
 from typing import Any, Dict
 
 from api.tools.common import get_report
-from config.tools import tools_for_category
-
-SUPPORTED_TOOLS = tools_for_category("secrets")
 
 
 def get_secrets_report(tool: str, workspace_id: str) -> Dict[str, Any]:

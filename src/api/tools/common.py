@@ -10,18 +10,37 @@ LLM-facing) that delegate here.
 import logging
 from typing import Any, Dict, Optional
 
-from config.tools import tools_for_category
+from config.tools import resolve_tool_name, tools_for_category
 from deps import get_service
 
 logger = logging.getLogger(__name__)
 
 
+# Tools that are commonly requested through the generic scan endpoints but are
+# wired separately. Map them to an actionable hint instead of a bare "unsupported".
+_SPECIAL_TOOL_HINTS = {
+    "codeql": (
+        "CodeQL is not run via run_sast_scan. Use the dedicated CodeQL tools: "
+        "create_codeql_database, then execute_query "
+        "(see list_query_packs and list_databases)."
+    ),
+    "linguist": (
+        "Linguist is not a scan tool. Use detect_languages to identify a "
+        "workspace's languages."
+    ),
+}
+
+
 def _unsupported(tool: str, supported: list) -> Dict[str, Any]:
-    return {
+    result: Dict[str, Any] = {
         "status": "error",
         "error": f"Unsupported tool: {tool}",
         "supported_tools": supported,
     }
+    hint = _SPECIAL_TOOL_HINTS.get((tool or "").lower().strip())
+    if hint:
+        result["hint"] = hint
+    return result
 
 
 def run_scan(
@@ -33,6 +52,7 @@ def run_scan(
 ) -> Dict[str, Any]:
     """Run a scan for ``tool`` (which must belong to ``category``)."""
     supported = tools_for_category(category)
+    tool = resolve_tool_name(tool)
     if tool not in supported:
         return _unsupported(tool, supported)
     try:
@@ -45,6 +65,7 @@ def run_scan(
 def get_report(category: str, tool: str, workspace_id: str) -> Dict[str, Any]:
     """Get the latest report for ``tool`` (which must belong to ``category``)."""
     supported = tools_for_category(category)
+    tool = resolve_tool_name(tool)
     if tool not in supported:
         return _unsupported(tool, supported)
     try:

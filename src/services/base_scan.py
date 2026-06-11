@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import threading
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -15,6 +16,15 @@ logger = logging.getLogger(__name__)
 # containers that may run under a different UID than this server. Pre-create them
 # world-writable so any container (root or non-root) can drop its report file in.
 _REPORT_DIR_MODE = 0o777
+
+# Cap concurrent outbound scans. FastMCP runs each (synchronous) tool call in a
+# worker thread, so a burst of parallel tool calls would otherwise fan out into
+# an unbounded number of simultaneous scans — exhausting memory/threads and
+# overwhelming the tool containers, which can drop the whole stdio connection
+# ("MCP server not connected"). This bounded semaphore queues excess scans
+# instead of letting them pile up. Tune via MCPWNER_MAX_CONCURRENT_SCANS.
+_MAX_CONCURRENT_SCANS = max(1, int(os.environ.get("MCPWNER_MAX_CONCURRENT_SCANS", "8")))
+_scan_semaphore = threading.BoundedSemaphore(_MAX_CONCURRENT_SCANS)
 
 
 class BaseScanService:
@@ -93,12 +103,15 @@ class BaseScanService:
             # into it (it owns the volume as UID 1000).
             self._ensure_report_dir(workspace_id)
 
-            result = self.client.scan(
-                workspace_path=workspace_path,
-                scan_path=scan_path,
-                config=config,
-                report_base=report_base,
-            )
+            # Bound concurrency so parallel tool calls queue rather than
+            # exhausting resources and dropping the MCP connection.
+            with _scan_semaphore:
+                result = self.client.scan(
+                    workspace_path=workspace_path,
+                    scan_path=scan_path,
+                    config=config,
+                    report_base=report_base,
+                )
             logger.info(
                 f"{self.tool_name} scan result: status={result.get('status')}, "
                 f"findings={result.get('finding_count', 'N/A')}"
@@ -174,7 +187,12 @@ class BaseScanService:
                 f"{[e.name for e in all_entries[:10]]}"
             )
             reports = sorted(
-                list(report_dir.glob("*.sarif")) + list(report_dir.glob("*.json")), reverse=True
+                (
+                    p
+                    for p in (list(report_dir.glob("*.sarif")) + list(report_dir.glob("*.json")))
+                    if not p.name.startswith(".")
+                ),
+                reverse=True,
             )
             if reports:
                 latest_report = reports[0]
@@ -253,9 +271,20 @@ class BaseScanService:
         }
 
     def _scan_cache_path(self, workspace_id: str) -> Path:
-        """Path to the on-disk scan result cache file."""
+        """Path to the on-disk scan result cache file.
+
+        Deliberately kept OUT of the tool's report directory. Chaining tools
+        (e.g. httpx reading a previous tool's report) glob
+        ``reports/<category>/<tool>/*.json`` and pick the newest by mtime; a
+        cache file living alongside the reports would be selected as if it were
+        a findings report (it has the newest mtime, since it is written last),
+        breaking target extraction. Storing it under a separate ``.scan_cache``
+        tree keeps the report directories clean.
+        """
         reports_base = self._get_reports_base(workspace_id)
-        return Path(f"{reports_base}/reports/{self.tool_category}/{self.tool_name}/.last_scan.json")
+        return Path(
+            f"{reports_base}/reports/.scan_cache/{self.tool_category}/{self.tool_name}.json"
+        )
 
     def _persist_scan_result(self, workspace_id: str) -> None:
         """Write the cached scan result to disk."""

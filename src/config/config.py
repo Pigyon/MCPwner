@@ -158,23 +158,3 @@ def _validate_string(section: Dict[str, Any], key: str, section_name: str) -> No
     value = section[key]
     if not isinstance(value, str) or not value.strip():
         raise ConfigError(f"'{section_name}.{key}' must be a non-empty string, got: {value}")
-
-
-def _validate_bool(section: Dict[str, Any], key: str, section_name: str) -> None:
-    """Validate that a value is a boolean."""
-    if key not in section:
-        raise ConfigError(f"Missing required key '{key}' in section '{section_name}'")
-
-    value = section[key]
-    if not isinstance(value, bool):
-        raise ConfigError(f"'{section_name}.{key}' must be a boolean, got: {value}")
-
-
-def _validate_list(section: Dict[str, Any], key: str, section_name: str) -> None:
-    """Validate that a value is a list."""
-    if key not in section:
-        raise ConfigError(f"Missing required key '{key}' in section '{section_name}'")
-
-    value = section[key]
-    if not isinstance(value, list):
-        raise ConfigError(f"'{section_name}.{key}' must be a list, got: {value}")

@@ -5,7 +5,7 @@ This FastAPI service runs INSIDE the codeql-executor container as a separate mic
 It provides a REST API for CodeQL operations (database creation, query execution).
 
 Architecture:
-- Location: docker/codeql_service.py (infrastructure, not business logic)
+- Location: docker/codeql/main.py (infrastructure, not business logic)
 - Container: codeql-executor (separate from mcpwner-server)
 - Communication: HTTP API on port 8080
 - Called by: src/clients/codeql.py (CodeQLClient)
@@ -16,6 +16,7 @@ It's a standalone HTTP service that wraps CodeQL CLI operations.
 
 import json
 import logging
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -103,11 +104,11 @@ def create_database(request: CreateDatabaseRequest):
             "--overwrite",
         ]
 
-        # Pick an extraction strategy that needs no build tools or network, since
-        # the SAST network is internet-less.
         lang = request.language.lower()
         interpreted = {"javascript", "typescript", "python", "ruby"}
-        # Compiled languages that CodeQL can extract without building (CodeQL >= 2.16).
+        # Compiled languages CodeQL can extract WITHOUT a build (CodeQL >= 2.16).
+        # build-mode=none reads source directly, no Maven/Gradle/JDK-version
+        # constraints, and auto-finalizes the database.
         build_mode_none = {"java", "csharp", "kotlin"}
         logger.info(f"Checking language: '{request.language}'")
 
@@ -116,13 +117,10 @@ def create_database(request: CreateDatabaseRequest):
             cmd.append(f"--command={str(Path('/bin/true'))}")
             cmd.append("--no-run-unnecessary-builds")
         elif lang in build_mode_none:
-            logger.info(f"Using --build-mode=none for '{lang}' (no build/network needed)")
+            logger.info(f"Using --build-mode=none for '{lang}' (no build/JDK needed)")
             cmd.append("--build-mode=none")
         else:
             logger.info(f"Language '{lang}' uses the default autobuilder (needs build tools)")
-
-        # Add verbosity to debug autobuild failures
-        # cmd.append("-v")
 
         logger.info(f"Creating database: {' '.join(cmd)}")
 
@@ -200,6 +198,14 @@ def execute_query(request: ExecuteQueryRequest):
         else:
             query_spec = f"codeql/{request.query_pack}"
 
+        # CodeQL's default heap (~769 MiB) is far too small for real-world
+        # databases and query evaluation OOMs ("ran out of Java heap" → 500).
+        # Give the engine an explicit RAM budget (MB) and all CPU threads.
+        # Tunable via CODEQL_RAM_MB / CODEQL_THREADS; defaults sized for the
+        # container's 8 GB limit while leaving headroom for off-heap usage.
+        ram_mb = os.environ.get("CODEQL_RAM_MB", "4096")
+        threads = os.environ.get("CODEQL_THREADS", "0")  # 0 = one per core
+
         # Build CodeQL command
         cmd = [
             "codeql",
@@ -210,6 +216,8 @@ def execute_query(request: ExecuteQueryRequest):
             "--format=sarif-latest",
             f"--output={request.output_path}",
             "--sarif-add-snippets",
+            f"--ram={ram_mb}",
+            f"--threads={threads}",
         ]
 
         if request.query_name:
