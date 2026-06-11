@@ -201,6 +201,14 @@ services:
       # enabled (it queries the registry), so override the image's off default.
       - SEMGREP_DEFAULT_CONFIG=auto
       - SEMGREP_SEND_METRICS=auto
+      # This container runs as root, but GitHub clones are owned by UID 1000 (the
+      # server that cloned them). Git rejects such repos ("dubious ownership"), so
+      # `git ls-files` returns nothing — and semgrep discovers its scan targets via
+      # git, meaning it would scan 0 files and report 0 findings on every cloned
+      # repo regardless of language. Tell git to trust any repo path.
+      - GIT_CONFIG_COUNT=1
+      - GIT_CONFIG_KEY_0=safe.directory
+      - "GIT_CONFIG_VALUE_0=*"
     read_only: false
     restart: unless-stopped
     cap_drop:
