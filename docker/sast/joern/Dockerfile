@@ -18,7 +18,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     curl \
+    php-cli \
     && rm -rf /var/lib/apt/lists/*
+# php-cli is required by Joern's php2cpg frontend (it shells out to `php` to run
+# its bundled php-parser). Without it, PHP repos produce an empty CPG. Other
+# frontends (Java, JS, Python, Go, Ruby) are self-contained in the Joern bundle.
 
 # Copy only the joern CLI from builder
 COPY --from=builder /opt/joern /opt/joern

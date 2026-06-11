@@ -3,9 +3,6 @@
 from typing import Any, Dict, Optional
 
 from api.tools.common import run_scan
-from config.tools import tools_for_category
-
-SUPPORTED_TOOLS = tools_for_category("secrets")
 
 
 def run_secrets_scan(

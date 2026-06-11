@@ -76,8 +76,10 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
 
             # amass: {"name": "sub.example.com", ...}
             elif source_tool == "amass":
-                if entry.get("name"):
-                    targets.add(entry["name"])
+                # amass writes {"subdomain": "..."}; raw/older formats use "name"
+                val = entry.get("subdomain") or entry.get("name")
+                if val:
+                    targets.add(val)
 
             # bbot: {"type": "DNS_NAME"|"URL"|"IP_ADDRESS"|"OPEN_TCP_PORT", "data": "..."}
             elif source_tool == "bbot":
@@ -129,7 +131,11 @@ def _find_latest_report(workspace_root: Path, source_tool: str) -> Optional[Path
     report_dir = workspace_root / "reports" / "reconnaissance" / source_tool
     if not report_dir.exists():
         return None
-    reports = sorted(report_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    reports = sorted(
+        (p for p in report_dir.glob("*.json") if not p.name.startswith(".")),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
     return reports[0] if reports else None
 
 

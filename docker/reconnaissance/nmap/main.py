@@ -150,12 +150,28 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     # Basic Nmap command with XML output
     cmd = ["nmap", "-oX", str(xml_path)]
 
+    config = request.config or {}
+
     # Add default timeouts to prevent hangs
-    host_timeout = "5m"
-    if request.config and request.config.get("timeout"):
-        host_timeout = f"{request.config['timeout']}s"
+    host_timeout = f"{config['timeout']}s" if config.get("timeout") else "5m"
     cmd.extend(["--host-timeout", host_timeout])
     cmd.extend(["--max-retries", "2"])  # Limit retries
+
+    # Timing template — default to -T4 so a default scan finishes well within
+    # the MCP client timeout (~50s) instead of backgrounding with no result.
+    # Override via config.timing (0-5, where 5 is fastest).
+    timing = config.get("timing", 4)
+    cmd.append(f"-T{timing}")
+
+    # Port scope — when the caller doesn't pin ports, scan the top 100 ports
+    # (fast, covers the common services) rather than nmap's default 1000, which
+    # routinely exceeds the client timeout. Override with config.ports or
+    # config.top_ports.
+    ports = config.get("ports")
+    if ports:
+        cmd.extend(["-p", str(ports)])
+    else:
+        cmd.extend(["--top-ports", str(config.get("top_ports", 100))])
 
     # Add optional parameters
     if request.config:
@@ -179,10 +195,7 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
             cmd.append("-sX")  # Xmas scan
         # If no scan_type specified, nmap defaults to -sS (SYN) when run as root
 
-        # Port specification
-        ports = request.config.get("ports")
-        if ports:
-            cmd.extend(["-p", str(ports)])
+        # (Port scope is handled above, before the optional block.)
 
         # Service version detection
         if request.config.get("service_version", False):
@@ -198,10 +211,7 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         if request.config.get("aggressive", False):
             cmd.append("-A")
 
-        # Timing template (0-5, where 5 is fastest)
-        timing = request.config.get("timing")
-        if timing is not None:
-            cmd.append(f"-T{timing}")
+        # (Timing template is handled above, before the optional block.)
 
         # Script scanning
         scripts = request.config.get("scripts")
