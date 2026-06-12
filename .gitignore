@@ -26,5 +26,5 @@ config/config.yaml
 
 # Documentation
 *.md
-!CONTRIBUTING.md
 !README.md
+!tests/llm/*.md

@@ -170,3 +170,14 @@ iac:
     service_url: "http://tfsec:8143"
   hadolint:
     service_url: "http://hadolint:8144"
+
+# Source Fuzzing Services (white-box, coverage-guided fuzzers)
+fuzzing:
+  atheris:
+    service_url: "http://atheris:8150"
+  jazzer:
+    service_url: "http://jazzer:8151"
+  jazzerjs:
+    service_url: "http://jazzerjs:8152"
+  php_fuzzer:
+    service_url: "http://php-fuzzer:8153"

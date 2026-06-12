@@ -133,3 +133,10 @@ OPENGREP_LANGUAGES: List[str] = [
 
 PYTHON_LANGUAGES: List[str] = ["python"]
 JAVASCRIPT_LANGUAGES: List[str] = ["javascript", "typescript", "jsx", "tsx"]
+
+# Source fuzzing engines — one per language already covered by SAST. The list
+# drives fuzzing_list_tools' language filtering, mirroring the SAST tools.
+ATHERIS_LANGUAGES: List[str] = ["python"]
+JAZZER_LANGUAGES: List[str] = ["java", "kotlin"]
+JAZZERJS_LANGUAGES: List[str] = ["javascript", "typescript"]
+PHP_FUZZER_LANGUAGES: List[str] = ["php"]

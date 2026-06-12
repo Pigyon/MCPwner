@@ -28,6 +28,7 @@ class ToolCategory(str, Enum):
     RECONNAISSANCE = "reconnaissance"
     UTILITIES = "utilities"
     IAC = "iac"
+    FUZZING = "fuzzing"
 
 
 @dataclass(frozen=True)
@@ -56,6 +57,7 @@ _SECRETS = ToolCategory.SECRETS
 _RECON = ToolCategory.RECONNAISSANCE
 _UTIL = ToolCategory.UTILITIES
 _IAC = ToolCategory.IAC
+_FUZZING = ToolCategory.FUZZING
 
 _SPECS: Tuple[ToolSpec, ...] = (
     # --- SAST ---
@@ -104,6 +106,11 @@ _SPECS: Tuple[ToolSpec, ...] = (
     _spec("terrascan", _IAC, ("iac", "terrascan"), "http://terrascan:8142"),
     _spec("tfsec", _IAC, ("iac", "tfsec"), "http://tfsec:8143"),
     _spec("hadolint", _IAC, ("iac", "hadolint"), "http://hadolint:8144"),
+    # --- Source Fuzzing ---
+    _spec("atheris", _FUZZING, ("fuzzing", "atheris"), "http://atheris:8150"),
+    _spec("jazzer", _FUZZING, ("fuzzing", "jazzer"), "http://jazzer:8151"),
+    _spec("jazzerjs", _FUZZING, ("fuzzing", "jazzerjs"), "http://jazzerjs:8152"),
+    _spec("php-fuzzer", _FUZZING, ("fuzzing", "php_fuzzer"), "http://php-fuzzer:8153"),
 )
 
 TOOL_REGISTRY: Dict[str, ToolSpec] = {spec.name: spec for spec in _SPECS}
@@ -120,6 +127,13 @@ TOOL_ALIASES: Dict[str, str] = {
     "detect_secrets": "detect-secrets",
     "osv": "osv-scanner",
     "osv_scanner": "osv-scanner",
+    # Source fuzzing — accept the spellings used in the README / docs.
+    "jazzer.js": "jazzerjs",
+    "jazzer-js": "jazzerjs",
+    "jazzer_js": "jazzerjs",
+    "php_fuzzer": "php-fuzzer",
+    "phpfuzzer": "php-fuzzer",
+    "php-fuzz": "php-fuzzer",
 }
 
 
