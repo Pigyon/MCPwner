@@ -27,6 +27,7 @@ class ToolCategory(str, Enum):
     SECRETS = "secrets"
     RECONNAISSANCE = "reconnaissance"
     UTILITIES = "utilities"
+    IAC = "iac"
 
 
 @dataclass(frozen=True)
@@ -54,6 +55,7 @@ _SCA = ToolCategory.SCA
 _SECRETS = ToolCategory.SECRETS
 _RECON = ToolCategory.RECONNAISSANCE
 _UTIL = ToolCategory.UTILITIES
+_IAC = ToolCategory.IAC
 
 _SPECS: Tuple[ToolSpec, ...] = (
     # --- SAST ---
@@ -96,6 +98,12 @@ _SPECS: Tuple[ToolSpec, ...] = (
     _spec("mitmproxy", _UTIL, ("utilities", "mitmproxy"), "http://mitmproxy:8131"),
     _spec("fuzzer", _UTIL, ("utilities", "fuzzer"), "http://fuzzer:8132"),
     _spec("chromium", _UTIL, ("utilities", "chromium"), "http://chromium:8133"),
+    # --- Infrastructure & IaC Security ---
+    _spec("checkov", _IAC, ("iac", "checkov"), "http://checkov:8140"),
+    _spec("kics", _IAC, ("iac", "kics"), "http://kics:8141"),
+    _spec("terrascan", _IAC, ("iac", "terrascan"), "http://terrascan:8142"),
+    _spec("tfsec", _IAC, ("iac", "tfsec"), "http://tfsec:8143"),
+    _spec("hadolint", _IAC, ("iac", "hadolint"), "http://hadolint:8144"),
 )
 
 TOOL_REGISTRY: Dict[str, ToolSpec] = {spec.name: spec for spec in _SPECS}

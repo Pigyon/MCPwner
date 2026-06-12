@@ -9,7 +9,7 @@ layer have bespoke wiring and stay as explicit factories below.
 from functools import lru_cache
 from typing import Any
 
-from clients.base import BaseSASTClient, BaseScanClient, BaseSCAClient
+from clients.base import BaseIaCClient, BaseSASTClient, BaseScanClient, BaseSCAClient
 from clients.base_reconnaissance import BaseReconnaissanceClient
 from clients.base_secrets import BaseSecretsClient
 from clients.base_utilities import BaseUtilitiesClient
@@ -18,6 +18,7 @@ from clients.linguist import LinguistClient
 from config.config import load_config
 from config.tools import TOOL_REGISTRY, ToolSpec
 from repositories.workspace import WorkspaceRepository
+from services.base_iac import BaseIaCService
 from services.base_reconnaissance import BaseReconnaissanceService
 from services.base_sast import BaseSASTService
 from services.base_sca import BaseSCAService
@@ -51,6 +52,7 @@ _CLIENT_BASES = {
     "secrets": BaseSecretsClient,
     "reconnaissance": BaseReconnaissanceClient,
     "utilities": BaseUtilitiesClient,
+    "iac": BaseIaCClient,
 }
 
 _SERVICE_BASES = {
@@ -59,6 +61,7 @@ _SERVICE_BASES = {
     "secrets": BaseSecretsService,
     "reconnaissance": BaseReconnaissanceService,
     "utilities": BaseUtilitiesService,
+    "iac": BaseIaCService,
 }
 
 
