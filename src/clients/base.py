@@ -153,3 +153,9 @@ class BaseSCAClient(BaseScanClient):
     """Base HTTP client for SCA services."""
 
     report_tool = "get_sca_report"
+
+
+class BaseIaCClient(BaseScanClient):
+    """Base HTTP client for Infrastructure-as-Code (IaC) scanners."""
+
+    report_tool = "get_iac_report"
