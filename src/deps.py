@@ -12,6 +12,7 @@ from typing import Any
 from clients.base import BaseSASTClient, BaseScanClient, BaseSCAClient
 from clients.base_reconnaissance import BaseReconnaissanceClient
 from clients.base_secrets import BaseSecretsClient
+from clients.base_utilities import BaseUtilitiesClient
 from clients.codeql import CodeQLClient
 from clients.linguist import LinguistClient
 from config.config import load_config
@@ -22,6 +23,7 @@ from services.base_sast import BaseSASTService
 from services.base_sca import BaseSCAService
 from services.base_scan import BaseScanService
 from services.base_secrets import BaseSecretsService
+from services.base_utilities import BaseUtilitiesService
 from services.codeql import CodeQLService
 from services.linguist import LinguistService
 from services.workspace import WorkspaceService
@@ -48,6 +50,7 @@ _CLIENT_BASES = {
     "sca": BaseSCAClient,
     "secrets": BaseSecretsClient,
     "reconnaissance": BaseReconnaissanceClient,
+    "utilities": BaseUtilitiesClient,
 }
 
 _SERVICE_BASES = {
@@ -55,6 +58,7 @@ _SERVICE_BASES = {
     "sca": BaseSCAService,
     "secrets": BaseSecretsService,
     "reconnaissance": BaseReconnaissanceService,
+    "utilities": BaseUtilitiesService,
 }
 
 
