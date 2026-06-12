@@ -121,6 +121,16 @@ services:
         condition: service_healthy
       chromium:
         condition: service_healthy
+      checkov:
+        condition: service_healthy
+      kics:
+        condition: service_healthy
+      terrascan:
+        condition: service_healthy
+      tfsec:
+        condition: service_healthy
+      hadolint:
+        condition: service_healthy
 
   codeql:
     # Using digest for reproducibility (equivalent to latest as of 2026-01-23)
@@ -1197,6 +1207,146 @@ services:
       timeout: 15s
       retries: 3
       start_period: 30s
+
+  # --- Infrastructure & IaC Security ---
+  # IaC scanners analyze static infrastructure definitions, so they run on the
+  # internet-free internal network like the other static-analysis tools.
+
+  checkov:
+
+    build:
+      context: .
+      dockerfile: docker/iac/checkov/Dockerfile
+    container_name: checkov-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8140/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  kics:
+
+    build:
+      context: .
+      dockerfile: docker/iac/kics/Dockerfile
+    container_name: kics-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8141/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  terrascan:
+
+    build:
+      context: .
+      dockerfile: docker/iac/terrascan/Dockerfile
+    container_name: terrascan-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=512m
+    networks:
+      - mcpwner-internal
+      - mcpwner-recon   # internet: Terrascan resolves Terraform provider schemas from registry.terraform.io
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8142/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  tfsec:
+
+    build:
+      context: .
+      dockerfile: docker/iac/tfsec/Dockerfile
+    container_name: tfsec-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=512m
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8143/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  hadolint:
+
+    build:
+      context: .
+      dockerfile: docker/iac/hadolint/Dockerfile
+    container_name: hadolint-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=512m
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8144/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
 volumes:
   workspaces:
