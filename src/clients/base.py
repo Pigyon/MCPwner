@@ -159,3 +159,10 @@ class BaseIaCClient(BaseScanClient):
     """Base HTTP client for Infrastructure-as-Code (IaC) scanners."""
 
     report_tool = "get_iac_report"
+
+
+class BaseFuzzingClient(BaseScanClient):
+    """Base HTTP client for source-fuzzing engines (Atheris, Jazzer, Jazzer.js,
+    PHP-Fuzzer)."""
+
+    report_tool = "get_fuzzing_report"

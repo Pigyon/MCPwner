@@ -131,6 +131,14 @@ services:
         condition: service_healthy
       hadolint:
         condition: service_healthy
+      atheris:
+        condition: service_healthy
+      jazzer:
+        condition: service_healthy
+      jazzerjs:
+        condition: service_healthy
+      php-fuzzer:
+        condition: service_healthy
 
   codeql:
     # Using digest for reproducibility (equivalent to latest as of 2026-01-23)
@@ -1343,6 +1351,116 @@ services:
       - mcpwner-internal
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8144/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ---- Source Fuzzing (white-box, coverage-guided fuzzers) ----
+
+  atheris:
+
+    build:
+      context: .
+      dockerfile: docker/fuzzing/atheris/Dockerfile
+    container_name: atheris-fuzzer
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=512m
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8150/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  jazzer:
+
+    build:
+      context: .
+      dockerfile: docker/fuzzing/jazzer/Dockerfile
+    container_name: jazzer-fuzzer
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=512m
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8151/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  jazzerjs:
+
+    build:
+      context: .
+      dockerfile: docker/fuzzing/jazzerjs/Dockerfile
+    container_name: jazzerjs-fuzzer
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=512m
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8152/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  php-fuzzer:
+
+    build:
+      context: .
+      dockerfile: docker/fuzzing/php_fuzzer/Dockerfile
+    container_name: php-fuzzer
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=512m
+    networks:
+      - mcpwner-internal
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8153/health\")"]
       interval: 60s
       timeout: 10s
       retries: 3
