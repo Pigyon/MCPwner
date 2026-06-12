@@ -157,3 +157,16 @@ reconnaissance:
     service_url: "http://wafw00f:8120"
   kiterunner:
     service_url: "http://kiterunner:8121"
+
+# Infrastructure & IaC Security Services
+iac:
+  checkov:
+    service_url: "http://checkov:8140"
+  kics:
+    service_url: "http://kics:8141"
+  terrascan:
+    service_url: "http://terrascan:8142"
+  tfsec:
+    service_url: "http://tfsec:8143"
+  hadolint:
+    service_url: "http://hadolint:8144"
