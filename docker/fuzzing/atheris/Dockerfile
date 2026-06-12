@@ -1,0 +1,41 @@
+# Atheris 1.0.3 (2021) only supports Python 3.6-3.9: its tracer pokes
+# PyFrameObject internals (f_stacktop, f_valuestack, ...) that became opaque in
+# CPython 3.11, so it will NOT compile on 3.10+. Pin Python 3.9 for the build.
+#
+# Atheris ships no wheels; pip builds its C++ extension against libFuzzer at
+# install time. That needs clang, the matching compiler-rt fuzzer archive
+# (libclang_rt.fuzzer_no_main-x86_64.a, shipped by libclang-rt-dev and NOT by
+# the base clang package), the C++ stdlib headers and a linker. We then point
+# atheris straight at the archive via $LIBFUZZER_LIB (bypassing its own search).
+FROM python:3.9-slim
+
+# Unversioned packages keep this image-version-agnostic (the python:3.11-slim
+# base tracks Debian's default clang); libclang-rt-dev ships the fuzzer archive,
+# g++ brings the C++ stdlib headers clang++ needs, and clang pulls the linker.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        clang \
+        libclang-rt-dev \
+        g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV CC=clang \
+    CXX=clang++ \
+    CLANG_BIN=/usr/bin/clang
+
+COPY docker/fuzzing/atheris/requirements.txt /tmp/requirements.txt
+RUN set -eu; \
+    LIBFUZZER_LIB="$(find /usr/lib -name 'libclang_rt.fuzzer_no_main-x86_64.a' | head -1)"; \
+    test -n "$LIBFUZZER_LIB"; \
+    export LIBFUZZER_LIB; \
+    echo "Building atheris against $LIBFUZZER_LIB"; \
+    pip install --no-cache-dir -r /tmp/requirements.txt; \
+    rm -f /tmp/requirements.txt
+
+WORKDIR /service
+
+COPY docker/common /service/common
+COPY docker/fuzzing/atheris/main.py .
+
+EXPOSE 8150
+
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8150"]

@@ -1,0 +1,7 @@
+# Pinned to Python 3.9-compatible releases: atheris 1.0.3 forces the 3.9 base
+# (see Dockerfile), and fastapi >=0.129 requires Python >=3.10. The 0.115.x line
+# is the latest that still supports 3.9 and works with pydantic 2.9.
+atheris==1.0.3
+fastapi==0.115.6
+uvicorn[standard]==0.32.0
+pydantic==2.9.0
