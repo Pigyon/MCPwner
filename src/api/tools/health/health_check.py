@@ -4,26 +4,19 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
+from config.tools import TOOL_REGISTRY
 from deps import get_client, get_codeql_client, get_linguist_client
 
 logger = logging.getLogger(__name__)
 
-# Tools surfaced by the health check, in display order. CodeQL and Linguist use
-# bespoke clients; the rest are resolved generically from the tool registry.
-_HEALTH_TOOLS = [
-    "codeql",
-    "linguist",
-    "bandit",
-    "brakeman",
-    "gosec",
-    "pmd",
-    "psalm",
-    "semgrep",
-    "nodejsscan",
-    "joern",
-    "yasa",
-    "opengrep",
-]
+# CodeQL and Linguist use bespoke clients and are not in the tool registry, so
+# they are listed explicitly and checked first.
+_BESPOKE_TOOLS = ["codeql", "linguist"]
+
+# Every other tool is resolved generically from the registry, so all categories
+# (SAST, SCA, Secrets, Reconnaissance, Utilities, IaC) — and any tool added in
+# future — are health-checked automatically, in registry (display) order.
+_HEALTH_TOOLS = _BESPOKE_TOOLS + list(TOOL_REGISTRY.keys())
 
 
 def _client_for(name: str):
@@ -83,9 +76,9 @@ def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:
 
     Args:
         tool_name: Optional name of a specific tool to check.
-                   If not provided, checks all services.
-                   Valid values: codeql, linguist, bandit, brakeman, gosec,
-                   pmd, psalm, semgrep, nodejsscan, joern, yasa, opengrep
+                   If not provided, checks all wired services (CodeQL, Linguist,
+                   and every tool in the registry across all categories — SAST,
+                   SCA, Secrets, Reconnaissance, Utilities, IaC).
 
     Returns:
         Dictionary with health status
