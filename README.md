@@ -1,7 +1,7 @@
 <div align="center">
   <h1>MCPwner</h1>
   <img src="readme/avatar.png" width="200" alt="MCPwner Badger Avatar">
-  <h3><i>Beware of the Badger</i></h3>
+  <h3><i>Beware the Badger</i></h3>
   <p>Model Context Protocol server for security research automation</p>
 
 [![Docker](https://img.shields.io/badge/Docker-ready-1F2937?logo=docker&logoColor=2496ED)](https://www.docker.com/)
@@ -70,6 +70,12 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 | <img src="readme/grype.png" width="100"> | <img src="readme/syft.png" width="100"> | <img src="readme/osv-scanner.png" width="100"> | <img src="readme/retirejs.png" width="100"> |
 | :--------------------------------------: | :-------------------------------------: | :--------------------------------------------: | :-----------------------------------------: |
 | [**Grype**](https://github.com/anchore/grype) | [**Syft**](https://github.com/anchore/syft) | [**OSV-Scanner**](https://github.com/google/osv-scanner) | [**Retire.js**](https://github.com/RetireJS/retire.js) |
+
+## Utilities
+
+| <img src="readme/linguist.jpg" width="100"> | <img src="readme/wiremock.png" width="100"> | <img src="readme/mitmproxy.png" width="100"> | <img src="readme/aiohttp.png" width="100"> | <img src="readme/playwright.png" width="100"> |
+| :-----------------------------------------: | :-----------------------------------------: | :------------------------------------------: | :----------------------------------------: | :-------------------------------------------: |
+| [**Linguist**](https://github.com/github-linguist/linguist) | [**WireMock**](https://github.com/wiremock/wiremock) | [**Mitmproxy**](https://github.com/mitmproxy/mitmproxy) | [**aiohttp Fuzzer**](https://github.com/aio-libs/aiohttp) | [**Chromium + Playwright**](https://github.com/microsoft/playwright) |
 
 </div>
 
@@ -262,6 +268,7 @@ graph LR
     Recon[Reconnaissance]
     CodeQL[CodeQL Service]
     Linguist[Language Detection]
+    Utilities[Utilities]
 
     Client -->|JSON-RPC 2.0| Server
     Server -->|HTTP| SAST
@@ -270,6 +277,7 @@ graph LR
     Server -->|HTTP| Recon
     Server -->|HTTP| CodeQL
     Server -->|HTTP| Linguist
+    Server -->|HTTP| Utilities
 
     style LLM fill:#7C3AED,stroke:#5B21B6,stroke-width:3px,color:#fff
     style Client fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
@@ -280,6 +288,7 @@ graph LR
     style Recon fill:#00BCD4,stroke:#0097A7,stroke-width:2px,color:#fff
     style CodeQL fill:#E67E22,stroke:#CA6F1E,stroke-width:2px,color:#fff
     style Linguist fill:#3498DB,stroke:#2874A6,stroke-width:2px,color:#fff
+    style Utilities fill:#6D28D9,stroke:#4C1D95,stroke-width:2px,color:#fff
     style IDE fill:none,stroke:#ddd,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
@@ -345,6 +354,12 @@ MCPwner exposes the following tools through the MCP interface:
 - `list_databases` - List available CodeQL databases
 - `list_query_packs` - List available query packs
 - `execute_query` - Run specific CodeQL queries
+
+**Utilities:**
+
+- `run_utilities_scan` - Run a utility tool against a live target (Linguist, WireMock, Mitmproxy, aiohttp Fuzzer, Headless Chromium)
+- `get_utilities_report` - Retrieve utility scan results
+- `utilities_list_tools` - List available utility tools and their config options
 
 **Health & Monitoring:**
 
