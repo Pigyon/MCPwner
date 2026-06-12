@@ -23,7 +23,7 @@
 
 ## Overview
 
-MCPwner is a Model Context Protocol (MCP) server that integrates security testing tools into LLM-driven workflows. It provides a unified interface for secret scanning, static analysis (SAST), software composition analysis (SCA), reconnaissance, dynamic application security testing (DAST), and vulnerability research including 0-day discovery.
+MCPwner is a Model Context Protocol (MCP) server that integrates security testing tools into LLM-driven workflows. It provides a unified interface for secret scanning, static analysis (SAST), software composition analysis (SCA), infrastructure-as-code (IaC) security, reconnaissance, dynamic application security testing (DAST), and vulnerability research including 0-day discovery.
 
 Instead of manually chaining tools and pasting outputs into your LLM, MCPwner standardizes and streams results directly into the model's working context. This enables continuous reasoning, correlation, and attack path discovery across the security research lifecycle - from mapping attack surfaces and identifying known vulnerabilities to uncovering novel attack vectors.
 
@@ -71,11 +71,17 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 | :--------------------------------------: | :-------------------------------------: | :--------------------------------------------: | :-----------------------------------------: |
 | [**Grype**](https://github.com/anchore/grype) | [**Syft**](https://github.com/anchore/syft) | [**OSV-Scanner**](https://github.com/google/osv-scanner) | [**Retire.js**](https://github.com/RetireJS/retire.js) |
 
+## Infrastructure & IaC Security
+
+| <img src="readme/checkov.png" width="100"> | <img src="readme/KICS.png" width="100"> | <img src="readme/terrascan.png" width="100"> | <img src="readme/tfsec.jpeg" width="100"> | <img src="readme/hadolint.png" width="100"> |
+| :----------------------------------------------------: | :-------------------------------------------: | :---------------------------------------------------: | :------------------------------------------------: | :--------------------------------------------------: |
+| [**Checkov**](https://github.com/bridgecrewio/checkov) | [**KICS**](https://github.com/checkmarx/kics) | [**Terrascan**](https://github.com/tenable/terrascan) | [**TFSec**](https://github.com/aquasecurity/tfsec) | [**Hadolint**](https://github.com/hadolint/hadolint) |
+
 ## Utilities
 
 | <img src="readme/linguist.jpg" width="100"> | <img src="readme/wiremock.png" width="100"> | <img src="readme/mitmproxy.png" width="100"> | <img src="readme/aiohttp.png" width="100"> | <img src="readme/playwright.png" width="100"> |
 | :-----------------------------------------: | :-----------------------------------------: | :------------------------------------------: | :----------------------------------------: | :-------------------------------------------: |
-| [**Linguist**](https://github.com/github-linguist/linguist) | [**WireMock**](https://github.com/wiremock/wiremock) | [**Mitmproxy**](https://github.com/mitmproxy/mitmproxy) | [**aiohttp Fuzzer**](https://github.com/aio-libs/aiohttp) | [**Chromium + Playwright**](https://github.com/microsoft/playwright) |
+| [**Linguist**](https://github.com/github-linguist/linguist) | [**WireMock**](https://github.com/wiremock/wiremock) | [**Mitmproxy**](https://github.com/mitmproxy/mitmproxy) | [**aiohttp**](https://github.com/aio-libs/aiohttp) | [**Chromium w. Playwright**](https://github.com/microsoft/playwright) |
 
 </div>
 
@@ -86,11 +92,6 @@ The following tools are planned for future releases:
 ### Dynamic Application Security Testing (DAST)
 
 - OWASP ZAP, SQLmap, NoSQLMap, Dalfox, Nikto, SSTImap, Commix, jwt_tool, Wapiti, Nuclei,
-
-
-### Infrastructure & IaC Security
-
-- Prowler, Checkov, KICS, Terrascan, TFSec, Hadolint
 
 ## Usage Examples
 
@@ -269,6 +270,7 @@ graph LR
     CodeQL[CodeQL Service]
     Linguist[Language Detection]
     Utilities[Utilities]
+    IaC[IaC Security]
 
     Client -->|JSON-RPC 2.0| Server
     Server -->|HTTP| SAST
@@ -278,6 +280,7 @@ graph LR
     Server -->|HTTP| CodeQL
     Server -->|HTTP| Linguist
     Server -->|HTTP| Utilities
+    Server -->|HTTP| IaC
 
     style LLM fill:#7C3AED,stroke:#5B21B6,stroke-width:3px,color:#fff
     style Client fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
@@ -289,27 +292,8 @@ graph LR
     style CodeQL fill:#E67E22,stroke:#CA6F1E,stroke-width:2px,color:#fff
     style Linguist fill:#3498DB,stroke:#2874A6,stroke-width:2px,color:#fff
     style Utilities fill:#6D28D9,stroke:#4C1D95,stroke-width:2px,color:#fff
+    style IaC fill:#059669,stroke:#047857,stroke-width:2px,color:#fff
     style IDE fill:none,stroke:#ddd,stroke-width:2px,stroke-dasharray: 5 5
-```
-
-## Workflows
-
-**Data Flow - Analysis Results:**
-
-```mermaid
-sequenceDiagram
-    participant LLM as 🤖 LLM
-    participant MCP as MCP Client
-    participant Server as MCPwner Server
-    participant Tools as Security Tools
-
-    LLM->>MCP: Request security scan
-    MCP->>Server: Execute scan command
-    Server->>Tools: Run analysis
-    Tools-->>Server: Raw results
-    Server-->>MCP: SARIF/JSON reports
-    MCP-->>LLM: Structured findings
-    Note over LLM: Correlate vulnerabilities<br/>Generate insights<br/>Suggest remediation
 ```
 
 ## Available MCP Tools
@@ -355,9 +339,15 @@ MCPwner exposes the following tools through the MCP interface:
 - `list_query_packs` - List available query packs
 - `execute_query` - Run specific CodeQL queries
 
+**Infrastructure & IaC Security:**
+
+- `run_iac_scan` - Scan infrastructure-as-code for misconfigurations (Checkov, KICS, Terrascan, TFSec, Hadolint)
+- `get_iac_report` - Retrieve IaC scan results
+- `iac_list_tools` - List available IaC scanning tools
+
 **Utilities:**
 
-- `run_utilities_scan` - Run a utility tool against a live target (Linguist, WireMock, Mitmproxy, aiohttp Fuzzer, Headless Chromium)
+- `run_utilities_scan` - Run a utility tool against a live target (Linguist, WireMock, Mitmproxy, aiohttp, Headless Chromium)
 - `get_utilities_report` - Retrieve utility scan results
 - `utilities_list_tools` - List available utility tools and their config options
 
@@ -371,4 +361,4 @@ MCPwner exposes the following tools through the MCP interface:
 
 MCPwner executes security tools that may perform intrusive operations. Only use on systems and codebases you own or have explicit permission to test - unauthorized access is illegal. Restrict MCP server access to authorized users and consider network isolation for production deployments. Review tool configurations before running scans as some tools can generate significant network traffic or system load. Log tool execution and results, keeping in mind that security scans can trigger alerts in monitoring systems. Follow responsible disclosure practices when reporting vulnerabilities discovered using MCPwner. Keep Docker images updated and scan containers for vulnerabilities regularly. Never commit API keys, tokens, or credentials to configuration files - use environment variables or secret management systems instead.
 
-Also, you should be responsible for your owns ecurity when running these tools and accessing 3rd party libraries, it's suggested to eun everything sandboxed and with no special auth (minimized and hardened where feasible)
+Also, you should be responsible for your own security when running these tools and accessing 3rd party libraries, it's suggested to run everything sandboxed and with no special auth (minimized and hardened where feasible)
