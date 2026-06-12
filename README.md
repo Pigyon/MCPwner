@@ -23,7 +23,7 @@
 
 ## Overview
 
-MCPwner is a Model Context Protocol (MCP) server that integrates security testing tools into LLM-driven workflows. It provides a unified interface for secret scanning, static analysis (SAST), software composition analysis (SCA), infrastructure-as-code (IaC) security, reconnaissance, dynamic application security testing (DAST), and vulnerability research including 0-day discovery.
+MCPwner is a Model Context Protocol (MCP) server that integrates security testing tools into LLM-driven workflows. It provides a unified interface for secret scanning, static analysis (SAST), software composition analysis (SCA), infrastructure-as-code (IaC) security, source fuzzing, reconnaissance, dynamic application security testing (DAST), and vulnerability research including 0-day discovery.
 
 Instead of manually chaining tools and pasting outputs into your LLM, MCPwner standardizes and streams results directly into the model's working context. This enables continuous reasoning, correlation, and attack path discovery across the security research lifecycle - from mapping attack surfaces and identifying known vulnerabilities to uncovering novel attack vectors.
 
@@ -59,6 +59,12 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 | :-------------------------------------------------------: | :------------------------------------: | :-------------------------------------------: | :----------------------------------------------------: | :-------------------------------------: |
 | [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  | [**NodeJsScan**](https://github.com/ajinabraham/NodeJsScan) | [**Joern**](https://github.com/joernio/joern) | [**YASA**](https://github.com/antgroup/YASA-Engine) |
 
+## Source Fuzzing
+
+| <img src="readme/atheris.png" width="100"> | <img src="readme/jazzer.png" width="100"> | <img src="readme/jazzerjs.png" width="100"> | <img src="readme/phpfuzzer.jpeg" width="100"> |
+| :---: | :---: | :---: | :---: |
+| [**Atheris**](https://github.com/google/atheris) | [**Jazzer**](https://github.com/CodeIntelligenceTesting/jazzer) | [**Jazzer.js**](https://github.com/CodeIntelligenceTesting/jazzer.js) | [**PHP-Fuzzer**](https://github.com/nikic/php-fuzzer) |
+
 ## Secrets Scanning Tools
 
 |       <img src="readme/gitleaks.png" width="100">       |          <img src="readme/trufflehog.png" width="100">          |      <img src="readme/detect-secrets.png" width="100">       |      <img src="readme/whispers.png" width="100">       |      <img src="readme/hawk-eye.jpeg" width="100">      |
@@ -87,11 +93,44 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 
 ## Future Tools
 
-The following tools are planned for future releases:
+The following tools are planned for future releases. Logos will be added as each tool is integrated.
 
 ### Dynamic Application Security Testing (DAST)
 
-- OWASP ZAP, SQLmap, NoSQLMap, Dalfox, Nikto, SSTImap, Commix, jwt_tool, Wapiti, Nuclei,
+Exploitation and verification tools that run against a live target and produce proof of a vulnerability:
+
+- **sqlmap** - SQL injection detection and exploitation (data extraction)
+- **NoSQLMap** - NoSQL injection (MongoDB, CouchDB)
+- **Commix** - command injection exploitation
+- **Dalfox** - reflected, stored, and DOM-based XSS
+- **SSTImap** - server-side template injection and code injection (RCE)
+- **SSRFmap** - server-side request forgery exploitation
+- **jwt_tool** - JWT tampering and authentication bypass
+- **interactsh** - OOB interaction server/client for confirming blind vulnerabilities (blind SSRF, blind RCE, blind SQLi, XXE, DNS exfiltration)
+
+### Insecure Deserialization
+
+Gadget-chain and payload generators for weaponizing deserialization sinks identified during SAST. Mature gadget-chain ecosystems exist for Java, .NET, and PHP; Python is covered via malicious-pickle generation (Ruby/Node deserialization is payload-based and lives in the Payloads corpus below):
+
+- **ysoserial** - Java
+- **ysoserial.net** - .NET
+- **PHPGGC** - PHP
+- **marshalsec** - JVM marshallers/unmarshallers
+- **Fickling** - Python (pickle)
+
+### HTTP Request Smuggling
+
+- **smuggler** - HTTP/1.1 request smuggling / desync (CL.TE, TE.CL, TE.TE)
+- **h2csmuggler** - HTTP/2 cleartext (h2c) upgrade smuggling (distinct from HTTP/2 desync)
+- **http2smugl** - HTTP/2 request smuggling / desync
+
+### Payloads
+
+Curated payload and wordlist corpora to back the tools above:
+
+- **SecLists** - aggregate of fuzzing payloads, credentials, and injection lists
+- **PayloadsAllTheThings** - attack payloads and bypasses organized by vulnerability class
+- **FuzzDB** - fault-injection primitives and predictable resource patterns
 
 ## Usage Examples
 
@@ -271,6 +310,7 @@ graph LR
     Linguist[Language Detection]
     Utilities[Utilities]
     IaC[IaC Security]
+    Fuzzing[Source Fuzzing]
 
     Client -->|JSON-RPC 2.0| Server
     Server -->|HTTP| SAST
@@ -281,6 +321,7 @@ graph LR
     Server -->|HTTP| Linguist
     Server -->|HTTP| Utilities
     Server -->|HTTP| IaC
+    Server -->|HTTP| Fuzzing
 
     style LLM fill:#7C3AED,stroke:#5B21B6,stroke-width:3px,color:#fff
     style Client fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
@@ -293,6 +334,7 @@ graph LR
     style Linguist fill:#3498DB,stroke:#2874A6,stroke-width:2px,color:#fff
     style Utilities fill:#6D28D9,stroke:#4C1D95,stroke-width:2px,color:#fff
     style IaC fill:#059669,stroke:#047857,stroke-width:2px,color:#fff
+    style Fuzzing fill:#B91C1C,stroke:#7F1D1D,stroke-width:2px,color:#fff
     style IDE fill:none,stroke:#ddd,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
@@ -344,6 +386,12 @@ MCPwner exposes the following tools through the MCP interface:
 - `run_iac_scan` - Scan infrastructure-as-code for misconfigurations (Checkov, KICS, Terrascan, TFSec, Hadolint)
 - `get_iac_report` - Retrieve IaC scan results
 - `iac_list_tools` - List available IaC scanning tools
+
+**Source Fuzzing:**
+
+- `run_fuzzing_scan` - Run a white-box, coverage-guided fuzzing campaign against a per-target harness (Atheris, Jazzer, Jazzer.js, PHP-Fuzzer)
+- `get_fuzzing_report` - Retrieve fuzzing crash results (crashing input + stack trace)
+- `fuzzing_list_tools` - List available fuzzing engines, filtered by detected language
 
 **Utilities:**
 
