@@ -1,5 +1,6 @@
 # Stage 1: terrascan binary
-FROM tenable/terrascan:1.19.9 AS terrascan
+ARG TERRASCAN_VERSION=1.19.9
+FROM tenable/terrascan:${TERRASCAN_VERSION} AS terrascan
 
 # Stage 2: Install Python deps
 FROM python:3.11-alpine AS deps
@@ -15,12 +16,23 @@ RUN apk add --no-cache gcompat
 COPY --from=terrascan /go/bin/terrascan /usr/local/bin/terrascan
 COPY --from=deps /install /usr/local
 
-# Pre-fetch Terrascan's policy bundle at build time, since the runtime network is
-# internal-only. `terrascan init` clones the policies into $HOME/.terrascan; bake
-# them under a fixed HOME and make them readable by the runtime user.
+# Pre-fetch Terrascan's policy bundle at build time. `terrascan init` uses go-git and
+# is flaky in Docker builds; download the matching source tarball instead.
+ARG TERRASCAN_VERSION=1.19.9
 ENV HOME=/home/scanner
-RUN adduser -D -h /home/scanner scanner \
-    && terrascan init \
+ENV TERRASCAN_VERSION=${TERRASCAN_VERSION}
+RUN apk add --no-cache curl ca-certificates \
+    && adduser -D -h /home/scanner scanner \
+    && for attempt in 1 2 3 4 5; do \
+         curl -fsSL \
+           "https://github.com/tenable/terrascan/archive/refs/tags/v${TERRASCAN_VERSION}.tar.gz" \
+           | tar -xz -C /home/scanner \
+         && mv "/home/scanner/terrascan-${TERRASCAN_VERSION}" /home/scanner/.terrascan \
+         && break; \
+         echo "Policy download failed (attempt ${attempt}/5); retrying in 10s..."; \
+         sleep 10; \
+       done \
+    && test -d /home/scanner/.terrascan/pkg/policies/opa/rego \
     && chown -R scanner:scanner /home/scanner \
     && chmod -R a+rX /home/scanner/.terrascan
 
@@ -28,11 +40,13 @@ WORKDIR /service
 
 COPY docker/common /service/common
 COPY docker/iac/terrascan/main.py .
+COPY docker/iac/terrascan/start.sh .
 
-RUN chown -R scanner:scanner /service
+RUN chmod +x /service/start.sh \
+    && chown -R scanner:scanner /service
 
 USER scanner
 
 EXPOSE 8142
 
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8142"]
+CMD ["/service/start.sh"]
