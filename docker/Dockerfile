@@ -17,7 +17,7 @@ WORKDIR /app
 COPY --from=builder /install /usr/local
 
 COPY src/ ./src/
-COPY config/config.yaml ./config/
+COPY config/config.yaml.example ./config/config.yaml
 
 RUN mkdir -p /var/log/mcpwner && \
     chown -R mcpwner:mcpwner /var/log/mcpwner /app
