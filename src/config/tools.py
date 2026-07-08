@@ -29,6 +29,7 @@ class ToolCategory(str, Enum):
     UTILITIES = "utilities"
     IAC = "iac"
     FUZZING = "fuzzing"
+    DAST = "dast"
 
 
 @dataclass(frozen=True)
@@ -41,12 +42,8 @@ class ToolSpec:
     default_url: str
 
 
-def _spec(
-    name: str, category: ToolCategory, config_path: Tuple[str, ...], default_url: str
-) -> ToolSpec:
-    return ToolSpec(
-        name=name, category=category.value, config_path=config_path, default_url=default_url
-    )
+def _spec(name: str, category: ToolCategory, config_path: Tuple[str, ...], default_url: str) -> ToolSpec:
+    return ToolSpec(name=name, category=category.value, config_path=config_path, default_url=default_url)
 
 
 # Order within each category is LLM-facing (it drives SUPPORTED_TOOLS), so it is
@@ -58,6 +55,7 @@ _RECON = ToolCategory.RECONNAISSANCE
 _UTIL = ToolCategory.UTILITIES
 _IAC = ToolCategory.IAC
 _FUZZING = ToolCategory.FUZZING
+_DAST = ToolCategory.DAST
 
 _SPECS: Tuple[ToolSpec, ...] = (
     # --- SAST ---
@@ -111,6 +109,15 @@ _SPECS: Tuple[ToolSpec, ...] = (
     _spec("jazzer", _FUZZING, ("fuzzing", "jazzer"), "http://jazzer:8151"),
     _spec("jazzerjs", _FUZZING, ("fuzzing", "jazzerjs"), "http://jazzerjs:8152"),
     _spec("php-fuzzer", _FUZZING, ("fuzzing", "php_fuzzer"), "http://php-fuzzer:8153"),
+    # --- DAST ---
+    _spec("sqlmap", _DAST, ("dast", "sqlmap"), "http://sqlmap:8160"),
+    _spec("nosqlmap", _DAST, ("dast", "nosqlmap"), "http://nosqlmap:8161"),
+    _spec("commix", _DAST, ("dast", "commix"), "http://commix:8162"),
+    _spec("dalfox", _DAST, ("dast", "dalfox"), "http://dalfox:8163"),
+    _spec("sstimap", _DAST, ("dast", "sstimap"), "http://sstimap:8164"),
+    _spec("ssrfmap", _DAST, ("dast", "ssrfmap"), "http://ssrfmap:8165"),
+    _spec("jwt_tool", _DAST, ("dast", "jwt_tool"), "http://jwt-tool:8166"),
+    _spec("interactsh-client", _DAST, ("dast", "interactsh_client"), "http://interactsh-client:8167"),
 )
 
 TOOL_REGISTRY: Dict[str, ToolSpec] = {spec.name: spec for spec in _SPECS}
@@ -134,6 +141,10 @@ TOOL_ALIASES: Dict[str, str] = {
     "php_fuzzer": "php-fuzzer",
     "phpfuzzer": "php-fuzzer",
     "php-fuzz": "php-fuzzer",
+    "jwt-tool": "jwt_tool",
+    "jwt": "jwt_tool",
+    "interactsh": "interactsh-client",
+    "interactsh_client": "interactsh-client",
 }
 
 

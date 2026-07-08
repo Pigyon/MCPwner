@@ -13,9 +13,10 @@ from clients.base import (
     BaseFuzzingClient,
     BaseIaCClient,
     BaseSASTClient,
-    BaseScanClient,
     BaseSCAClient,
+    BaseScanClient,
 )
+from clients.base_dast import BaseDastClient
 from clients.base_reconnaissance import BaseReconnaissanceClient
 from clients.base_secrets import BaseSecretsClient
 from clients.base_utilities import BaseUtilitiesClient
@@ -24,6 +25,7 @@ from clients.linguist import LinguistClient
 from config.config import load_config
 from config.tools import TOOL_REGISTRY, ToolSpec
 from repositories.workspace import WorkspaceRepository
+from services.base_dast import BaseDastService
 from services.base_fuzzing import BaseFuzzingService
 from services.base_iac import BaseIaCService
 from services.base_reconnaissance import BaseReconnaissanceService
@@ -61,6 +63,7 @@ _CLIENT_BASES = {
     "utilities": BaseUtilitiesClient,
     "iac": BaseIaCClient,
     "fuzzing": BaseFuzzingClient,
+    "dast": BaseDastClient,
 }
 
 _SERVICE_BASES = {
@@ -71,6 +74,7 @@ _SERVICE_BASES = {
     "utilities": BaseUtilitiesService,
     "iac": BaseIaCService,
     "fuzzing": BaseFuzzingService,
+    "dast": BaseDastService,
 }
 
 

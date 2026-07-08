@@ -1,0 +1,18 @@
+# Linux-first: normalize all text files to LF on checkout and commit.
+* text=auto eol=lf
+
+# Scripts and container entrypoints (must be LF for Docker/Linux)
+*.sh text eol=lf
+*.bash text eol=lf
+Dockerfile text eol=lf
+**/Dockerfile text eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary

@@ -139,6 +139,22 @@ services:
         condition: service_healthy
       php-fuzzer:
         condition: service_healthy
+      sqlmap:
+        condition: service_healthy
+      nosqlmap:
+        condition: service_healthy
+      commix:
+        condition: service_healthy
+      dalfox:
+        condition: service_healthy
+      sstimap:
+        condition: service_healthy
+      ssrfmap:
+        condition: service_healthy
+      jwt-tool:
+        condition: service_healthy
+      interactsh-client:
+        condition: service_healthy
 
   codeql:
     # Using digest for reproducibility (equivalent to latest as of 2026-01-23)
@@ -1465,6 +1481,222 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+
+  sqlmap:
+
+    build:
+      context: .
+      dockerfile: docker/dast/sqlmap/Dockerfile
+    container_name: sqlmap-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-recon
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8160/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  nosqlmap:
+
+    build:
+      context: .
+      dockerfile: docker/dast/nosqlmap/Dockerfile
+    container_name: nosqlmap-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-recon
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8161/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  commix:
+
+    build:
+      context: .
+      dockerfile: docker/dast/commix/Dockerfile
+    container_name: commix-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-recon
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8162/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  dalfox:
+
+    build:
+      context: .
+      dockerfile: docker/dast/dalfox/Dockerfile
+    container_name: dalfox-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-recon
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8163/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  sstimap:
+
+    build:
+      context: .
+      dockerfile: docker/dast/sstimap/Dockerfile
+    container_name: sstimap-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-recon
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8164/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  ssrfmap:
+
+    build:
+      context: .
+      dockerfile: docker/dast/ssrfmap/Dockerfile
+    container_name: ssrfmap-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-recon
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8165/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  jwt-tool:
+
+    build:
+      context: .
+      dockerfile: docker/dast/jwt_tool/Dockerfile
+    container_name: jwt-tool-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-recon
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8166/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  interactsh-client:
+
+    build:
+      context: .
+      dockerfile: docker/dast/interactsh_client/Dockerfile
+    container_name: interactsh-client-scanner
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:noexec,nosuid,size=1g
+    networks:
+      - mcpwner-recon
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8167/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
 volumes:
   workspaces:

@@ -181,3 +181,22 @@ fuzzing:
     service_url: "http://jazzerjs:8152"
   php_fuzzer:
     service_url: "http://php-fuzzer:8153"
+
+# Dynamic Application Security Testing (DAST) Services
+dast:
+  sqlmap:
+    service_url: "http://sqlmap:8160"
+  nosqlmap:
+    service_url: "http://nosqlmap:8161"
+  commix:
+    service_url: "http://commix:8162"
+  dalfox:
+    service_url: "http://dalfox:8163"
+  sstimap:
+    service_url: "http://sstimap:8164"
+  ssrfmap:
+    service_url: "http://ssrfmap:8165"
+  jwt_tool:
+    service_url: "http://jwt-tool:8166"
+  interactsh_client:
+    service_url: "http://interactsh-client:8167"

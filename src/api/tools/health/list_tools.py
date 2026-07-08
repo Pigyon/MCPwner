@@ -8,16 +8,10 @@ from config.tools import TOOL_REGISTRY
 # automatically.
 _BESPOKE_TOOLS = ["codeql", "linguist"]
 
-# Tools tracked in the README "Future Tools" roadmap (DAST), not yet wired.
+# Tools tracked in the README "Future Tools" roadmap, not yet wired.
 _PLANNED_TOOLS = [
     "owasp-zap",
-    "sqlmap",
-    "nosqlmap",
-    "dalfox",
     "nikto",
-    "sstimap",
-    "commix",
-    "jwt_tool",
     "wapiti",
     "nuclei",
 ]

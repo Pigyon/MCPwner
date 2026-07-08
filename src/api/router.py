@@ -2,6 +2,7 @@
 
 from api.mcp_router import MCPRouter
 from api.routers.codeql.router import router as codeql_router
+from api.routers.dast.router import router as dast_router
 from api.routers.fuzzing.router import router as fuzzing_router
 from api.routers.health.router import router as health_router
 from api.routers.iac.router import router as iac_router
@@ -26,3 +27,4 @@ router.include_router(reconnaissance_router)
 router.include_router(utilities_router)
 router.include_router(iac_router)
 router.include_router(fuzzing_router)
+router.include_router(dast_router)
