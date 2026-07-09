@@ -26,10 +26,32 @@ class BaseClient:
         self.service_url = service_url.rstrip("/")
         self.tool_name = tool_name
 
+    def _get(
+        self, endpoint: str, timeout_seconds: int, params: Optional[Dict[str, Any]] = None
+    ) -> requests.Response:
+        """Send GET request and handle connection errors."""
+        try:
+            response = requests.get(
+                f"{self.service_url}{endpoint}", params=params, timeout=timeout_seconds
+            )
+            response.raise_for_status()
+            return response
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Cannot connect to {self.tool_name} service at {self.service_url}: {e}")
+            raise RuntimeError(
+                f"Cannot connect to {self.tool_name} service at {self.service_url}. "
+                f"Is the {self.tool_name} container running? "
+                f"Check with: docker ps | grep {self.tool_name}"
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"{self.tool_name} request failed: {e}")
+            if hasattr(e, "response") and e.response is not None:
+                logger.error(f"Response content: {e.response.text}")
+            raise
+
     def get_version(self) -> Dict[str, Any]:
         """Get tool version via HTTP."""
-        response = requests.get(f"{self.service_url}/version", timeout=VERSION_TIMEOUT_SECONDS)
-        response.raise_for_status()
+        response = self._get("/version", VERSION_TIMEOUT_SECONDS)
         return response.json()
 
     def _post_with_background_timeout(
@@ -81,8 +103,7 @@ class BaseClient:
         Unlike /version, this does not execute the tool's CLI, so it stays fast and
         reliable even while the CLI is slow to cold-start.
         """
-        response = requests.get(f"{self.service_url}/health", timeout=HEALTH_TIMEOUT_SECONDS)
-        response.raise_for_status()
+        response = self._get("/health", HEALTH_TIMEOUT_SECONDS)
         return response.json()
 
 
@@ -145,12 +166,7 @@ class BaseScanClient(BaseClient):
             params = {"workspace_path": workspace_path}
             if report_base:
                 params["report_base"] = report_base
-            response = requests.get(
-                f"{self.service_url}/reports",
-                params=params,
-                timeout=LIST_REPORTS_TIMEOUT_SECONDS,
-            )
-            response.raise_for_status()
+            response = self._get("/reports", LIST_REPORTS_TIMEOUT_SECONDS, params=params)
             return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(f"{self.tool_name} list_reports failed: {e}")
@@ -164,12 +180,7 @@ class BaseScanClient(BaseClient):
             params = {"workspace_path": workspace_path}
             if report_base:
                 params["report_base"] = report_base
-            response = requests.get(
-                f"{self.service_url}/report/{timestamp}",
-                params=params,
-                timeout=GET_REPORT_TIMEOUT_SECONDS,
-            )
-            response.raise_for_status()
+            response = self._get(f"/report/{timestamp}", GET_REPORT_TIMEOUT_SECONDS, params=params)
             return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(f"{self.tool_name} get_report failed: {e}")

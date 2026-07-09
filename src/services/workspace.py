@@ -267,21 +267,16 @@ class WorkspaceService:
                 else:
                     result["details"].append("Skipped file deletion: Local mount - preserving user data")
                     result["status"] = "partial"
-            elif workspace.is_virtual():
-                # Virtual workspaces can be safely deleted (only contain reports)
-                workspace_dir = Path(base_path) / workspace_id
-                if workspace_dir.exists():
-                    self._safe_rmtree(
-                        workspace_dir, result, f"Deleted virtual workspace directory: {workspace_dir}"
-                    )
-                else:
-                    result["details"].append("No workspace directory found to delete")
             else:
+                # Virtual workspaces and GitHub clones can be safely deleted
                 workspace_dir = Path(base_path) / workspace_id
                 if workspace_dir.exists():
-                    self._safe_rmtree(
-                        workspace_dir, result, f"Deleted workspace directory: {workspace_dir}"
+                    msg = (
+                        "Deleted virtual workspace directory"
+                        if workspace.is_virtual()
+                        else "Deleted workspace directory"
                     )
+                    self._safe_rmtree(workspace_dir, result, f"{msg}: {workspace_dir}")
                 else:
                     result["details"].append("No workspace directory found to delete")
         else:

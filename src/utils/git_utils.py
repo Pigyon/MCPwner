@@ -25,15 +25,21 @@ def run_git_command(
     Returns:
         CompletedProcess instance containing stdout and stderr
     """
-    return subprocess.run(
-        ["git"] + args,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=check,
-        timeout=timeout,
-        env=env,
-    )
+    try:
+        return subprocess.run(
+            ["git"] + args,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=check,
+            timeout=timeout,
+            env=env,
+        )
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr if e.stderr else str(e)
+        # Use args[0] which is the git subcommand (e.g., 'init', 'config', 'add')
+        cmd_name = args[0] if args else "command"
+        raise RuntimeError(f"Failed to run git {cmd_name}: {error_msg}")
 
 
 def init_git(path: Union[str, Path]) -> None:
@@ -46,11 +52,7 @@ def init_git(path: Union[str, Path]) -> None:
     Raises:
         RuntimeError: If git init fails
     """
-    try:
-        run_git_command(["init"], cwd=path)
-    except subprocess.CalledProcessError as e:
-        error_msg = e.stderr if e.stderr else str(e)
-        raise RuntimeError(f"Failed to run git init: {error_msg}")
+    run_git_command(["init"], cwd=path)
 
 
 def config_git(path: Union[str, Path], email: str = "mcpwner@local", name: str = "MCPwner") -> None:
@@ -65,12 +67,8 @@ def config_git(path: Union[str, Path], email: str = "mcpwner@local", name: str =
     Raises:
         RuntimeError: If git config fails
     """
-    try:
-        run_git_command(["config", "user.email", email], cwd=path)
-        run_git_command(["config", "user.name", name], cwd=path)
-    except subprocess.CalledProcessError as e:
-        error_msg = e.stderr if e.stderr else str(e)
-        raise RuntimeError(f"Failed to configure git: {error_msg}")
+    run_git_command(["config", "user.email", email], cwd=path)
+    run_git_command(["config", "user.name", name], cwd=path)
 
 
 def commit_git(path: Union[str, Path], message: str = "Initial commit for analysis") -> None:
@@ -84,9 +82,5 @@ def commit_git(path: Union[str, Path], message: str = "Initial commit for analys
     Raises:
         RuntimeError: If git add or commit fails
     """
-    try:
-        run_git_command(["add", "."], cwd=path)
-        run_git_command(["commit", "-m", message], cwd=path)
-    except subprocess.CalledProcessError as e:
-        error_msg = e.stderr if e.stderr else str(e)
-        raise RuntimeError(f"Failed to commit files: {error_msg}")
+    run_git_command(["add", "."], cwd=path)
+    run_git_command(["commit", "-m", message], cwd=path)

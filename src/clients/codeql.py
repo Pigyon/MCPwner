@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 import requests
 
-from clients.base import BaseClient
+from clients.base import SCAN_TIMEOUT_SECONDS, BaseClient
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +29,11 @@ class CodeQLClient(BaseClient):
                 "source_path": source_path,
                 "db_path": db_path,
             },
-            50,
-            "Database creation exceeded 50s MCP timeout and is continuing in the background.",
+            SCAN_TIMEOUT_SECONDS,
+            (
+                f"Database creation exceeded {SCAN_TIMEOUT_SECONDS}s MCP timeout "
+                "and is continuing in the background."
+            ),
             {"database_path": db_path},
         )
 
@@ -54,8 +57,11 @@ class CodeQLClient(BaseClient):
         return self._post_with_background_timeout(
             "/query/execute",
             payload,
-            50,
-            "Query execution exceeded 50s MCP timeout and is continuing in the background.",
+            SCAN_TIMEOUT_SECONDS,
+            (
+                f"Query execution exceeded {SCAN_TIMEOUT_SECONDS}s MCP timeout "
+                "and is continuing in the background."
+            ),
             {"output_path": output_path},
         )
 
