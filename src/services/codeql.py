@@ -31,13 +31,7 @@ class CodeQLService:
         self, workspace_id: str, language: str = None, base_path: str = "/workspaces"
     ) -> Dict[str, Any]:
         """Create CodeQL database for workspace."""
-        workspace = self.repository.find_by_id(workspace_id)
-        if not workspace:
-            raise ValueError(f"Workspace not found: {workspace_id}")
-
-        source_path = workspace.path or workspace.local_path
-        if not source_path:
-            raise ValueError(f"No source path for workspace: {workspace_id}")
+        source_path = self.repository.get_valid_workspace_path(workspace_id)
 
         # Auto-detect language if not provided
         if not language:
@@ -72,7 +66,6 @@ class CodeQLService:
             # Log warning but continue, as the directory might be created by the service
             # or volume permissions might prevent it here (though shared volume should allow it)
             logger.warning(f"Failed to create database parent directory: {e}")
-            pass
 
         try:
             result = self.codeql_client.create_database(

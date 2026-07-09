@@ -1,5 +1,6 @@
 """Health check tool."""
 
+import concurrent.futures
 import logging
 import os
 from typing import Any, Dict, Optional
@@ -103,11 +104,17 @@ def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:
     }
 
     all_healthy = True
-    for name in _HEALTH_TOOLS:
-        status = _check_service(name, _client_for(name))
-        results["services"][name] = status
-        if status["status"] != "healthy":
-            all_healthy = False
+
+    def check_tool(name: str):
+        return name, _check_service(name, _client_for(name))
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(32, len(_HEALTH_TOOLS) or 1)) as executor:
+        future_to_name = {executor.submit(check_tool, name): name for name in _HEALTH_TOOLS}
+        for future in concurrent.futures.as_completed(future_to_name):
+            name, status = future.result()
+            results["services"][name] = status
+            if status["status"] != "healthy":
+                all_healthy = False
 
     if not all_healthy:
         results["status"] = "degraded"

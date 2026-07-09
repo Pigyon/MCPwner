@@ -4,12 +4,34 @@ from typing import Any, Dict
 
 import requests
 
+from clients.base import BaseClient
 
-class LinguistClient:
+
+class LinguistClient(BaseClient):
     """HTTP client for Linguist service."""
 
+    # Mapping from linguist to CodeQL language names
+    _LANGUAGE_MAP = {
+        "Python": "python",
+        "JavaScript": "javascript",
+        "TypeScript": "typescript",
+        "Java": "java",
+        "C++": "cpp",
+        "C": "cpp",
+        "C#": "csharp",
+        "Go": "go",
+        "Ruby": "ruby",
+        "Swift": "swift",
+        "Kotlin": "kotlin",
+        "Rust": "rust",
+        "Objective-C": "cpp",
+        "Objective-C++": "cpp",
+        "JSX": "javascript",
+        "TSX": "typescript",
+    }
+
     def __init__(self, service_url: str):
-        self.service_url = service_url.rstrip("/")
+        super().__init__(service_url, "linguist")
 
     def detect_languages(self, workspace_path: str) -> Dict[str, Any]:
         """
@@ -61,18 +83,6 @@ class LinguistClient:
         except Exception as e:
             raise RuntimeError(f"Language detection failed: {e}")
 
-    def get_version(self) -> Dict[str, Any]:
-        """Get linguist version via HTTP."""
-        response = requests.get(f"{self.service_url}/version", timeout=10)
-        response.raise_for_status()
-        return response.json()
-
-    def get_health(self) -> Dict[str, Any]:
-        """Liveness check via the cheap static /health endpoint (no CLI invocation)."""
-        response = requests.get(f"{self.service_url}/health", timeout=10)
-        response.raise_for_status()
-        return response.json()
-
     def _map_to_codeql_language(self, linguist_name: str) -> str:
         """
         Map linguist language names to CodeQL language names.
@@ -83,24 +93,4 @@ class LinguistClient:
         Returns:
             CodeQL language name or None if not supported
         """
-        # Mapping from linguist to CodeQL language names
-        language_map = {
-            "Python": "python",
-            "JavaScript": "javascript",
-            "TypeScript": "typescript",
-            "Java": "java",
-            "C++": "cpp",
-            "C": "cpp",
-            "C#": "csharp",
-            "Go": "go",
-            "Ruby": "ruby",
-            "Swift": "swift",
-            "Kotlin": "kotlin",
-            "Rust": "rust",
-            "Objective-C": "cpp",
-            "Objective-C++": "cpp",
-            "JSX": "javascript",
-            "TSX": "typescript",
-        }
-
-        return language_map.get(linguist_name)
+        return self._LANGUAGE_MAP.get(linguist_name)

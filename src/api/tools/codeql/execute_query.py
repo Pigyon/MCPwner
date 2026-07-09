@@ -6,7 +6,8 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from deps import get_codeql_service, get_workspace_repository, get_workspace_service
+from api.tools.common import handle_tool_error
+from deps import get_codeql_service, get_workspace_repository
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +21,11 @@ QUERY_BACKGROUND_WAIT_SECONDS = 600
 QUERY_POLL_INTERVAL_SECONDS = 3
 
 
+@handle_tool_error
 def execute_query(
     workspace_id: str,
     database_id: str,
     query_pack: str = "security-extended",
-    query_name: Optional[str] = None,
     query_type: str = "builtin",
     custom_query: Optional[str] = None,
 ) -> dict:
@@ -35,7 +36,6 @@ def execute_query(
         workspace_id: UUID of the workspace
         database_id: ID of the CodeQL database
         query_pack: Query pack name (default: "security-extended")
-        query_name: Optional specific query name within pack
         query_type: Type of query - "builtin" or "custom" (default: "builtin")
         custom_query: Custom CodeQL query code (required if query_type="custom")
 
@@ -43,21 +43,8 @@ def execute_query(
         Dictionary with query results and findings
     """
     try:
-        # Validate workspace
-        workspace_service = get_workspace_service()
-        workspace = workspace_service.get_workspace(workspace_id)
-
         # Get database metadata from CodeQL service
         codeql_service = get_codeql_service()
-        databases = codeql_service.list_databases(workspace_id)
-        database = next((db for db in databases if db.get("database_id") == database_id), None)
-
-        if not database:
-            return {"status": "error", "error": f"Database not found: {database_id}"}
-
-        db_path = database.get("path")
-        if not db_path:
-            return {"status": "error", "error": "Database path not found in metadata"}
 
         # Handle custom query execution
         if custom_query:
@@ -76,6 +63,7 @@ def execute_query(
         sarif_filename = f"{workspace_id}_{database_id}_{int(time.time())}.sarif"
         repo = get_workspace_repository()
         ws = repo.find_by_id(workspace_id)
+        ws_path = ws.path if ws else None
         reports_base = ws.get_reports_base_dir() if ws else f"/workspaces/{workspace_id}"
         sarif_output = f"{reports_base}/{sarif_filename}"
 
@@ -137,13 +125,13 @@ def execute_query(
                     with open(sarif_output, "r", encoding="utf-8") as f:
                         sarif_data = json.load(f)
                     break
-                except (json.JSONDecodeError, ValueError):
+                except json.JSONDecodeError:
                     if attempt == 4:
                         raise
                     time.sleep(2)
 
             # Extract findings
-            findings = parse_sarif(sarif_data, workspace_id)
+            findings = parse_sarif(sarif_data, workspace_id, ws_path)
 
             # Enforce result size limit
             result_json = json.dumps(findings)
@@ -169,18 +157,20 @@ def execute_query(
             # Cleanup temporary file
             Path(sarif_output).unlink(missing_ok=True)
 
-    except Exception as e:
-        logger.error(f"Error executing query: {e}")
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        raise
 
 
-def parse_sarif(sarif_data: Dict[str, Any], workspace_id: str) -> List[Dict[str, Any]]:
+def parse_sarif(
+    sarif_data: Dict[str, Any], workspace_id: str, ws_path: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """
     Parse SARIF output into structured findings.
 
     Args:
         sarif_data: SARIF JSON data
         workspace_id: Workspace ID for path sanitization
+        ws_path: Optional workspace local path for sanitization
 
     Returns:
         List of finding dictionaries
@@ -205,7 +195,7 @@ def parse_sarif(sarif_data: Dict[str, Any], workspace_id: str) -> List[Dict[str,
 
             # Sanitize file path (remove /workspaces/ prefix)
             file_path = artifact_location.get("uri", "")
-            file_path = sanitize_path(file_path, workspace_id)
+            file_path = sanitize_path(file_path, workspace_id, ws_path)
 
             finding = {
                 "rule_id": rule_id,
@@ -226,26 +216,21 @@ def parse_sarif(sarif_data: Dict[str, Any], workspace_id: str) -> List[Dict[str,
     return findings
 
 
-def sanitize_path(path: str, workspace_id: str) -> str:
+def sanitize_path(path: str, workspace_id: str, ws_path: Optional[str] = None) -> str:
     """
     Sanitize file path by removing workspace prefix.
 
     Args:
         path: Original file path
         workspace_id: Workspace ID
+        ws_path: Optional workspace local path
 
     Returns:
         Sanitized relative path
     """
-    # Try to resolve via workspace metadata for local_path workspaces
-    try:
-        repo = get_workspace_repository()
-        ws = repo.find_by_id(workspace_id)
-        if ws and ws.path and path.startswith(ws.path):
-            relative = path[len(ws.path) :]
-            return relative.lstrip("/")
-    except Exception:
-        pass
+    if ws_path and path.startswith(ws_path):
+        relative = path[len(ws_path) :]
+        return relative.lstrip("/")
 
     # Remove /workspaces/{workspace_id}/ prefix
     prefix = f"/workspaces/{workspace_id}/"

@@ -1,5 +1,6 @@
 """List available tools."""
 
+from api.tools.common import handle_tool_error
 from config.tools import HEALTHY_TOOLS, TOOL_REGISTRY
 
 # CodeQL and Linguist have bespoke wiring and are not in the registry, so they
@@ -17,6 +18,7 @@ _PLANNED_TOOLS = [
 ]
 
 
+@handle_tool_error
 def health_list_tools() -> dict:
     """
     List available and planned security tools.

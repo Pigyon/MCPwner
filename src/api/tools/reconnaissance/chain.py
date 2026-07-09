@@ -6,9 +6,12 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from api.tools.reconnaissance.scan import AUTO_WORKSPACE, CHAINABLE_TOOLS, SUPPORTED_TOOLS
-from config.tools import resolve_tool_name
+from config.tools import resolve_tool_name, tools_for_category
 from deps import get_service, get_workspace_repository, get_workspace_service
+
+AUTO_WORKSPACE = "auto"
+CHAINABLE_TOOLS = ["httpx", "katana", "arjun", "gau", "wafw00f", "kiterunner", "ffuf"]
+SUPPORTED_TOOLS = tools_for_category("reconnaissance")
 
 logger = logging.getLogger(__name__)
 
@@ -19,17 +22,14 @@ DEFAULT_BACKGROUND_WAIT_SECONDS = 240
 BACKGROUND_POLL_INTERVAL_SECONDS = 3
 
 
-def _report_dir(workspace_id: str, tool: str) -> Path:
+def _report_dir(reports_base: str, tool: str) -> Path:
     """Resolve the reconnaissance report directory for a tool in a workspace."""
-    repo = get_workspace_repository()
-    workspace = repo.find_by_id(workspace_id)
-    reports_base = workspace.get_reports_base_dir() if workspace else f"/workspaces/{workspace_id}"
     return Path(f"{reports_base}/reports/reconnaissance/{tool}")
 
 
-def _latest_report_path(workspace_id: str, tool: str) -> Optional[Path]:
+def _latest_report_path(reports_base: str, tool: str) -> Optional[Path]:
     """Return the newest (non-cache) JSON report for a tool, or None."""
-    report_dir = _report_dir(workspace_id, tool)
+    report_dir = _report_dir(reports_base, tool)
     if not report_dir.exists():
         return None
     reports = sorted(
@@ -58,20 +58,27 @@ def _count_findings(report_path: Path) -> int:
     return 0
 
 
-def _wait_for_fresh_report(workspace_id: str, tool: str, since: float, timeout: float) -> Optional[Path]:
-    """Poll for a report written at/after ``since`` (epoch seconds).
+def _wait_for_fresh_report(
+    reports_base: str, tool: str, existing_reports: set, timeout: float
+) -> Optional[Path]:
+    """Poll for a newly written report that was not in existing_reports.
 
     A backgrounded scan keeps running in its tool container after the MCP client
     times out; its report is written atomically on completion. Polling the shared
     report volume lets the chain wait for that report instead of racing ahead and
-    failing on a missing/stale file. Returns the report path, or None on timeout.
+    failing on a missing/stale file. Returns the new report path, or None on timeout.
     """
     deadline = time.time() + timeout
     while time.time() < deadline:
-        latest = _latest_report_path(workspace_id, tool)
-        # Allow a 1s slack so a report written essentially at scan-start still counts.
-        if latest and latest.stat().st_mtime >= since - 1.0:
-            return latest
+        report_dir = _report_dir(reports_base, tool)
+        if report_dir.exists():
+            current_reports = {p.name for p in report_dir.glob("*.json") if not p.name.startswith(".")}
+            new_reports = current_reports - existing_reports
+            if new_reports:
+                # Return the newest among the newly appeared reports
+                paths = [report_dir / name for name in new_reports]
+                paths.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                return paths[0]
         time.sleep(BACKGROUND_POLL_INTERVAL_SECONDS)
     return None
 
@@ -87,9 +94,9 @@ PRESET_CHAINS = {
 }
 
 
-def _report_has_findings(workspace_id: str, tool: str) -> bool:
+def _report_has_findings(reports_base: str, tool: str) -> bool:
     """Check whether a tool's latest report in the workspace has at least one entry."""
-    latest = _latest_report_path(workspace_id, tool)
+    latest = _latest_report_path(reports_base, tool)
     if not latest:
         return False
     return _count_findings(latest) > 0
@@ -165,6 +172,11 @@ def run_reconnaissance_chain(
             workspace_id = workspace_result["workspace_id"]
             logger.info(f"Created workspace for chain: {workspace_id}")
 
+        # Resolve workspace reports base dir once
+        repo = get_workspace_repository()
+        ws = repo.find_by_id(workspace_id)
+        reports_base = ws.get_reports_base_dir() if ws else f"/workspaces/{workspace_id}"
+
         steps = []
         total_findings = 0
         # Track the last successful tool that actually produced findings
@@ -196,7 +208,13 @@ def run_reconnaissance_chain(
 
             try:
                 service = get_service(tool)
-                start = time.time()
+                report_dir_path = _report_dir(reports_base, tool)
+                existing_reports = set()
+                if report_dir_path.exists():
+                    existing_reports = {
+                        p.name for p in report_dir_path.glob("*.json") if not p.name.startswith(".")
+                    }
+
                 result = service.scan(workspace_id, None, tool_config)
 
                 # A scan that exceeded the MCP client timeout returns
@@ -208,7 +226,7 @@ def run_reconnaissance_chain(
                         "background_wait_seconds", DEFAULT_BACKGROUND_WAIT_SECONDS
                     )
                     logger.info(f"{tool} backgrounded — waiting up to {wait_timeout}s for its report")
-                    report = _wait_for_fresh_report(workspace_id, tool, start, wait_timeout)
+                    report = _wait_for_fresh_report(reports_base, tool, existing_reports, wait_timeout)
                     if report:
                         result = {
                             "status": "success",
@@ -241,7 +259,7 @@ def run_reconnaissance_chain(
                     # Only update last_tool_with_findings if this tool actually found something
                     # Always update the "last successful tool" regardless of finding count
                     # so the next step can at least attempt to chain
-                    if _report_has_findings(workspace_id, tool):
+                    if _report_has_findings(reports_base, tool):
                         last_tool_with_findings = tool
                         logger.info(f"{tool}: produced findings, will be used as source for next step")
                     else:

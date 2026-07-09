@@ -26,13 +26,7 @@ class LinguistService:
         Returns:
             List of detected language names (e.g., ["python", "javascript"])
         """
-        workspace = self.repository.find_by_id(workspace_id)
-        if not workspace:
-            raise ValueError(f"Workspace not found: {workspace_id}")
-
-        workspace_path = workspace.path or workspace.local_path
-        if not workspace_path:
-            raise ValueError(f"No source path for workspace: {workspace_id}")
+        workspace_path = self.repository.get_valid_workspace_path(workspace_id)
 
         workspace_dir = Path(workspace_path)
         if not workspace_dir.exists():
@@ -62,13 +56,7 @@ class LinguistService:
         Returns:
             Dictionary with languages, statistics, and raw output
         """
-        workspace = self.repository.find_by_id(workspace_id)
-        if not workspace:
-            raise ValueError(f"Workspace not found: {workspace_id}")
-
-        workspace_path = workspace.path or workspace.local_path
-        if not workspace_path:
-            raise ValueError(f"No source path for workspace: {workspace_id}")
+        workspace_path = self.repository.get_valid_workspace_path(workspace_id)
 
         workspace_dir = Path(workspace_path)
         if not workspace_dir.exists():
