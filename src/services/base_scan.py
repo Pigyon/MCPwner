@@ -7,7 +7,6 @@ import threading
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from config.tools import ToolCategory
 from repositories.workspace import WorkspaceRepository
 
 logger = logging.getLogger(__name__)
@@ -35,12 +34,11 @@ class BaseScanService:
     category-agnostic.
     """
 
-    def __init__(self, repository: WorkspaceRepository, client: Any):
+    def __init__(self, repository: WorkspaceRepository, client: Any, category: str):
         self.repository = repository
         self.client = client
         self.tool_name = client.tool_name
-        # Category of the tool (sast, secrets, etc.) - overridden by subclass
-        self.tool_category = ToolCategory.SAST.value
+        self.tool_category = category
         # Cache of last scan result per workspace for reliable report retrieval
         self._last_scan_results: Dict[str, Dict[str, Any]] = {}
 
@@ -61,22 +59,16 @@ class BaseScanService:
         Returns:
             Dictionary with scan results including finding count and report path
         """
-        # Validate workspace exists
-        workspace = self.repository.find_by_id(workspace_id)
-        if not workspace:
+        try:
+            workspace_path = self.repository.get_valid_workspace_path(workspace_id)
+        except ValueError as e:
             return {
                 "status": "error",
-                "error": f"Workspace not found: {workspace_id}",
-                "error_code": "WORKSPACE_NOT_FOUND",
+                "error": str(e),
+                "error_code": "WORKSPACE_NOT_FOUND" if "not found" in str(e) else "NO_SOURCE_PATH",
             }
 
-        workspace_path = workspace.path or workspace.local_path
-        if not workspace_path:
-            return {
-                "status": "error",
-                "error": f"No source path for workspace: {workspace_id}",
-                "error_code": "NO_SOURCE_PATH",
-            }
+        workspace = self.repository.find_by_id(workspace_id)
 
         # Validate scan path if provided
         if scan_path:
@@ -200,15 +192,7 @@ class BaseScanService:
                     with open(latest_report, "r") as f:
                         report_data = json.load(f)
 
-                    return {
-                        "status": "success",
-                        "workspace_id": workspace_id,
-                        "tool": self.tool_name,
-                        "report_path": str(latest_report),
-                        "timestamp": latest_report.stem,
-                        "sarif": report_data,
-                        "report_content": report_data,
-                    }
+                    return self._build_report_response(workspace_id, latest_report, report_data)
                 except Exception as e:
                     logger.warning(f"Failed to read local report {latest_report}: {e}")
             else:
@@ -225,15 +209,9 @@ class BaseScanService:
                 try:
                     with open(cached_path, "r") as f:
                         report_data = json.load(f)
-                    return {
-                        "status": "success",
-                        "workspace_id": workspace_id,
-                        "tool": self.tool_name,
-                        "report_path": str(cached_path),
-                        "timestamp": cached.get("timestamp", cached_path.stem),
-                        "sarif": report_data,
-                        "report_content": report_data,
-                    }
+                    return self._build_report_response(
+                        workspace_id, cached_path, report_data, cached.get("timestamp")
+                    )
                 except Exception as e:
                     logger.warning(f"Failed to read cached report path {cached_path}: {e}")
 
@@ -252,15 +230,9 @@ class BaseScanService:
                     )
                     if result.get("status") == "success":
                         report_data = result.get("report") or result.get("report_raw", "")
-                        return {
-                            "status": "success",
-                            "workspace_id": workspace_id,
-                            "tool": self.tool_name,
-                            "report_path": result.get("report_path", ""),
-                            "timestamp": timestamps[0],
-                            "sarif": report_data if isinstance(report_data, dict) else None,
-                            "report_content": report_data,
-                        }
+                        return self._build_report_response(
+                            workspace_id, result.get("report_path", ""), report_data, timestamps[0]
+                        )
             except Exception as e:
                 logger.warning(f"HTTP fallback for {self.tool_name} report failed: {e}")
 
@@ -268,6 +240,27 @@ class BaseScanService:
             "status": "error",
             "error": f"No {self.tool_name} reports found for workspace: {workspace_id}",
             "error_code": "NO_REPORTS_FOUND",
+        }
+
+    def _build_report_response(
+        self, workspace_id: str, report_path: Any, report_data: Any, timestamp: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Build a standardized report response dictionary."""
+        # Convert Path objects to string, handle None
+        path_str = str(report_path) if report_path else ""
+
+        # Determine timestamp from path stem if not provided
+        if not timestamp:
+            timestamp = getattr(report_path, "stem", "") if hasattr(report_path, "stem") else ""
+
+        return {
+            "status": "success",
+            "workspace_id": workspace_id,
+            "tool": self.tool_name,
+            "report_path": path_str,
+            "timestamp": timestamp,
+            "sarif": report_data if isinstance(report_data, dict) else None,
+            "report_content": report_data,
         }
 
     def _scan_cache_path(self, workspace_id: str) -> Path:

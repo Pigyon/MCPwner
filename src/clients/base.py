@@ -19,16 +19,83 @@ LIST_REPORTS_TIMEOUT_SECONDS = 30
 GET_REPORT_TIMEOUT_SECONDS = 60
 
 
-class BaseScanClient:
+class BaseClient:
+    """Base HTTP client with version and health endpoints."""
+
+    def __init__(self, service_url: str, tool_name: str):
+        self.service_url = service_url.rstrip("/")
+        self.tool_name = tool_name
+
+    def get_version(self) -> Dict[str, Any]:
+        """Get tool version via HTTP."""
+        response = requests.get(f"{self.service_url}/version", timeout=VERSION_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        return response.json()
+
+    def _post_with_background_timeout(
+        self,
+        endpoint: str,
+        payload: dict,
+        timeout_seconds: int,
+        background_message: str,
+        background_extra: dict,
+    ) -> Dict[str, Any]:
+        """Send POST request and handle background timeout."""
+        try:
+            response = requests.post(
+                f"{self.service_url}{endpoint}", json=payload, timeout=timeout_seconds
+            )
+            if not response.ok:
+                body = response.text[:500]
+                raise RuntimeError(
+                    f"{self.tool_name} service returned HTTP {response.status_code}: {body}"
+                )
+            return response.json()
+        except requests.exceptions.ReadTimeout:
+            logger.warning(
+                f"{self.tool_name} request exceeded {timeout_seconds}s timeout. "
+                "It is likely still running in the background."
+            )
+            res = {
+                "status": "backgrounded",
+                "message": background_message,
+            }
+            res.update(background_extra)
+            return res
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Cannot connect to {self.tool_name} service at {self.service_url}: {e}")
+            raise RuntimeError(
+                f"Cannot connect to {self.tool_name} service at {self.service_url}. "
+                f"Is the {self.tool_name} container running? "
+                f"Check with: docker ps | grep {self.tool_name}"
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"{self.tool_name} request failed: {e}")
+            if hasattr(e, "response") and e.response is not None:
+                logger.error(f"Response content: {e.response.text}")
+            raise
+
+    def get_health(self) -> Dict[str, Any]:
+        """Liveness check via the cheap static /health endpoint.
+
+        Unlike /version, this does not execute the tool's CLI, so it stays fast and
+        reliable even while the CLI is slow to cold-start.
+        """
+        response = requests.get(f"{self.service_url}/health", timeout=HEALTH_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        return response.json()
+
+
+class BaseScanClient(BaseClient):
     """Base HTTP client for scan services (SAST, SCA, etc.)."""
 
     # Name of the MCP tool used to retrieve this category's reports. Overridden
     # per category so backgrounded-scan hints point at the correct tool.
     report_tool: str = "the matching get_report"
 
-    def __init__(self, service_url: str, tool_name: str):
-        self.service_url = service_url.rstrip("/")
-        self.tool_name = tool_name
+    def __init__(self, service_url: str, tool_name: str, category: str):
+        super().__init__(service_url, tool_name)
+        self.report_tool = f"get_{category}_report"
 
     def scan(
         self,
@@ -64,53 +131,13 @@ class BaseScanClient:
         )
 
         logger.info(f"Sending scan request to {self.service_url}/scan with payload: {payload}")
-        try:
-            response = requests.post(f"{self.service_url}/scan", json=payload, timeout=timeout_seconds)
-            if not response.ok:
-                body = response.text[:500]
-                raise RuntimeError(
-                    f"{self.tool_name} service returned HTTP {response.status_code}: {body}"
-                )
-            return response.json()
-        except requests.exceptions.ReadTimeout:
-            logger.warning(
-                f"{self.tool_name} scan exceeded {timeout_seconds}s timeout. "
-                "It is likely still running in the background."
-            )
-            return {
-                "status": "backgrounded",
-                "message": f"Scan exceeded {timeout_seconds}s MCP timeout "
-                "and is continuing in the background.",
-                "next_steps": f"Use the {self.report_tool} tool later to check if the report is ready.",
-            }
-        except requests.exceptions.ConnectionError as e:
-            logger.error(f"Cannot connect to {self.tool_name} service at {self.service_url}: {e}")
-            raise RuntimeError(
-                f"Cannot connect to {self.tool_name} service at {self.service_url}. "
-                f"Is the {self.tool_name} container running? "
-                f"Check with: docker ps | grep {self.tool_name}"
-            )
-        except requests.exceptions.RequestException as e:
-            logger.error(f"{self.tool_name} scan request failed: {e}")
-            if hasattr(e, "response") and e.response is not None:
-                logger.error(f"Response content: {e.response.text}")
-            raise
-
-    def get_version(self) -> Dict[str, Any]:
-        """Get tool version via HTTP."""
-        response = requests.get(f"{self.service_url}/version", timeout=VERSION_TIMEOUT_SECONDS)
-        response.raise_for_status()
-        return response.json()
-
-    def get_health(self) -> Dict[str, Any]:
-        """Liveness check via the cheap static /health endpoint.
-
-        Unlike /version, this does not execute the tool's CLI, so it stays fast and
-        reliable even while the CLI is slow to cold-start.
-        """
-        response = requests.get(f"{self.service_url}/health", timeout=HEALTH_TIMEOUT_SECONDS)
-        response.raise_for_status()
-        return response.json()
+        return self._post_with_background_timeout(
+            "/scan",
+            payload,
+            timeout_seconds,
+            f"Scan exceeded {timeout_seconds}s MCP timeout and is continuing in the background.",
+            {"next_steps": f"Use the {self.report_tool} tool later to check if the report is ready."},
+        )
 
     def list_reports(self, workspace_path: str, report_base: Optional[str] = None) -> Dict[str, Any]:
         """List available report timestamps via HTTP."""
@@ -147,28 +174,3 @@ class BaseScanClient:
         except requests.exceptions.RequestException as e:
             logger.error(f"{self.tool_name} get_report failed: {e}")
             return {"status": "error", "error": str(e)}
-
-
-class BaseSASTClient(BaseScanClient):
-    """Base HTTP client for SAST services."""
-
-    report_tool = "get_sast_report"
-
-
-class BaseSCAClient(BaseScanClient):
-    """Base HTTP client for SCA services."""
-
-    report_tool = "get_sca_report"
-
-
-class BaseIaCClient(BaseScanClient):
-    """Base HTTP client for Infrastructure-as-Code (IaC) scanners."""
-
-    report_tool = "get_iac_report"
-
-
-class BaseFuzzingClient(BaseScanClient):
-    """Base HTTP client for source-fuzzing engines (Atheris, Jazzer, Jazzer.js,
-    PHP-Fuzzer)."""
-
-    report_tool = "get_fuzzing_report"
