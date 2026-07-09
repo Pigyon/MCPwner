@@ -11,6 +11,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from utils.git_utils import run_git_command
+
 
 class RepositoryError(Exception):
     """Raised when repository operations fail."""
@@ -110,11 +112,8 @@ def clone_repository(
     # is thread-safe, unlike signal.alarm — MCP tool calls run on a worker thread,
     # where signal-based timeouts raise "signal only works in main thread".
     try:
-        subprocess.run(
-            ["git", "clone", "--depth", "1", "--single-branch", validated_url, str(target_path)],
-            capture_output=True,
-            text=True,
-            check=True,
+        run_git_command(
+            ["clone", "--depth", "1", "--single-branch", validated_url, str(target_path)],
             timeout=timeout,
             # Never prompt for credentials: a missing/private repo should fail fast
             # with "repository not found" rather than hang or return an opaque auth error.

@@ -1,39 +1,28 @@
 """Domain models for MCPwner using Pydantic."""
 
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import PlainSerializer
 
-
-def _iso_z(dt: datetime) -> str:
-    """Serialize a datetime as ISO-8601 UTC with a 'Z' suffix.
-
-    Uses 'Z' instead of '+00:00' (and never both — emitting '+00:00Z' produces an
-    invalid timestamp that pydantic refuses to parse back).
-    """
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+IsoDateTime = Annotated[
+    datetime,
+    PlainSerializer(lambda v: v.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z", return_type=str),
+]
 
 
-class Workspace(BaseModel):
+class Workspace(PydanticBaseModel):
     """Workspace domain model."""
 
     workspace_id: str
     source_type: str  # "github", "local", "local_path", or "virtual"
     source: str
-    created_at: datetime
+    created_at: IsoDateTime
     path: Optional[str] = None
     local_path: Optional[str] = None
     mount_path: Optional[str] = None
     workspace_base_dir: Optional[str] = None  # Base dir for reports/metadata (e.g. /workspaces/{id})
-
-    model_config = ConfigDict()
-
-    @field_serializer("created_at")
-    def serialize_created_at(self, dt: datetime, _info):
-        return _iso_z(dt)
 
     def is_github_clone(self) -> bool:
         """Check if workspace is a GitHub clone."""
@@ -63,65 +52,13 @@ class Workspace(BaseModel):
         return f"/workspaces/{self.workspace_id}"
 
 
-class CodeQLDatabase(BaseModel):
+class CodeQLDatabase(PydanticBaseModel):
     """CodeQL database domain model."""
 
     database_id: str
     workspace_id: str
     language: str
-    created_at: datetime
+    created_at: IsoDateTime
     path: str
     status: str = "ready"  # ready, creating, failed
     error: Optional[str] = None
-
-    model_config = ConfigDict()
-
-    @field_serializer("created_at")
-    def serialize_created_at(self, dt: datetime, _info):
-        return _iso_z(dt)
-
-
-class CodeElement(BaseModel):
-    """Code element model (function, method, class)."""
-
-    id: Optional[int] = None
-    element_type: str  # 'function', 'method', 'class'
-    name: str
-    qualified_name: Optional[str] = None
-    file: str
-    start_line: int
-    end_line: int
-    code: str
-    language: str
-    metadata: Optional[str] = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-    def to_dict(self):
-        """Convert to dictionary for backward compatibility."""
-        return self.model_dump()
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        """Create from dictionary for backward compatibility."""
-        return cls(**data)
-
-
-class CallRelationship(BaseModel):
-    """Call relationship between code elements."""
-
-    id: Optional[int] = None
-    caller_id: int
-    callee_id: int
-    call_site_line: Optional[int] = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-    def to_dict(self):
-        """Convert to dictionary for backward compatibility."""
-        return self.model_dump()
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        """Create from dictionary for backward compatibility."""
-        return cls(**data)

@@ -2,7 +2,38 @@
 
 import subprocess
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
+
+
+def run_git_command(
+    args: list[str],
+    cwd: Optional[Union[str, Path]] = None,
+    timeout: Optional[int] = None,
+    env: Optional[dict[str, str]] = None,
+    check: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    """
+    Execute a git command.
+
+    Args:
+        args: Git command arguments
+        cwd: Working directory for the command
+        timeout: Optional timeout in seconds
+        env: Optional environment variables
+        check: Whether to raise CalledProcessError on non-zero exit
+
+    Returns:
+        CompletedProcess instance containing stdout and stderr
+    """
+    return subprocess.run(
+        ["git"] + args,
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        check=check,
+        timeout=timeout,
+        env=env,
+    )
 
 
 def init_git(path: Union[str, Path]) -> None:
@@ -16,7 +47,7 @@ def init_git(path: Union[str, Path]) -> None:
         RuntimeError: If git init fails
     """
     try:
-        subprocess.run(["git", "init"], cwd=path, check=True, capture_output=True, text=True)
+        run_git_command(["init"], cwd=path)
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr if e.stderr else str(e)
         raise RuntimeError(f"Failed to run git init: {error_msg}")
@@ -35,12 +66,8 @@ def config_git(path: Union[str, Path], email: str = "mcpwner@local", name: str =
         RuntimeError: If git config fails
     """
     try:
-        subprocess.run(
-            ["git", "config", "user.email", email], cwd=path, check=True, capture_output=True, text=True
-        )
-        subprocess.run(
-            ["git", "config", "user.name", name], cwd=path, check=True, capture_output=True, text=True
-        )
+        run_git_command(["config", "user.email", email], cwd=path)
+        run_git_command(["config", "user.name", name], cwd=path)
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr if e.stderr else str(e)
         raise RuntimeError(f"Failed to configure git: {error_msg}")
@@ -58,30 +85,8 @@ def commit_git(path: Union[str, Path], message: str = "Initial commit for analys
         RuntimeError: If git add or commit fails
     """
     try:
-        subprocess.run(["git", "add", "."], cwd=path, check=True, capture_output=True, text=True)
-        subprocess.run(
-            ["git", "commit", "-m", message], cwd=path, check=True, capture_output=True, text=True
-        )
+        run_git_command(["add", "."], cwd=path)
+        run_git_command(["commit", "-m", message], cwd=path)
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr if e.stderr else str(e)
         raise RuntimeError(f"Failed to commit files: {error_msg}")
-
-
-def ensure_git_repo(path: Union[str, Path]) -> None:
-    """
-    Ensure the given path is a git repository.
-    If not, initialize it, configure it, and commit all files.
-
-    Args:
-        path: Directory path to check/initialize
-
-    Raises:
-        RuntimeError: If any git operation fails
-    """
-    path = Path(path)
-    if (path / ".git").exists():
-        return
-
-    init_git(path)
-    config_git(path)
-    commit_git(path)

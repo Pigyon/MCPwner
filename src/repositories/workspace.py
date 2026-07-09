@@ -28,7 +28,7 @@ class WorkspaceRepository:
 
         # In-memory cache for performance
         self._workspaces: Dict[str, Workspace] = {}
-        self._databases: Dict[str, List[CodeQLDatabase]] = {}
+        self._databases: Dict[str, Dict[str, CodeQLDatabase]] = {}
 
         # Load existing data on initialization
         self._load_from_disk()
@@ -63,12 +63,15 @@ class WorkspaceRepository:
                 with open(self.databases_file, "r") as f:
                     data = json.load(f)
                 for ws_id, db_list in data.items():
-                    dbs = []
-                    for db_data in db_list:
+                    dbs = {}
+                    # Handle both legacy list format and new dict format gracefully
+                    db_items = db_list if isinstance(db_list, list) else db_list.values()
+                    for db_data in db_items:
                         if isinstance(db_data, dict) and "created_at" in db_data:
                             db_data["created_at"] = self._sanitize_timestamp(db_data["created_at"])
                         try:
-                            dbs.append(CodeQLDatabase(**db_data))
+                            db = CodeQLDatabase(**db_data)
+                            dbs[db.database_id] = db
                         except Exception as e:
                             logger.error(f"Skipping unparseable database for {ws_id}: {e}")
                     if dbs:
@@ -99,7 +102,7 @@ class WorkspaceRepository:
             # Write to temporary file first
             temp_file = self.databases_file.with_suffix(".tmp")
             data = {
-                ws_id: [db.model_dump() for db in db_list] for ws_id, db_list in self._databases.items()
+                ws_id: [db.model_dump() for db in dbs.values()] for ws_id, dbs in self._databases.items()
             }
             with open(temp_file, "w") as f:
                 json.dump(data, f, indent=2)
@@ -114,8 +117,18 @@ class WorkspaceRepository:
         """Save workspace to memory and disk."""
         self._workspaces[workspace.workspace_id] = workspace
         if workspace.workspace_id not in self._databases:
-            self._databases[workspace.workspace_id] = []
+            self._databases[workspace.workspace_id] = {}
         self._save_workspaces_to_disk()
+
+    def get_valid_workspace_path(self, workspace_id: str) -> str:
+        """Helper to fetch workspace and return its path, raising ValueError if invalid."""
+        workspace = self.find_by_id(workspace_id)
+        if not workspace:
+            raise ValueError(f"Workspace not found: {workspace_id}")
+        path = workspace.path or workspace.local_path
+        if not path:
+            raise ValueError(f"No source path for workspace: {workspace_id}")
+        return path
 
     def find_by_id(self, workspace_id: str) -> Optional[Workspace]:
         """Find workspace by ID."""
@@ -139,26 +152,15 @@ class WorkspaceRepository:
     def save_database(self, database: CodeQLDatabase) -> None:
         """Save database metadata to memory and disk."""
         if database.workspace_id not in self._databases:
-            self._databases[database.workspace_id] = []
+            self._databases[database.workspace_id] = {}
 
-        # Update existing or append new
-        databases = self._databases[database.workspace_id]
-        for i, db in enumerate(databases):
-            if db.database_id == database.database_id:
-                databases[i] = database
-                self._save_databases_to_disk()
-                return
-        databases.append(database)
+        self._databases[database.workspace_id][database.database_id] = database
         self._save_databases_to_disk()
 
     def find_databases(self, workspace_id: str) -> List[CodeQLDatabase]:
         """Find all databases for workspace."""
-        return self._databases.get(workspace_id, [])
+        return list(self._databases.get(workspace_id, {}).values())
 
     def find_database(self, workspace_id: str, database_id: str) -> Optional[CodeQLDatabase]:
         """Find specific database."""
-        databases = self._databases.get(workspace_id, [])
-        for db in databases:
-            if db.database_id == database_id:
-                return db
-        return None
+        return self._databases.get(workspace_id, {}).get(database_id)

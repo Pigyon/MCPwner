@@ -83,13 +83,13 @@ class WorkspaceService:
         # Handle virtual workspace (for tools that don't have source code)
         if source_type == "virtual":
             try:
-                workspace_dir = _ensure_shared_dir(Path(base_path) / workspace.workspace_id)
-                _ensure_shared_dir(workspace_dir / "reports")
-
-                workspace.path = str(workspace_dir)
-                workspace.workspace_base_dir = str(workspace_dir)
-                self.repository.save(workspace)
-                logger.info(f"Successfully created virtual workspace at {workspace_dir}")
+                workspace_dir = str(Path(base_path) / workspace.workspace_id)
+                self._finalize_workspace(
+                    workspace,
+                    base_path,
+                    workspace_dir,
+                    success_msg=f"Successfully created virtual workspace at {workspace_dir}",
+                )
             except Exception as e:
                 logger.error(f"Failed to create virtual workspace: {e}")
                 raise
@@ -98,12 +98,12 @@ class WorkspaceService:
         elif source_type == "github":
             try:
                 repo_path = clone_repository(source, workspace.workspace_id, base_path)
-                workspace_base = _ensure_shared_dir(Path(base_path) / workspace.workspace_id)
-                _ensure_shared_dir(workspace_base / "reports")
-                workspace.path = repo_path
-                workspace.workspace_base_dir = str(workspace_base)
-                self.repository.save(workspace)
-                logger.info(f"Successfully cloned GitHub repo to {repo_path}")
+                self._finalize_workspace(
+                    workspace,
+                    base_path,
+                    repo_path,
+                    success_msg=f"Successfully cloned GitHub repo to {repo_path}",
+                )
             except RepositoryError as e:
                 logger.error(f"Failed to clone repository: {e}")
                 raise
@@ -112,9 +112,6 @@ class WorkspaceService:
         elif source_type == "local":
             try:
                 mount_info = setup_local_mount(source, workspace.workspace_id, base_path)
-
-                # Copy local source to shared workspace directory
-                # This ensures all containers (CodeQL, SAST) can access the files
                 destination_path = mount_info["mount_path"]
                 source_path = mount_info["local_path"]
 
@@ -130,14 +127,14 @@ class WorkspaceService:
                     ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"),
                 )
 
-                workspace_base = _ensure_shared_dir(Path(base_path) / workspace.workspace_id)
-                _ensure_shared_dir(workspace_base / "reports")
-                workspace.local_path = source_path
-                workspace.mount_path = destination_path
-                workspace.path = destination_path
-                workspace.workspace_base_dir = str(workspace_base)
-                self.repository.save(workspace)
-                logger.info(f"Successfully set up local workspace at {destination_path}")
+                self._finalize_workspace(
+                    workspace,
+                    base_path,
+                    destination_path,
+                    local_path=source_path,
+                    mount_path=destination_path,
+                    success_msg=f"Successfully set up local workspace at {destination_path}",
+                )
             except LocalMountError as e:
                 logger.error(f"Failed to setup local mount: {e}")
                 raise
@@ -146,18 +143,14 @@ class WorkspaceService:
         elif source_type == "local_path":
             try:
                 validated_path = _validate_local_codebase(source)
-
-                # Create a workspace base dir for reports/metadata only
-                workspace_base = _ensure_shared_dir(Path(base_path) / workspace.workspace_id)
-                _ensure_shared_dir(workspace_base / "reports")
-
-                workspace.path = validated_path
-                workspace.local_path = validated_path
-                workspace.workspace_base_dir = str(workspace_base)
-                self.repository.save(workspace)
-                logger.info(
-                    f"Successfully created local_path workspace pointing to {validated_path}, "
-                    f"reports at {workspace_base}"
+                self._finalize_workspace(
+                    workspace,
+                    base_path,
+                    validated_path,
+                    local_path=validated_path,
+                    success_msg=(
+                        f"Successfully created local_path workspace pointing to {validated_path}"
+                    ),
                 )
             except ValueError as e:
                 logger.error(f"Failed to setup local_path workspace: {e}")
@@ -169,6 +162,30 @@ class WorkspaceService:
             )
 
         return workspace.model_dump()
+
+    def _finalize_workspace(
+        self,
+        workspace: Workspace,
+        base_path: str,
+        primary_path: str,
+        local_path: str = None,
+        mount_path: str = None,
+        success_msg: str = None,
+    ) -> None:
+        """Finalize workspace initialization by setting up shared dirs and saving."""
+        workspace_base = _ensure_shared_dir(Path(base_path) / workspace.workspace_id)
+        _ensure_shared_dir(workspace_base / "reports")
+
+        workspace.path = primary_path
+        if local_path:
+            workspace.local_path = local_path
+        if mount_path:
+            workspace.mount_path = mount_path
+        workspace.workspace_base_dir = str(workspace_base)
+
+        self.repository.save(workspace)
+        if success_msg:
+            logger.info(success_msg)
 
     def list_workspaces(self) -> List[Dict[str, Any]]:
         """List all workspaces."""
