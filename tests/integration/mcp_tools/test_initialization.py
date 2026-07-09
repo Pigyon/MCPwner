@@ -14,7 +14,7 @@ from mcp.client.stdio import stdio_client
 
 
 @asynccontextmanager
-async def create_mcp_client():
+async def create_mcp_client_init():
     """Create an MCP client connected to the server via stdio."""
     # Get the mcpwner root directory (two levels up from this test file)
     test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -41,7 +41,7 @@ async def create_mcp_client():
 @pytest.mark.asyncio
 async def test_mcp_initialization(docker_compose_up):
     """Test MCP server initialization and handshake."""
-    async with create_mcp_client() as (session, result):
+    async with create_mcp_client_init() as (session, result):
         # Verify session is initialized
         assert session is not None
 

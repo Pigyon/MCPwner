@@ -4,38 +4,9 @@ Test Error handling - verify proper error responses for ALL error scenarios.
 This validates that the MCP server properly handles and reports errors to LLMs.
 """
 
-import os
-import sys
-from contextlib import asynccontextmanager
-
 import pytest
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
 
-
-@asynccontextmanager
-async def create_mcp_client():
-    """Create an MCP client connected to the server via stdio."""
-    # Get the mcpwner root directory (two levels up from this test file)
-    test_dir = os.path.dirname(os.path.abspath(__file__))
-    mcpwner_root = os.path.abspath(os.path.join(test_dir, "..", "..", ".."))
-    src_dir = os.path.join(mcpwner_root, "src")
-
-    server_params = StdioServerParameters(
-        command=sys.executable,
-        args=["-m", "server"],
-        cwd=src_dir,
-        env={
-            "MCP_TRANSPORT": "stdio",
-            "CODEQL_SERVICE_URL": "http://localhost:8080",
-            "LINGUIST_SERVICE_URL": "http://localhost:8081",
-            "SEMGREP_SERVICE_URL": "http://localhost:8082",
-        },
-    )
-
-    async with stdio_client(server_params) as (read, write), ClientSession(read, write) as session:
-        await session.initialize()
-        yield session
+from tests.integration.mcp_tools.conftest import create_mcp_client
 
 
 @pytest.mark.asyncio
@@ -54,8 +25,8 @@ async def test_invalid_tool_name(docker_compose_up):
 async def test_missing_required_arguments(docker_compose_up):
     """Test that missing required arguments returns proper error."""
     async with create_mcp_client() as session:
-        # workspace_create_workspace requires workspace_id and source_type
-        result = await session.call_tool("workspace_create_workspace", arguments={})
+        # create_workspace requires workspace_id and source_type
+        result = await session.call_tool("create_workspace", arguments={})
 
         # Server returns isError=True for missing args
         assert result.isError is True
@@ -69,7 +40,7 @@ async def test_invalid_argument_type(docker_compose_up):
     async with create_mcp_client() as session:
         # workspace_id should be string, not number
         result = await session.call_tool(
-            "workspace_create_workspace",
+            "create_workspace",
             arguments={"workspace_id": 12345, "source_type": "empty"},
         )
 
@@ -85,7 +56,7 @@ async def test_invalid_workspace_id(docker_compose_up):
     async with create_mcp_client() as session:
         # Try to cleanup a workspace that doesn't exist
         result = await session.call_tool(
-            "workspace_cleanup_workspace",
+            "cleanup_workspace",
             arguments={"workspace_id": "nonexistent-workspace-xyz"},
         )
 
@@ -102,7 +73,7 @@ async def test_invalid_codeql_database(docker_compose_up):
     async with create_mcp_client() as session:
         # Try to execute query on non-existent database
         result = await session.call_tool(
-            "codeql_execute_query",
+            "execute_query",
             arguments={
                 "workspace_id": "nonexistent",
                 "database_name": "nonexistent",
@@ -120,8 +91,8 @@ async def test_invalid_codeql_database(docker_compose_up):
 async def test_empty_arguments_when_required(docker_compose_up):
     """Test that empty arguments object is rejected when arguments are required."""
     async with create_mcp_client() as session:
-        # codeql_detect_languages requires workspace_id
-        result = await session.call_tool("codeql_detect_languages", arguments={})
+        # detect_languages requires workspace_id
+        result = await session.call_tool("detect_languages", arguments={})
 
         # Server returns isError=True for missing required args
         assert result.isError is True
@@ -139,3 +110,31 @@ async def test_extra_unexpected_arguments(docker_compose_up):
         # Should still work (extra args ignored) or fail gracefully
         assert result is not None
         print("\n✅ Extra arguments handled properly")
+
+
+@pytest.mark.parametrize(
+    "tool_action, arguments",
+    [
+        ("run_sast_scan", {"tool": "bandit", "workspace_id": "nonexistent-workspace"}),
+        ("get_sast_report", {"tool": "bandit", "workspace_id": "nonexistent-workspace"}),
+        ("run_sca_scan", {"tool": "grype", "workspace_id": "nonexistent-workspace"}),
+        ("get_sca_report", {"tool": "grype", "workspace_id": "nonexistent-workspace"}),
+    ],
+)
+@pytest.mark.asyncio
+async def test_sast_tools_invalid_workspace(docker_compose_up, tool_action, arguments):
+    """Test SAST/SCA scan/report tools with invalid workspace_id."""
+    async with create_mcp_client() as session:
+        result = await session.call_tool(
+            tool_action,
+            arguments=arguments,
+        )
+
+        assert result is not None
+        assert len(result.content) > 0
+        content = result.content[0]
+        assert hasattr(content, "text")
+        # Should return error for nonexistent workspace
+        assert "error" in content.text.lower() or "not found" in content.text.lower()
+
+        print(f"\n✅ {tool_action} error handling for invalid workspace works")

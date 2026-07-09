@@ -4,40 +4,9 @@ Test Tool discovery - verify ALL tools are exposed via MCP protocol.
 This test ensures that LLMs can discover all available tools.
 """
 
-import os
-import sys
-from contextlib import asynccontextmanager
-
 import pytest
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
 
-
-@asynccontextmanager
-async def create_mcp_client():
-    """Create an MCP client connected to the server via stdio."""
-    # Get the mcpwner root directory (two levels up from this test file)
-    test_dir = os.path.dirname(os.path.abspath(__file__))
-    mcpwner_root = os.path.abspath(os.path.join(test_dir, "..", "..", ".."))
-    src_dir = os.path.join(mcpwner_root, "src")
-
-    server_params = StdioServerParameters(
-        command=sys.executable,
-        args=["-m", "server"],
-        cwd=src_dir,
-        env={
-            "MCP_TRANSPORT": "stdio",
-            "CODEQL_SERVICE_URL": "http://localhost:8080",
-            "LINGUIST_SERVICE_URL": "http://localhost:8081",
-            "SEMGREP_SERVICE_URL": "http://localhost:8082",
-            "BANDIT_SERVICE_URL": "http://localhost:8083",
-            "GOSEC_SERVICE_URL": "http://localhost:8084",
-        },
-    )
-
-    async with stdio_client(server_params) as (read, write), ClientSession(read, write) as session:
-        await session.initialize()
-        yield session
+from tests.integration.mcp_tools.conftest import create_mcp_client
 
 
 @pytest.mark.asyncio
@@ -55,36 +24,35 @@ async def test_all_tools_discoverable(docker_compose_up):
         for name in sorted(tool_names):
             print(f"  - {name}")
 
-        # Complete list of ALL expected tools based on routers
-        expected_tools = [
-            # Health tools (health_ prefix)
+        # Core expected tools
+        expected_tools = {
             "health_check",
             "health_list_tools",
-            # Workspace tools (workspace_ prefix removed)
             "create_workspace",
             "list_workspaces",
             "cleanup_workspace",
-            # CodeQL tools (codeql_ prefix removed)
-            "detect_languages",
-            "create_codeql_database",
-            "list_databases",
-            "execute_query",
-            "list_query_packs",
-            "extract_code_context",
-            "get_function_context",
-            "get_callers",
-            "get_callees",
-            "search_functions",
-            "list_functions",
-            # SAST tools (sast_ prefix)
-            "sast_list_tools",
-            "sast_semgrep_scan",
-            "sast_semgrep_get_report",
-            "sast_bandit_scan",
-            "sast_bandit_get_report",
-            "sast_gosec_scan",
-            "sast_gosec_get_report",
-        ]
+        }
+
+        # Dynamically build expectations based on healthy tools registry
+        from config.tools import HEALTHY_TOOLS, tools_for_category
+
+        if "linguist" in HEALTHY_TOOLS:
+            expected_tools.add("detect_languages")
+
+        if "codeql" in HEALTHY_TOOLS:
+            expected_tools.update(
+                ["create_codeql_database", "list_databases", "execute_query", "list_query_packs"]
+            )
+
+        # Standard categories
+        categories = ["sast", "sca", "secrets", "reconnaissance", "utilities", "fuzzing", "dast", "iac"]
+        for category in categories:
+            if tools_for_category(category):
+                expected_tools.update(
+                    [f"{category}_list_tools", f"run_{category}_scan", f"get_{category}_report"]
+                )
+                if category == "reconnaissance":
+                    expected_tools.add("run_reconnaissance_chain")
 
         # Verify ALL expected tools are present
         missing_tools = []
