@@ -171,3 +171,11 @@ def filter_unhealthy_tools(healthy_names: set):
     global HEALTHY_TOOLS
     HEALTHY_TOOLS.clear()
     HEALTHY_TOOLS.update(healthy_names)
+
+
+def get_bespoke_tools() -> List[str]:
+    """Return healthy tools that have bespoke wiring and are not in the registry."""
+    return [t for t in ["codeql", "linguist"] if t in HEALTHY_TOOLS]
+
+
+CHAINABLE_TOOLS = ["httpx", "katana", "arjun", "gau", "wafw00f", "kiterunner", "ffuf"]

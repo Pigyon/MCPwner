@@ -5,19 +5,17 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-from config.tools import HEALTHY_TOOLS, TOOL_REGISTRY
+from config.tools import TOOL_REGISTRY, get_bespoke_tools
 from deps import get_client, get_codeql_client, get_linguist_client
 
 logger = logging.getLogger(__name__)
 
-# CodeQL and Linguist use bespoke clients and are not in the tool registry, so
-# they are listed explicitly and checked first.
-_BESPOKE_TOOLS = [t for t in ["codeql", "linguist"] if t in HEALTHY_TOOLS]
 
 # Every other tool is resolved generically from the registry, so all categories
 # (SAST, SCA, Secrets, Reconnaissance, Utilities, IaC) — and any tool added in
 # future — are health-checked automatically, in registry (display) order.
-_HEALTH_TOOLS = _BESPOKE_TOOLS + list(TOOL_REGISTRY.keys())
+def _get_health_tools():
+    return get_bespoke_tools() + list(TOOL_REGISTRY.keys())
 
 
 def _client_for(name: str):
@@ -85,13 +83,14 @@ def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:
         Dictionary with health status
     """
     # Check specific tool
+    health_tools = _get_health_tools()
     if tool_name:
         tool_name = tool_name.lower()
-        if tool_name not in _HEALTH_TOOLS:
+        if tool_name not in health_tools:
             return {
                 "status": "error",
                 "error": f"Unknown tool: {tool_name}",
-                "available_tools": _HEALTH_TOOLS,
+                "available_tools": health_tools,
             }
 
         return _check_service(tool_name, _client_for(tool_name))
@@ -108,8 +107,8 @@ def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:
     def check_tool(name: str):
         return name, _check_service(name, _client_for(name))
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(32, len(_HEALTH_TOOLS) or 1)) as executor:
-        future_to_name = {executor.submit(check_tool, name): name for name in _HEALTH_TOOLS}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(32, len(health_tools) or 1)) as executor:
+        future_to_name = {executor.submit(check_tool, name): name for name in health_tools}
         for future in concurrent.futures.as_completed(future_to_name):
             name, status = future.result()
             results["services"][name] = status

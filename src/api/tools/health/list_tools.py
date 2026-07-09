@@ -1,13 +1,12 @@
 """List available tools."""
 
 from api.tools.common import handle_tool_error
-from config.tools import HEALTHY_TOOLS, TOOL_REGISTRY
+from config.tools import TOOL_REGISTRY, get_bespoke_tools
 
 # CodeQL and Linguist have bespoke wiring and are not in the registry, so they
 # are listed explicitly; every other tool is derived from the registry so all
 # categories (SAST, SCA, Secrets, Reconnaissance, Utilities, IaC) stay in sync
 # automatically.
-_BESPOKE_TOOLS = [t for t in ["codeql", "linguist"] if t in HEALTHY_TOOLS]
 
 # Tools tracked in the README "Future Tools" roadmap, not yet wired.
 _PLANNED_TOOLS = [
@@ -27,6 +26,6 @@ def health_list_tools() -> dict:
         Dictionary with available and planned tools
     """
     return {
-        "available": _BESPOKE_TOOLS + list(TOOL_REGISTRY.keys()),
+        "available": get_bespoke_tools() + list(TOOL_REGISTRY.keys()),
         "planned": _PLANNED_TOOLS,
     }

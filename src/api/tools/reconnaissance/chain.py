@@ -6,11 +6,10 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from config.tools import resolve_tool_name, tools_for_category
+from config.tools import CHAINABLE_TOOLS, resolve_tool_name, tools_for_category
 from deps import get_service, get_workspace_repository, get_workspace_service
 
 AUTO_WORKSPACE = "auto"
-CHAINABLE_TOOLS = ["httpx", "katana", "arjun", "gau", "wafw00f", "kiterunner", "ffuf"]
 SUPPORTED_TOOLS = tools_for_category("reconnaissance")
 
 logger = logging.getLogger(__name__)

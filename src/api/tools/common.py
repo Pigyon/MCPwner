@@ -11,7 +11,7 @@ import logging
 from functools import wraps
 from typing import Any, Dict, Optional
 
-from config.tools import resolve_tool_name, tools_for_category
+from config.tools import CHAINABLE_TOOLS, resolve_tool_name, tools_for_category
 from deps import get_linguist_service, get_service
 
 logger = logging.getLogger(__name__)
@@ -161,12 +161,11 @@ def create_scan_tool(category: str):
                 return _unsupported(tool, supported)
 
             # Target validation
-            chainable_tools = ["httpx", "katana", "arjun", "gau", "wafw00f", "kiterunner", "ffuf"]
             is_chained = (
                 category == "reconnaissance"
                 and config
                 and config.get("source_tool")
-                and tool in chainable_tools
+                and tool in CHAINABLE_TOOLS
             )
 
             if target:
