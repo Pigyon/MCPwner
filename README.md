@@ -39,12 +39,12 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 | :------------------------------------------------------------: | :-----------------------------------------------: | :--------------------------------------: | :---------------------------------------------------------: | :--------------------------------------: |
 | [**Subfinder**](https://github.com/projectdiscovery/subfinder) | [**Amass**](https://github.com/owasp-amass/amass) | [**Nmap**](https://github.com/nmap/nmap) | [**Masscan**](https://github.com/robertdavidgraham/masscan) | [**ffuf**](https://github.com/ffuf/ffuf) |
 
-|        <img src="readme/bbot.png" width="100">         |        <img src="readme/httpx.png" width="100">        |       <img src="readme/katana.png" width="100">        |      <img src="https://img.shields.io/badge/gau-333333?style=for-the-badge" width="100" height="100">      |      <img src="readme/arjun.png" width="100">      |
-| :----------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------: | :------------------------------------------------: |
-| [**bbot**](https://github.com/blacklanternsecurity/bbot) | [**httpx**](https://github.com/projectdiscovery/httpx) | [**Katana**](https://github.com/projectdiscovery/katana) | [**gau**](https://github.com/lc/gau) | [**Arjun**](https://github.com/s0md3v/Arjun) |
+|         <img src="readme/bbot.png" width="100">          |        <img src="readme/httpx.png" width="100">        |        <img src="readme/katana.png" width="100">         | <img src="https://img.shields.io/badge/gau-333333?style=for-the-badge" width="100" height="100"> |   <img src="readme/arjun.png" width="100">   |
+| :------------------------------------------------------: | :----------------------------------------------------: | :------------------------------------------------------: | :----------------------------------------------------------------------------------------------: | :------------------------------------------: |
+| [**bbot**](https://github.com/blacklanternsecurity/bbot) | [**httpx**](https://github.com/projectdiscovery/httpx) | [**Katana**](https://github.com/projectdiscovery/katana) |                               [**gau**](https://github.com/lc/gau)                               | [**Arjun**](https://github.com/s0md3v/Arjun) |
 
-|        <img src="readme/wafw00f.png" width="100">        |          <img src="readme/kiterunner.png" width="100">          |
-| :------------------------------------------------------: | :-------------------------------------------------------------: |
+|        <img src="readme/wafw00f.png" width="100">        |       <img src="readme/kiterunner.png" width="100">       |
+| :------------------------------------------------------: | :-------------------------------------------------------: |
 | [**wafw00f**](https://github.com/EnableSecurity/wafw00f) | [**Kiterunner**](https://github.com/assetnote/kiterunner) |
 
 ## Static Application Security Testing (SAST) Scanning Tools
@@ -55,14 +55,14 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 
 <br>
 
-|        <img src="readme/brakeman.png" width="100">        | <img src="readme/pmd.png" width="100"> | <img src="readme/nodejsscan.png" width="100"> |        <img src="readme/joern.png" width="100">        | <img src="readme/yasa.png" width="100"> |
-| :-------------------------------------------------------: | :------------------------------------: | :-------------------------------------------: | :----------------------------------------------------: | :-------------------------------------: |
+|        <img src="readme/brakeman.png" width="100">        | <img src="readme/pmd.png" width="100"> |        <img src="readme/nodejsscan.png" width="100">        |   <img src="readme/joern.png" width="100">    |       <img src="readme/yasa.png" width="100">       |
+| :-------------------------------------------------------: | :------------------------------------: | :---------------------------------------------------------: | :-------------------------------------------: | :-------------------------------------------------: |
 | [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  | [**NodeJsScan**](https://github.com/ajinabraham/NodeJsScan) | [**Joern**](https://github.com/joernio/joern) | [**YASA**](https://github.com/antgroup/YASA-Engine) |
 
 ## Source Fuzzing
 
-| <img src="readme/atheris.png" width="100"> | <img src="readme/jazzer.png" width="100"> | <img src="readme/jazzerjs.png" width="100"> | <img src="readme/phpfuzzer.jpeg" width="100"> |
-| :---: | :---: | :---: | :---: |
+|    <img src="readme/atheris.png" width="100">    |            <img src="readme/jazzer.png" width="100">            |              <img src="readme/jazzerjs.png" width="100">              |     <img src="readme/phpfuzzer.jpeg" width="100">     |
+| :----------------------------------------------: | :-------------------------------------------------------------: | :-------------------------------------------------------------------: | :---------------------------------------------------: |
 | [**Atheris**](https://github.com/google/atheris) | [**Jazzer**](https://github.com/CodeIntelligenceTesting/jazzer) | [**Jazzer.js**](https://github.com/CodeIntelligenceTesting/jazzer.js) | [**PHP-Fuzzer**](https://github.com/nikic/php-fuzzer) |
 
 ## Secrets Scanning Tools
@@ -73,40 +73,39 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 
 ## Software Composition Analysis (SCA) Tools
 
-| <img src="readme/grype.png" width="100"> | <img src="readme/syft.png" width="100"> | <img src="readme/osv-scanner.png" width="100"> | <img src="readme/retirejs.png" width="100"> |
-| :--------------------------------------: | :-------------------------------------: | :--------------------------------------------: | :-----------------------------------------: |
+|   <img src="readme/grype.png" width="100">    |   <img src="readme/syft.png" width="100">   |      <img src="readme/osv-scanner.png" width="100">      |      <img src="readme/retirejs.png" width="100">       |
+| :-------------------------------------------: | :-----------------------------------------: | :------------------------------------------------------: | :----------------------------------------------------: |
 | [**Grype**](https://github.com/anchore/grype) | [**Syft**](https://github.com/anchore/syft) | [**OSV-Scanner**](https://github.com/google/osv-scanner) | [**Retire.js**](https://github.com/RetireJS/retire.js) |
 
 ## Infrastructure & IaC Security
 
-| <img src="readme/checkov.png" width="100"> | <img src="readme/KICS.png" width="100"> | <img src="readme/terrascan.png" width="100"> | <img src="readme/tfsec.jpeg" width="100"> | <img src="readme/hadolint.png" width="100"> |
+|       <img src="readme/checkov.png" width="100">       |    <img src="readme/KICS.png" width="100">    |     <img src="readme/terrascan.png" width="100">      |     <img src="readme/tfsec.jpeg" width="100">      |     <img src="readme/hadolint.png" width="100">      |
 | :----------------------------------------------------: | :-------------------------------------------: | :---------------------------------------------------: | :------------------------------------------------: | :--------------------------------------------------: |
 | [**Checkov**](https://github.com/bridgecrewio/checkov) | [**KICS**](https://github.com/checkmarx/kics) | [**Terrascan**](https://github.com/tenable/terrascan) | [**TFSec**](https://github.com/aquasecurity/tfsec) | [**Hadolint**](https://github.com/hadolint/hadolint) |
 
+## Dynamic Application Security Testing (DAST)
+
+|       <img src="readme/sqlmap.png" width="100">       |     <img src="readme/nosqlmap.png" width="100">     |       <img src="readme/commix.png" width="100">       |   <img src="readme/dalfox.png" width="100">    |     <img src="readme/sstimap.png" width="100">      |
+| :---------------------------------------------------: | :-------------------------------------------------: | :---------------------------------------------------: | :--------------------------------------------: | :-------------------------------------------------: |
+| [**sqlmap**](https://github.com/sqlmapproject/sqlmap) | [**NoSQLMap**](https://github.com/codingo/NoSQLMap) | [**Commix**](https://github.com/commixproject/commix) | [**Dalfox**](https://github.com/hahwul/dalfox) | [**SSTImap**](https://github.com/vladko312/SSTImap) |
+
+<br>
+
+|      <img src="readme/ssrfmap.jpg" width="100">       |     <img src="readme/jwttool.jpg" width="100">      |          <img src="readme/interactsh.png" width="100">           |
+| :---------------------------------------------------: | :-------------------------------------------------: | :--------------------------------------------------------------: |
+| [**SSRFmap**](https://github.com/swisskyrepo/SSRFmap) | [**jwt_tool**](https://github.com/ticarpi/jwt_tool) | [**interactsh**](https://github.com/projectdiscovery/interactsh) |
+
 ## Utilities
 
-| <img src="readme/linguist.jpg" width="100"> | <img src="readme/wiremock.png" width="100"> | <img src="readme/mitmproxy.png" width="100"> | <img src="readme/aiohttp.png" width="100"> | <img src="readme/playwright.png" width="100"> |
-| :-----------------------------------------: | :-----------------------------------------: | :------------------------------------------: | :----------------------------------------: | :-------------------------------------------: |
+|         <img src="readme/linguist.jpg" width="100">         |     <img src="readme/wiremock.png" width="100">      |      <img src="readme/mitmproxy.png" width="100">       |     <img src="readme/aiohttp.png" width="100">     |             <img src="readme/playwright.png" width="100">             |
+| :---------------------------------------------------------: | :--------------------------------------------------: | :-----------------------------------------------------: | :------------------------------------------------: | :-------------------------------------------------------------------: |
 | [**Linguist**](https://github.com/github-linguist/linguist) | [**WireMock**](https://github.com/wiremock/wiremock) | [**Mitmproxy**](https://github.com/mitmproxy/mitmproxy) | [**aiohttp**](https://github.com/aio-libs/aiohttp) | [**Chromium w. Playwright**](https://github.com/microsoft/playwright) |
 
 </div>
 
 ## Future Tools
 
-The following tools are planned for future releases. Logos will be added as each tool is integrated.
-
-### Dynamic Application Security Testing (DAST)
-
-Exploitation and verification tools that run against a live target and produce proof of a vulnerability:
-
-- **sqlmap** - SQL injection detection and exploitation (data extraction)
-- **NoSQLMap** - NoSQL injection (MongoDB, CouchDB)
-- **Commix** - command injection exploitation
-- **Dalfox** - reflected, stored, and DOM-based XSS
-- **SSTImap** - server-side template injection and code injection (RCE)
-- **SSRFmap** - server-side request forgery exploitation
-- **jwt_tool** - JWT tampering and authentication bypass
-- **interactsh** - OOB interaction server/client for confirming blind vulnerabilities (blind SSRF, blind RCE, blind SQLi, XXE, DNS exfiltration)
+The following tools are planned for future releases.
 
 ### Insecure Deserialization
 
@@ -162,6 +161,13 @@ Curated payload and wordlist corpora to back the tools above:
 → MCPwner runs CodeQL queries, cross-references with secrets and SCA results
 ```
 
+### Live Target Exploitation
+
+```
+"Test for SQLi and XSS on http://localhost:8080"
+→ MCPwner chains: sqlmap + Dalfox and verifies findings
+```
+
 ## Installation
 
 ### Prerequisites
@@ -210,8 +216,9 @@ Once Docker containers are running, add MCPwner to your MCP client:
 
 **Important: Dynamic Tool Registration**
 MCPwner uses a modular, opt-in architecture. Security tools are governed by Docker Compose `profiles`.
-1. The `.env` file (`COMPOSE_PROFILES=sast,secrets,reconnaissance,etc`) dictates which containers are brought online. Alternatively, you can override this and launch specific profiles via the CLI: `docker compose --profile sast --profile secrets up -d`.
-2. The MCP server dynamically probes the running containers at startup and registers *only* the healthy tools with your LLM.
+
+1. The `.env` file (`COMPOSE_PROFILES=sast,secrets,reconnaissance,dast,etc`) dictates which containers are brought online. Alternatively, you can override this and launch specific profiles via the CLI: `docker compose --profile sast --profile dast up -d`.
+2. The MCP server dynamically probes the running containers at startup and registers _only_ the healthy tools with your LLM.
 3. If you want to omit specific tools (e.g., `semgrep`), omit its category (`sast`) from `.env` and manually list the other tools you want (`bandit,gosec,codeql`).
 4. **Note:** Tools in the `utilities` category (e.g., Linguist, WireMock, Chromium) are treated as permanent core dependencies. They run unconditionally on `docker compose up -d` to ensure critical cross-tool dependencies (like language detection) always function.
 
@@ -318,6 +325,7 @@ graph LR
     Utilities[Utilities]
     IaC[IaC Security]
     Fuzzing[Source Fuzzing]
+    DAST[DAST Tools]
 
     Client -->|JSON-RPC 2.0| Server
     Server -->|HTTP| SAST
@@ -329,6 +337,7 @@ graph LR
     Server -->|HTTP| Utilities
     Server -->|HTTP| IaC
     Server -->|HTTP| Fuzzing
+    Server -->|HTTP| DAST
 
     style LLM fill:#7C3AED,stroke:#5B21B6,stroke-width:3px,color:#fff
     style Client fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
@@ -342,6 +351,7 @@ graph LR
     style Utilities fill:#6D28D9,stroke:#4C1D95,stroke-width:2px,color:#fff
     style IaC fill:#059669,stroke:#047857,stroke-width:2px,color:#fff
     style Fuzzing fill:#B91C1C,stroke:#7F1D1D,stroke-width:2px,color:#fff
+    style DAST fill:#D35400,stroke:#A04000,stroke-width:2px,color:#fff
     style IDE fill:none,stroke:#ddd,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
@@ -399,6 +409,12 @@ MCPwner exposes the following tools through the MCP interface:
 - `run_fuzzing_scan` - Run a white-box, coverage-guided fuzzing campaign against a per-target harness (Atheris, Jazzer, Jazzer.js, PHP-Fuzzer)
 - `get_fuzzing_report` - Retrieve fuzzing crash results (crashing input + stack trace)
 - `fuzzing_list_tools` - List available fuzzing engines, filtered by detected language
+
+**DAST (Dynamic Application Security Testing):**
+
+- `run_dast_scan` - Run dynamic application security testing tools (sqlmap, NoSQLMap, Commix, Dalfox, SSTImap, SSRFmap, jwt_tool, interactsh)
+- `get_dast_report` - Retrieve DAST scan results
+- `dast_list_tools` - List available DAST tools
 
 **Utilities:**
 
