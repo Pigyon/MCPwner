@@ -39,33 +39,15 @@ def _ensure_async(func: Callable) -> Callable:
 class MCPRouter:
     """
     Router for grouping related MCP tools.
-
-    Tools are registered with the FastMCP instance under their function name
-    (the project's naming convention bakes any namespace into the function name,
-    e.g. ``run_sast_scan`` / ``sast_list_tools``).
     """
 
     def __init__(self):
         self._tools: List[Callable] = []
-        self._routers: List["MCPRouter"] = []
 
-    def tool(self):
-        """Decorator to register a tool function under its own name."""
-
-        def decorator(func: Callable) -> Callable:
-            self._tools.append(func)
-            return func
-
-        return decorator
-
-    def include_router(self, router: "MCPRouter"):
-        """
-        Include another router's tools.
-
-        Args:
-            router: MCPRouter instance to include
-        """
-        self._routers.append(router)
+    def add_tools(self, *tools: Callable):
+        """Add one or more tool functions directly."""
+        for t in tools:
+            self._tools.append(t)
 
     def register_tools(self, mcp: FastMCP):
         """
@@ -82,7 +64,3 @@ class MCPRouter:
                 mcp.tool(name=name)(_ensure_async(tool_func))
             except Exception as e:
                 logger.error(f"  ERROR registering tool {name}: {e}")
-
-        # Register included routers' tools
-        for router in self._routers:
-            router.register_tools(mcp)

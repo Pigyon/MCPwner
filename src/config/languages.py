@@ -131,7 +131,6 @@ OPENGREP_LANGUAGES: List[str] = [
     "generic",
 ]
 
-PYTHON_LANGUAGES: List[str] = ["python"]
 JAVASCRIPT_LANGUAGES: List[str] = ["javascript", "typescript", "jsx", "tsx"]
 
 # Source fuzzing engines — one per language already covered by SAST. The list

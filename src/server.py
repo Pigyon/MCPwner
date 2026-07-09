@@ -64,8 +64,7 @@ try:
     logger.info("Registering tools from api_router...")
     api_router.register_tools(mcp)
     logger.info("All tools loaded")
-except Exception as e:
-    logger.error(f"ERROR loading tools: {e}")
+except Exception:
     logger.exception("Tool loading failed")
     # Don't exit, try to run anyway so we can see logs
 
@@ -106,7 +105,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("Shutting down gracefully...")
         sys.exit(0)
-    except Exception as e:
-        logger.critical(f"FATAL ERROR: {e}")
+    except Exception:
         logger.exception("Fatal error occurred")
         sys.exit(1)

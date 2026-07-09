@@ -106,19 +106,19 @@ def _validate_config(config: Dict[str, Any]) -> None:
 
     # Validate server settings
     server = config["server"]
-    _validate_positive_int(server, "port", "server")
+    _validate_int(server, "port", "server", 1)
     _validate_string(server, "host", "server")
 
     # Validate workspace settings
     workspace = config["workspace"]
-    _validate_positive_int(workspace, "max_workspaces", "workspace")
-    _validate_non_negative_int(workspace, "auto_cleanup_seconds", "workspace")
+    _validate_int(workspace, "max_workspaces", "workspace", 1)
+    _validate_int(workspace, "auto_cleanup_seconds", "workspace", 0)
 
     # Validate resource limits
     resources = config["resources"]
-    _validate_positive_int(resources, "max_disk_mb", "resources")
-    _validate_positive_int(resources, "max_memory_mb", "resources")
-    _validate_positive_int(resources, "max_cpu_cores", "resources")
+    _validate_int(resources, "max_disk_mb", "resources", 1)
+    _validate_int(resources, "max_memory_mb", "resources", 1)
+    _validate_int(resources, "max_cpu_cores", "resources", 1)
 
     # Validate logging settings
     logging = config["logging"]
@@ -130,24 +130,14 @@ def _validate_config(config: Dict[str, Any]) -> None:
         raise ConfigError(f"Invalid log level: {logging['level']}. Must be one of {valid_log_levels}")
 
 
-def _validate_positive_int(section: Dict[str, Any], key: str, section_name: str) -> None:
-    """Validate that a value is a positive integer."""
+def _validate_int(section: Dict[str, Any], key: str, section_name: str, min_val: int) -> None:
+    """Validate that a value is an integer >= min_val."""
     if key not in section:
         raise ConfigError(f"Missing required key '{key}' in section '{section_name}'")
 
     value = section[key]
-    if not isinstance(value, int) or value <= 0:
-        raise ConfigError(f"'{section_name}.{key}' must be a positive integer, got: {value}")
-
-
-def _validate_non_negative_int(section: Dict[str, Any], key: str, section_name: str) -> None:
-    """Validate that a value is a non-negative integer."""
-    if key not in section:
-        raise ConfigError(f"Missing required key '{key}' in section '{section_name}'")
-
-    value = section[key]
-    if not isinstance(value, int) or value < 0:
-        raise ConfigError(f"'{section_name}.{key}' must be a non-negative integer, got: {value}")
+    if not isinstance(value, int) or value < min_val:
+        raise ConfigError(f"'{section_name}.{key}' must be an integer >= {min_val}, got: {value}")
 
 
 def _validate_string(section: Dict[str, Any], key: str, section_name: str) -> None:

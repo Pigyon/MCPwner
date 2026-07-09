@@ -9,31 +9,13 @@ layer have bespoke wiring and stay as explicit factories below.
 from functools import lru_cache
 from typing import Any
 
-from clients.base import (
-    BaseFuzzingClient,
-    BaseIaCClient,
-    BaseSASTClient,
-    BaseSCAClient,
-    BaseScanClient,
-)
-from clients.base_dast import BaseDastClient
-from clients.base_reconnaissance import BaseReconnaissanceClient
-from clients.base_secrets import BaseSecretsClient
-from clients.base_utilities import BaseUtilitiesClient
+from clients.base import BaseScanClient
 from clients.codeql import CodeQLClient
 from clients.linguist import LinguistClient
 from config.config import load_config
 from config.tools import TOOL_REGISTRY, ToolSpec
 from repositories.workspace import WorkspaceRepository
-from services.base_dast import BaseDastService
-from services.base_fuzzing import BaseFuzzingService
-from services.base_iac import BaseIaCService
-from services.base_reconnaissance import BaseReconnaissanceService
-from services.base_sast import BaseSASTService
-from services.base_sca import BaseSCAService
 from services.base_scan import BaseScanService
-from services.base_secrets import BaseSecretsService
-from services.base_utilities import BaseUtilitiesService
 from services.codeql import CodeQLService
 from services.linguist import LinguistService
 from services.workspace import WorkspaceService
@@ -55,28 +37,6 @@ def get_workspace_repository():
 # Registry-driven clients and services
 # ---------------------------------------------------------------------------
 
-_CLIENT_BASES = {
-    "sast": BaseSASTClient,
-    "sca": BaseSCAClient,
-    "secrets": BaseSecretsClient,
-    "reconnaissance": BaseReconnaissanceClient,
-    "utilities": BaseUtilitiesClient,
-    "iac": BaseIaCClient,
-    "fuzzing": BaseFuzzingClient,
-    "dast": BaseDastClient,
-}
-
-_SERVICE_BASES = {
-    "sast": BaseSASTService,
-    "sca": BaseSCAService,
-    "secrets": BaseSecretsService,
-    "reconnaissance": BaseReconnaissanceService,
-    "utilities": BaseUtilitiesService,
-    "iac": BaseIaCService,
-    "fuzzing": BaseFuzzingService,
-    "dast": BaseDastService,
-}
-
 
 def _resolve_service_url(spec: ToolSpec) -> str:
     """Resolve a tool's service URL from config, falling back to its default."""
@@ -91,14 +51,14 @@ def _resolve_service_url(spec: ToolSpec) -> str:
 def get_client(name: str) -> BaseScanClient:
     """Get the HTTP client singleton for a registry tool."""
     spec = TOOL_REGISTRY[name]
-    return _CLIENT_BASES[spec.category](_resolve_service_url(spec), name)
+    return BaseScanClient(_resolve_service_url(spec), name, spec.category)
 
 
 @lru_cache(maxsize=None)
 def get_service(name: str) -> BaseScanService:
     """Get the service singleton for a registry tool."""
     spec = TOOL_REGISTRY[name]
-    return _SERVICE_BASES[spec.category](get_workspace_repository(), get_client(name))
+    return BaseScanService(get_workspace_repository(), get_client(name), spec.category)
 
 
 # ---------------------------------------------------------------------------
