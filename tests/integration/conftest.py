@@ -5,6 +5,8 @@ import time
 import pytest
 import requests
 
+from tests.integration.services.test_services import SERVICES
+
 
 @pytest.fixture(scope="session")
 def docker_compose_up():
@@ -14,15 +16,12 @@ def docker_compose_up():
     time.sleep(5)
 
     # Verify services are up
-    services = [
-        ("CodeQL", 8080, "/health"),
-        ("Linguist", 8081, "/health"),
-        ("Semgrep", 8082, "/health"),
-        ("Bandit", 8083, "/health"),
-        ("Gosec", 8084, "/health"),
+    # Extract just the port and service name from the SERVICES config
+    services_to_check = [
+        (service_name.capitalize(), port, "/health") for port, service_name, _, _ in SERVICES
     ]
 
-    for service_name, port, endpoint in services:
+    for service_name, port, endpoint in services_to_check:
         max_retries = 30
         for i in range(max_retries):
             try:

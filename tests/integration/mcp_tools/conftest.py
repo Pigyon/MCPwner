@@ -4,6 +4,7 @@ import os
 import sys
 from contextlib import asynccontextmanager
 
+import pytest_asyncio
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -35,4 +36,11 @@ async def create_mcp_client():
 
     async with stdio_client(server_params) as (read, write), ClientSession(read, write) as session:
         await session.initialize()
+        yield session
+
+
+@pytest_asyncio.fixture
+async def mcp_session():
+    """Fixture providing an active MCP session."""
+    async with create_mcp_client() as session:
         yield session

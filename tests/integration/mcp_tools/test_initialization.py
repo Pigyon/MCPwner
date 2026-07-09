@@ -6,17 +6,15 @@ Validates that the MCP server properly initializes and responds to the handshake
 
 import os
 import sys
-from contextlib import asynccontextmanager
 
 import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 
-@asynccontextmanager
-async def create_mcp_client_init():
-    """Create an MCP client connected to the server via stdio."""
-    # Get the mcpwner root directory (two levels up from this test file)
+@pytest.mark.asyncio
+async def test_mcp_initialization(docker_compose_up):
+    """Test MCP server initialization and handshake."""
     test_dir = os.path.dirname(os.path.abspath(__file__))
     mcpwner_root = os.path.abspath(os.path.join(test_dir, "..", "..", ".."))
     src_dir = os.path.join(mcpwner_root, "src")
@@ -35,13 +33,6 @@ async def create_mcp_client_init():
 
     async with stdio_client(server_params) as (read, write), ClientSession(read, write) as session:
         result = await session.initialize()
-        yield session, result
-
-
-@pytest.mark.asyncio
-async def test_mcp_initialization(docker_compose_up):
-    """Test MCP server initialization and handshake."""
-    async with create_mcp_client_init() as (session, result):
         # Verify session is initialized
         assert session is not None
 
