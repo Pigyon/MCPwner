@@ -1,4 +1,3 @@
-# Stage 1: Download YASA binary
 FROM alpine:3.19 AS builder
 
 RUN apk add --no-cache curl unzip \
@@ -10,7 +9,6 @@ RUN apk add --no-cache curl unzip \
     && chmod +x /opt/yasa/yasa-engine-linux-x64 \
     && ln -s /opt/yasa/yasa-engine-linux-x64 /opt/yasa/yasa
 
-# Stage 2: Slim runtime
 FROM python:3.11-slim
 
 COPY --from=builder /opt/yasa /opt/yasa

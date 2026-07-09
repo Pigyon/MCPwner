@@ -11,18 +11,16 @@ from config.languages import (
 logger = logging.getLogger(__name__)
 
 
-# Tool metadata with language support
-# If languages is empty, it means the tool supports all languages or is language-agnostic
 SCA_TOOLS = {
     "osv-scanner": {
         "name": "OSV-Scanner",
         "description": "Vulnerability scanner using Google's distributed OSV database API",
-        "languages": [],  # Supports multiple languages via lockfiles
+        "languages": [],
     },
     "grype": {
         "name": "Grype",
         "description": "Vulnerability scanner for container images and filesystems",
-        "languages": [],  # Language agnostic (scans filesystem/images)
+        "languages": [],
     },
     "retirejs": {
         "name": "Retire.js",
@@ -32,7 +30,7 @@ SCA_TOOLS = {
     "syft": {
         "name": "Syft",
         "description": "Generates a Software Bill of Materials (SBOM) from filesystems",
-        "languages": [],  # Language agnostic
+        "languages": [],
     },
 }
 

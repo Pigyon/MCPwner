@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Linguist Service", version="1.0.0")
 
 
-# Request/Response Models
 class DetectLanguagesRequest(BaseModel):
     path: str
 
@@ -43,22 +42,19 @@ def detect_languages(request: DetectLanguagesRequest):
     Returns language breakdown and statistics.
     """
     try:
-        # Validate path exists
         if not Path(request.path).exists():
             raise HTTPException(status_code=404, detail=f"Path does not exist: {request.path}")
 
-        # Ensure it's a git repository (Linguist requires it)
+        # Linguist requires a git repo; init one if missing.
         try:
             if not (Path(request.path) / ".git").exists():
                 init_git(request.path)
                 config_git(request.path, email="mcpwner@local", name="MCPwner")
                 commit_git(request.path, message="Initial commit")
         except RuntimeError as e:
-            # If git initialization fails, we log it but try to proceed anyway
-            # Linguist might still work partially or fail later with a clearer error
+            # Non-fatal: linguist may still work or fail with a clearer error later.
             logger.warning(f"Failed to initialize git repo: {e}")
 
-        # Run linguist
         result = subprocess.run(
             ["github-linguist", "--json", request.path],
             capture_output=True,
@@ -67,7 +63,6 @@ def detect_languages(request: DetectLanguagesRequest):
             check=True,
         )
 
-        # Parse JSON output
         languages_data = json.loads(result.stdout)
 
         return {"status": "success", "languages": languages_data}

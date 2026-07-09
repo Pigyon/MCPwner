@@ -58,10 +58,8 @@ def load_config(config_path: str = "config/config.yaml") -> Dict[str, Any]:
     if config is None:
         raise ConfigError("Configuration file is empty")
 
-    # Validate required sections
     _validate_config(config)
 
-    # Apply environment variable overrides for service URLs
     _apply_env_overrides(config)
 
     return config
@@ -104,23 +102,19 @@ def _validate_config(config: Dict[str, Any]) -> None:
         if section not in config:
             raise ConfigError(f"Missing required configuration section: {section}")
 
-    # Validate server settings
     server = config["server"]
     _validate_int(server, "port", "server", 1)
     _validate_string(server, "host", "server")
 
-    # Validate workspace settings
     workspace = config["workspace"]
     _validate_int(workspace, "max_workspaces", "workspace", 1)
     _validate_int(workspace, "auto_cleanup_seconds", "workspace", 0)
 
-    # Validate resource limits
     resources = config["resources"]
     _validate_int(resources, "max_disk_mb", "resources", 1)
     _validate_int(resources, "max_memory_mb", "resources", 1)
     _validate_int(resources, "max_cpu_cores", "resources", 1)
 
-    # Validate logging settings
     logging = config["logging"]
     _validate_string(logging, "level", "logging")
     _validate_string(logging, "file", "logging")

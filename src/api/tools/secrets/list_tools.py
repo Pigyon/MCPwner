@@ -2,8 +2,6 @@
 
 from api.tools.common import filter_tools_by_language, handle_tool_error
 
-# Tool metadata, mirroring the shape returned by the SAST/SCA list_tools tools.
-# Secrets scanners are language-agnostic, so there is nothing to filter on.
 SECRETS_TOOLS = {
     "gitleaks": {
         "name": "Gitleaks",

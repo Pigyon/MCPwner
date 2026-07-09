@@ -16,13 +16,13 @@ class Workspace(PydanticBaseModel):
     """Workspace domain model."""
 
     workspace_id: str
-    source_type: str  # "github", "local", "local_path", or "virtual"
+    source_type: str
     source: str
     created_at: IsoDateTime
     path: Optional[str] = None
     local_path: Optional[str] = None
     mount_path: Optional[str] = None
-    workspace_base_dir: Optional[str] = None  # Base dir for reports/metadata (e.g. /workspaces/{id})
+    workspace_base_dir: Optional[str] = None
 
     def is_github_clone(self) -> bool:
         """Check if workspace is a GitHub clone."""

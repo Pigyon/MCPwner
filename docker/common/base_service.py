@@ -35,10 +35,8 @@ def create_scanner_app(
         """Health check endpoint."""
         return {"status": "healthy", "service": tool_name}
 
-    # Resolved once per container. The version CLI can be slow to cold-start
-    # (e.g. semgrep/opengrep); caching it avoids re-spawning a subprocess on every
-    # health check, where a transient cold-start timeout would otherwise surface
-    # as a 500 and mark a perfectly healthy service "unavailable".
+    # Resolved once per container; version CLIs (e.g. semgrep) cold-start slowly
+    # and would otherwise time out parallel health checks.
     _version_cache: Dict[str, str] = {}
 
     @app.get("/version", response_model=VersionResponse)
@@ -65,7 +63,6 @@ def create_scanner_app(
         Execute scan on a workspace.
         """
         try:
-            # Build full scan path
             full_scan_path = Path(request.workspace_path) / request.scan_path
 
             if not full_scan_path.exists():
@@ -73,17 +70,13 @@ def create_scanner_app(
                     status_code=404, detail=f"Scan path does not exist: {full_scan_path}"
                 )
 
-            # Create output directory
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
 
-            # Determine report output directory.
-            # If report_base is provided (e.g. for local_path workspaces), use it directly.
+            # report_base overrides the default /workspaces/{id}/reports/{category}/{tool} layout.
             if request.report_base:
                 output_dir = Path(request.report_base) / "reports" / tool_category / tool_name
             else:
-                # Standard MCPwner layout: reports live at the workspace root,
-                # i.e. /workspaces/{id}/reports/{category}/{tool}. Derive the
-                # workspace root from the path if it contains 'workspaces'.
+                # Derive workspace root from path when it contains 'workspaces'.
                 parts = Path(request.workspace_path).parts
                 if "workspaces" in parts:
                     idx = parts.index("workspaces")
@@ -91,10 +84,8 @@ def create_scanner_app(
                         workspace_root = Path(*parts[: idx + 2])
                         output_dir = workspace_root / "reports" / tool_category / tool_name
                     else:
-                        # Fallback
                         output_dir = Path(request.workspace_path) / "reports" / tool_category / tool_name
                 else:
-                    # Fallback for local testing etc
                     output_dir = (
                         Path(request.workspace_path).parent / "reports" / tool_category / tool_name
                     )
@@ -102,18 +93,15 @@ def create_scanner_app(
             output_dir.mkdir(parents=True, exist_ok=True)
             output_path = output_dir / f"{timestamp}.{report_format}"
 
-            # Build command
             try:
                 cmd = scan_cmd_builder(request, output_path)
             except ValueError as e:
                 logger.error(f"Scan configuration error: {e}")
                 raise HTTPException(status_code=400, detail=str(e))
             except Exception as e:
-                # Other errors
                 logger.error(f"Error building scan command: {e}")
                 raise HTTPException(status_code=500, detail=f"Failed to build scan command: {e}")
 
-            # Execute scan
             logger.info(f"Executing {tool_name} scan: {' '.join(cmd)}")
             # A hung tool must not block the
             # request thread forever. Bound it with a timeout (10-minute default,
@@ -137,7 +125,6 @@ def create_scanner_app(
                     "output": stdout,
                 }
 
-            # Check if report was created
             if not output_path.exists():
                 logger.error(f"Scan failed: {result.stderr}")
                 # Some tools (e.g. arjun) don't write output when they find nothing.
@@ -155,7 +142,6 @@ def create_scanner_app(
                         "output": result.stdout,
                     }
 
-            # Parse report for finding count (simple heuristic or JSON parse)
             finding_count = 0
             try:
                 if report_format == "sarif":
@@ -170,14 +156,11 @@ def create_scanner_app(
                             if isinstance(data, list):
                                 finding_count = len(data)
                             elif isinstance(data, dict):
-                                # Single JSON object (e.g. one httpx NDJSON line) = 1 finding
                                 finding_count = len(data["results"]) if "results" in data else 1
                         except json.JSONDecodeError:
-                            # Handle NDJSON (Newline Delimited JSON)
                             f.seek(0)
                             lines = [line for line in f.readlines() if line.strip()]
                             finding_count = len(lines)
-                            # Convert NDJSON to JSON Array for easier consumption
                             try:
                                 json_array = [json.loads(line) for line in lines]
                                 with open(output_path, "w") as fw:
@@ -200,10 +183,6 @@ def create_scanner_app(
         except Exception as e:
             logger.exception("Scan execution error")
             raise HTTPException(status_code=500, detail=str(e))
-
-    # ------------------------------------------------------------------
-    # Report retrieval endpoints
-    # ------------------------------------------------------------------
 
     def _resolve_report_dir(workspace_path: str, report_base: str = None) -> Path:
         """Resolve the report directory for this tool given a workspace path."""
@@ -232,7 +211,6 @@ def create_scanner_app(
     def get_report(timestamp: str, workspace_path: str, report_base: str = None):
         """Retrieve the full contents of a scan report by its timestamp."""
         report_dir = _resolve_report_dir(workspace_path, report_base)
-        # Try known extensions
         for ext in (report_format, "json", "sarif"):
             candidate = report_dir / f"{timestamp}.{ext}"
             if candidate.exists():
@@ -241,7 +219,6 @@ def create_scanner_app(
                         data = json.load(f)
                     return {"status": "success", "report": data, "report_path": str(candidate)}
                 except json.JSONDecodeError:
-                    # Return raw text if not valid JSON
                     with open(candidate) as f:
                         raw = f.read()
                     return {"status": "success", "report_raw": raw, "report_path": str(candidate)}

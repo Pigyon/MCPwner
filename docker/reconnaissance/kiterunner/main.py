@@ -215,7 +215,6 @@ def scan(request: ScanRequest):
 
         logger.info(f"Running kiterunner against {len(all_targets)} target(s)")
 
-        # Build command — kr outputs to stdout only, no file flag
         cmd = ["kr", "scan", "-o", "json"]
 
         if config.get("wordlist"):
@@ -225,7 +224,6 @@ def scan(request: ScanRequest):
         if config.get("max_connection_per_host"):
             cmd.extend(["--max-connection-per-host", str(config["max_connection_per_host"])])
 
-        # Single target as positional arg; multiple via file: prefix
         if len(all_targets) == 1:
             cmd.append(next(iter(all_targets)))
         else:
@@ -233,7 +231,6 @@ def scan(request: ScanRequest):
             logger.info(f"Wrote {len(all_targets)} targets to {targets_file}")
             cmd.append(f"file:{targets_file}")
 
-        # Create output directory and path
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
         output_dir = workspace_root / "reports" / "reconnaissance" / TOOL_NAME
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -254,7 +251,6 @@ def scan(request: ScanRequest):
                 "output": stdout,
             }
 
-        # kr outputs JSON lines to stdout; write them to the report file
         stdout = result.stdout.strip()
         if not stdout:
             output_path.write_text("[]")
@@ -265,7 +261,6 @@ def scan(request: ScanRequest):
                 "timestamp": timestamp,
             }
 
-        # Parse NDJSON and convert to JSON array
         lines = [line for line in stdout.splitlines() if line.strip()]
         try:
             findings = [json.loads(line) for line in lines]

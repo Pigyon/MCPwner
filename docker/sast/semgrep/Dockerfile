@@ -1,4 +1,3 @@
-# Stage 1: Install semgrep and deps
 FROM python:3.11-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends git \
@@ -7,7 +6,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends git \
 COPY docker/sast/semgrep/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 2: Slim runtime
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -15,17 +13,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy installed Python packages from builder
 COPY --from=builder /install /usr/local
 
-# Keep semgrep fully offline: don't phone home for update checks (which otherwise
-# hangs 'semgrep --version' past the health-check timeout) or metrics.
+# Disable update checks/metrics so health checks do not hang on the internal network.
 ENV SEMGREP_ENABLE_VERSION_CHECK=0 \
     SEMGREP_SEND_METRICS=off
 
-# Bundle the official ruleset at build time (build has network access) so the
-# scanner works fully offline at runtime — the SAST network is internal:true and
-# 'semgrep --config auto' would otherwise need to reach semgrep.dev.
+# Bundle rules at build time; internal SAST network cannot reach semgrep.dev at runtime.
 ARG SEMGREP_RULES_REF=develop
 RUN git clone --depth 1 --branch "${SEMGREP_RULES_REF}" \
     https://github.com/semgrep/semgrep-rules /opt/semgrep-rules && \

@@ -226,7 +226,6 @@ def scan(request: ScanRequest):
 
         anomalies = _detect_anomalies(results)
 
-        # Write report
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
         output_dir = _report_dir(request.workspace_path, request.report_base)
         output_dir.mkdir(parents=True, exist_ok=True)

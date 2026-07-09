@@ -13,18 +13,15 @@ from tests.integration.mcp_tools.conftest import create_mcp_client
 async def test_all_tools_discoverable(docker_compose_up):
     """Test that ALL expected tools are discoverable via MCP protocol."""
     async with create_mcp_client() as session:
-        # List all available tools
         tools_result = await session.list_tools()
         tools = tools_result.tools
 
-        # Extract tool names
         tool_names = [tool.name for tool in tools]
 
         print(f"\n📋 Discovered {len(tool_names)} tools:")
         for name in sorted(tool_names):
             print(f"  - {name}")
 
-        # Core expected tools
         expected_tools = {
             "health_check",
             "health_list_tools",
@@ -44,7 +41,6 @@ async def test_all_tools_discoverable(docker_compose_up):
                 ["create_codeql_database", "list_databases", "execute_query", "list_query_packs"]
             )
 
-        # Standard categories
         categories = ["sast", "sca", "secrets", "reconnaissance", "utilities", "fuzzing", "dast", "iac"]
         for category in categories:
             if tools_for_category(category):
@@ -54,16 +50,13 @@ async def test_all_tools_discoverable(docker_compose_up):
                 if category == "reconnaissance":
                     expected_tools.add("run_reconnaissance_chain")
 
-        # Verify ALL expected tools are present
         missing_tools = []
         for expected_tool in expected_tools:
             if expected_tool not in tool_names:
                 missing_tools.append(expected_tool)
 
-        # Verify no tools are missing
         assert len(missing_tools) == 0, f"Missing tools: {missing_tools}"
 
-        # Verify no unexpected tools
         unexpected_tools = [t for t in tool_names if t not in expected_tools]
         if unexpected_tools:
             print(f"\n⚠️  Unexpected tools found: {unexpected_tools}")
@@ -76,14 +69,12 @@ async def test_all_tools_discoverable(docker_compose_up):
 async def test_tool_metadata(docker_compose_up):
     """Test that all tools have proper metadata (name, description, schema)."""
     async with create_mcp_client() as session:
-        # List all available tools
         tools_result = await session.list_tools()
         tools = tools_result.tools
 
         print(f"\n🔍 Validating metadata for {len(tools)} tools:")
 
         for tool in tools:
-            # Verify each tool has required metadata
             assert tool.name, "Tool missing name"
             assert tool.description, f"Tool '{tool.name}' missing description"
             assert tool.inputSchema, f"Tool '{tool.name}' missing input schema"

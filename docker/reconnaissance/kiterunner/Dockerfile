@@ -1,4 +1,3 @@
-# Stage 1: Download kiterunner binary
 FROM alpine:3.19 AS builder
 
 ENV KITERUNNER_VERSION=1.0.2
@@ -11,13 +10,11 @@ RUN apk add --no-cache curl tar \
     && chmod +x /usr/local/bin/kr \
     && rm /tmp/kiterunner.tar.gz
 
-# Stage 2: Install Python deps
 FROM python:3.11-alpine AS deps
 
 COPY docker/reconnaissance/kiterunner/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 3: Lean runtime
 FROM alpine:3.19
 
 RUN apk add --no-cache python3 curl

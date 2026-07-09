@@ -18,7 +18,6 @@ VERSION_CMD = ["subfinder", "-version"]
 
 def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     """Build Subfinder scan command."""
-    # Get domain from config (accept both 'domain' and 'target' for compatibility)
     domain = ""
     if request.config:
         domain = request.config.get("domain") or request.config.get("target", "")
@@ -28,20 +27,15 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
             "Domain is required in config for Subfinder scan (use 'domain' or 'target' field)"
         )
 
-    # Subfinder command with JSON output
     cmd = ["subfinder", "-d", domain, "-json", "-o", str(output_path)]
 
-    # Add optional parameters if provided
     if request.config:
-        # Add silent mode to reduce noise
         if request.config.get("silent", True):
             cmd.append("-silent")
 
-        # Add recursive subdomain discovery
         if request.config.get("recursive", False):
             cmd.append("-recursive")
 
-        # Add all sources
         if request.config.get("all", False):
             cmd.append("-all")
 

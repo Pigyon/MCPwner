@@ -17,7 +17,6 @@ async def create_mcp_client():
     This is a shared helper that can be used across all MCP tests.
     Uses sys.executable to ensure cross-platform compatibility.
     """
-    # Get the mcpwner root directory (two levels up from this file)
     test_dir = os.path.dirname(os.path.abspath(__file__))
     mcpwner_root = os.path.abspath(os.path.join(test_dir, "..", "..", ".."))
     src_dir = os.path.join(mcpwner_root, "src")

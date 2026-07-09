@@ -15,7 +15,6 @@ def docker_compose_up():
     print("⏳ Waiting for services to be healthy...")
     time.sleep(5)
 
-    # Verify services are up
     # Extract just the port and service name from the SERVICES config
     services_to_check = [
         (service_name.capitalize(), port, "/health") for port, service_name, _, _ in SERVICES
@@ -34,12 +33,10 @@ def docker_compose_up():
                     raise RuntimeError(f"❌ {service_name} service failed to start")
                 time.sleep(1)
 
-    # Check MCP SSE with POST request
     print("⏳ Checking MCP SSE service...")
     max_retries = 30
     for i in range(max_retries):
         try:
-            # Send a simple ping request
             response = requests.post(
                 "http://localhost:13370/sse",
                 json={"jsonrpc": "2.0", "id": 1, "method": "ping", "params": {}},

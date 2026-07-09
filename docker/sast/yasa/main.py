@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="YASA Service", version="1.0.0")
 
-# YASA language map: normalise incoming language names to what YASA accepts
+# YASA language normalisation and extension-based auto-detection.
 _LANG_MAP = {
     "javascript": "javascript",
     "typescript": "javascript",  # YASA treats TS as JS
@@ -25,7 +25,6 @@ _LANG_MAP = {
 
 _SUPPORTED = set(_LANG_MAP.keys())
 
-# File-extension based auto-detection for when no language is specified
 _EXT_TO_LANG = {
     ".js": "javascript",
     ".mjs": "javascript",
@@ -84,7 +83,6 @@ def scan(request: ScanRequest):
                 detail=f"Scan path does not exist: {full_scan_path}",
             )
 
-        # Build output directory
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
         parts = Path(request.workspace_path).parts
         if "workspaces" in parts:
@@ -101,7 +99,6 @@ def scan(request: ScanRequest):
 
         config = request.config or {}
 
-        # Build command — YASA requires --language or --analyzer
         cmd = [
             "yasa",
             "--sourcePath",
@@ -112,7 +109,6 @@ def scan(request: ScanRequest):
             "/opt/yasa",
         ]
 
-        # Language: explicit config > auto-detect from source files
         lang = config.get("language", "")
         if lang:
             mapped = _LANG_MAP.get(lang.lower())
@@ -124,13 +120,11 @@ def scan(request: ScanRequest):
                     ),
                 }
         else:
-            # Auto-detect from source directory
             mapped = _detect_language(full_scan_path)
             logger.info(f"Auto-detected language: {mapped}")
 
         cmd.extend(["--language", mapped])
 
-        # Use built-in rule config for the detected language if none provided
         _BUILTIN_RULES = {
             "javascript": "/opt/yasa/example-rule-config/rule_config_js.json",
             "golang": "/opt/yasa/example-rule-config/rule_config_go.json",
@@ -156,7 +150,6 @@ def scan(request: ScanRequest):
                 "output": stdout,
             }
 
-        # YASA writes its report into report_dir; find whatever file it created
         sarif_file = report_dir / "findings.sarif"
         if not sarif_file.exists():
             for candidate in report_dir.iterdir():
@@ -170,16 +163,13 @@ def scan(request: ScanRequest):
                     "output": result.stdout,
                 }
 
-        # Rename to timestamped filename, preserving extension
         final_path = report_dir.parent / f"{timestamp}{sarif_file.suffix}"
         sarif_file.rename(final_path)
 
-        # Count findings — YASA may output NDJSON (one object per line) or a JSON array/object
         finding_count = 0
         try:
             with open(final_path) as f:
                 raw = f.read().strip()
-            # Try standard JSON first
             try:
                 data = json.loads(raw)
                 if isinstance(data, list):
@@ -188,10 +178,8 @@ def scan(request: ScanRequest):
                     for run in data.get("runs", []):
                         finding_count += len(run.get("results", []))
             except json.JSONDecodeError:
-                # NDJSON fallback — count non-empty lines that are valid JSON
                 lines = [ln for ln in raw.splitlines() if ln.strip()]
                 finding_count = sum(1 for ln in lines if ln.strip().startswith("{"))
-                # Rewrite as JSON array for consistent downstream consumption
                 parsed = [json.loads(ln) for ln in lines if ln.strip()]
                 with open(final_path, "w") as f:
                     json.dump(parsed, f, indent=2)

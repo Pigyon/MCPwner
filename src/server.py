@@ -9,7 +9,6 @@ import sys
 
 from fastmcp import FastMCP
 
-# Load configuration first
 try:
     from config.config import load_config
     from config.logging import setup_logging
@@ -22,7 +21,6 @@ try:
     )
     config = load_config(config_path)
 
-    # Setup logging
     setup_logging(config)
     logger = logging.getLogger(__name__)
 
@@ -32,19 +30,15 @@ except Exception as e:
     logging.error(f"Configuration error: {e}")
     sys.exit(1)
 
-# Initialize main server
 mcp = FastMCP("MCPwner")
 
-# Register tools using main API router
 logger.info("Loading tools...")
 try:
     import config.tools as tools_module
     from config.health import update_healthy_tools
 
-    # CRITICAL IMPORT ORDER GUARD:
-    # update_healthy_tools() MUST be executed before api.router and its tool modules
-    # are imported. The tool discovery process dynamically resolves and captures
-    # HEALTHY_TOOLS state at module-load time, so the global registry must be pruned first.
+    # update_healthy_tools() must run before api.router import: HEALTHY_TOOLS is
+    # captured at module-load time during tool discovery.
     update_healthy_tools()
 
     if not tools_module.HEALTHY_TOOLS:
@@ -60,7 +54,6 @@ except Exception as e:
 try:
     from api.router import router as api_router
 
-    # Register all tools from the router
     logger.info("Registering tools from api_router...")
     api_router.register_tools(mcp)
     logger.info("All tools loaded")
@@ -83,14 +76,12 @@ def run_server():
         logger.info(f"SSE endpoint: http://{host}:{port}/sse")
         logger.info(f"Health check: http://{host}:{port}/health")
 
-        # Run with SSE transport
         mcp.run(transport="sse", host=host, port=port)
 
     elif transport == "stdio":
         logger.info("STDIO mode: Reading from stdin, writing to stdout")
         logger.info("Compatible with: Claude Desktop, MCP CLI tools")
 
-        # Run with STDIO transport (default)
         mcp.run()
 
     else:

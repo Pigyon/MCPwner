@@ -113,10 +113,8 @@ def scan(request: ScanRequest):
         if not target:
             raise HTTPException(status_code=400, detail="config.target is required")
 
-        # Step 1: reset WireMock state
         requests.post(f"{WIREMOCK_ADMIN}/reset", timeout=5)
 
-        # Step 2: register stubs
         registered = []
         for stub in stubs:
             r = requests.post(f"{WIREMOCK_ADMIN}/mappings", json=stub, timeout=5)
@@ -125,7 +123,6 @@ def scan(request: ScanRequest):
             else:
                 logger.warning(f"Failed to register stub: {r.text}")
 
-        # Step 3: exercise the stubs via test requests
         test_results = []
         base = target.rstrip("/")
         for path in test_paths:
@@ -143,11 +140,9 @@ def scan(request: ScanRequest):
             except Exception as e:
                 test_results.append({"url": url, "error": str(e)})
 
-        # Step 4: retrieve the request journal
         journal_resp = requests.get(f"{WIREMOCK_ADMIN}/requests", timeout=5)
         journal = journal_resp.json() if journal_resp.ok else {}
 
-        # Step 5: write report
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
         output_dir = _report_dir(request.workspace_path, request.report_base)
         output_dir.mkdir(parents=True, exist_ok=True)

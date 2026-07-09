@@ -33,7 +33,6 @@ class CodeQLService:
         """Create CodeQL database for workspace."""
         source_path = self.repository.get_valid_workspace_path(workspace_id)
 
-        # Auto-detect language if not provided
         if not language:
             try:
                 detected_languages = self.linguist_service.detect_languages(workspace_id)
@@ -48,23 +47,18 @@ class CodeQLService:
                 raise ValueError("No supported languages detected in workspace")
             language = detected_languages[0]
 
-        # Validate language
         if language not in CODEQL_LANGUAGES:
             raise ValueError(f"Unsupported language: {language}")
 
-        # Check database limit
         existing_dbs = self.repository.find_databases(workspace_id)
         if len(existing_dbs) >= 10:
             raise ValueError(f"Database limit exceeded for workspace {workspace_id}")
 
         db_path = str(Path(base_path) / workspace_id / "databases" / language)
 
-        # Ensure database parent directory exists
         try:
             Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         except Exception as e:
-            # Log warning but continue, as the directory might be created by the service
-            # or volume permissions might prevent it here (though shared volume should allow it)
             logger.warning(f"Failed to create database parent directory: {e}")
 
         try:
@@ -124,8 +118,6 @@ class CodeQLService:
 
         resolved_pack = query_pack
         if query_pack in ["security-extended", "security-and-quality", "code-scanning"]:
-            # Map generic alias to language-specific suite
-            # Example: "security-extended" -> "codeql/python-queries:..."
             resolved_pack = (
                 f"codeql/{database.language}-queries:codeql-suites/{database.language}-{query_pack}.qls"
             )

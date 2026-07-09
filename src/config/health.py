@@ -18,7 +18,6 @@ def probe_all_tools() -> Set[str]:
     def check_spec(spec):
         try:
             client = get_client(spec.name)
-            # If the health check succeeds, it returns the JSON payload (or raises on failure)
             client.get_health()
             return spec.name
         except Exception as e:

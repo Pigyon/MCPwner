@@ -14,9 +14,7 @@ SUPPORTED_TOOLS = tools_for_category("reconnaissance")
 
 logger = logging.getLogger(__name__)
 
-# How long a chain step will wait for a backgrounded scan's report to land
-# before giving up and moving on (the scan keeps running in its tool container,
-# but the chain falls back to the original target for the next step).
+# Poll up to DEFAULT_BACKGROUND_WAIT_SECONDS for a backgrounded step's report.
 DEFAULT_BACKGROUND_WAIT_SECONDS = 240
 BACKGROUND_POLL_INTERVAL_SECONDS = 3
 
@@ -74,7 +72,6 @@ def _wait_for_fresh_report(
             current_reports = {p.name for p in report_dir.glob("*.json") if not p.name.startswith(".")}
             new_reports = current_reports - existing_reports
             if new_reports:
-                # Return the newest among the newly appeared reports
                 paths = [report_dir / name for name in new_reports]
                 paths.sort(key=lambda p: p.stat().st_mtime, reverse=True)
                 return paths[0]
@@ -82,7 +79,6 @@ def _wait_for_fresh_report(
     return None
 
 
-# Predefined common chains
 PRESET_CHAINS = {
     "subdomain-to-params": ["subfinder", "httpx", "katana", "arjun"],
     "subdomain-to-waf": ["subfinder", "httpx", "wafw00f"],
@@ -171,14 +167,12 @@ def run_reconnaissance_chain(
             workspace_id = workspace_result["workspace_id"]
             logger.info(f"Created workspace for chain: {workspace_id}")
 
-        # Resolve workspace reports base dir once
         repo = get_workspace_repository()
         ws = repo.find_by_id(workspace_id)
         reports_base = ws.get_reports_base_dir() if ws else f"/workspaces/{workspace_id}"
 
         steps = []
         total_findings = 0
-        # Track the last successful tool that actually produced findings
         last_tool_with_findings: Optional[str] = None
 
         for i, tool in enumerate(chain):
@@ -187,17 +181,14 @@ def run_reconnaissance_chain(
             tool_config = dict(configs.get(tool, {}))
 
             if i == 0:
-                # First tool always gets the explicit target
                 tool_config["target"] = target
             elif (
                 tool in CHAINABLE_TOOLS and "target" not in tool_config and "targets" not in tool_config
             ):
-                # Try to chain from the last tool that produced findings
                 if last_tool_with_findings:
                     tool_config["source_tool"] = last_tool_with_findings
                     logger.info(f"{tool}: chaining from '{last_tool_with_findings}'")
                 else:
-                    # No previous tool had findings — fall back to original target
                     tool_config["target"] = target
                     logger.info(
                         f"{tool}: no previous findings to chain from, falling back to target='{target}'"
@@ -216,10 +207,6 @@ def run_reconnaissance_chain(
 
                 result = service.scan(workspace_id, None, tool_config)
 
-                # A scan that exceeded the MCP client timeout returns
-                # status="backgrounded" while still running in its tool
-                # container. Wait for its report to land so the next step has
-                # real input instead of failing on a missing/stale file.
                 if result.get("status") == "backgrounded":
                     wait_timeout = tool_config.get(
                         "background_wait_seconds", DEFAULT_BACKGROUND_WAIT_SECONDS
@@ -255,9 +242,6 @@ def run_reconnaissance_chain(
                     step_result["error"] = result.get("error", "Unknown error")
                     logger.warning(f"Step {tool} failed: {step_result['error']}")
                 else:
-                    # Only update last_tool_with_findings if this tool actually found something
-                    # Always update the "last successful tool" regardless of finding count
-                    # so the next step can at least attempt to chain
                     if _report_has_findings(reports_base, tool):
                         last_tool_with_findings = tool
                         logger.info(f"{tool}: produced findings, will be used as source for next step")

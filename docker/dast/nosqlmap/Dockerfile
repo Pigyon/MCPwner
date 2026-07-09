@@ -1,12 +1,9 @@
-# Stage 1: Install Python deps
 FROM python:3.11-slim AS deps
 
 COPY docker/dast/nosqlmap/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 2: Runtime — NoSQLMap requires Python 2 which is EOL and unavailable
-# on modern Debian. Instead we clone the repo for reference payloads and drive
-# the injection logic from the Python 3 wrapper.
+# NoSQLMap needs Python 2 (EOL); clone repo for payloads and drive logic from the Py3 wrapper.
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

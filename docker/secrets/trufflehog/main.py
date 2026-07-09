@@ -19,8 +19,6 @@ VERSION_CMD = ["trufflehog", "--version"]
 
 def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     """Build TruffleHog scan command."""
-    # TruffleHog filesystem scan command
-    # trufflehog filesystem [path] --json
 
     cmd = [
         "trufflehog",
@@ -35,9 +33,8 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         full_source = Path(request.workspace_path) / request.scan_path
         cmd[2] = str(full_source)
 
-    # Wrap in sh -c to redirect output to file
     safe_cmd = " ".join(shlex.quote(arg) for arg in cmd)
-
+    # TruffleHog has no --output flag; redirect stdout via sh -c.
     wrapped_cmd = ["sh", "-c", f"{safe_cmd} > {shlex.quote(str(output_path))}"]
 
     return wrapped_cmd

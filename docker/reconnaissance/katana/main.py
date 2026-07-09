@@ -51,7 +51,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
             try:
                 data = json.load(f)
             except json.JSONDecodeError:
-                # Try NDJSON
                 f.seek(0)
                 data = [json.loads(line) for line in f if line.strip()]
 
@@ -60,25 +59,21 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
 
         for entry in data:
             if not isinstance(entry, dict):
-                # Plain string (e.g. a raw URL line from gau)
                 val = str(entry).strip()
                 if val:
                     targets.add(val)
                 continue
 
-            # subfinder: {"host": "sub.example.com", ...}
             if source_tool == "subfinder":
                 if entry.get("host"):
                     targets.add(entry["host"])
 
-            # amass: {"name": "sub.example.com", ...}
             elif source_tool == "amass":
                 # amass writes {"subdomain": "..."}; raw/older formats use "name"
                 val = entry.get("subdomain") or entry.get("name")
                 if val:
                     targets.add(val)
 
-            # bbot: {"type": "DNS_NAME"|"URL"|"IP_ADDRESS"|"OPEN_TCP_PORT", "data": "..."}
             elif source_tool == "bbot":
                 etype = entry.get("type", "")
                 edata = entry.get("data", "")
@@ -95,14 +90,12 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                     except (ValueError, AttributeError):
                         targets.add(edata)
 
-            # httpx: {"url": "https://...", "input": "..."}
             elif source_tool == "httpx":
                 if entry.get("url"):
                     targets.add(entry["url"])
                 elif entry.get("input"):
                     targets.add(entry["input"])
 
-            # nmap/masscan: {"ip": "...", "port": ...} or {"host": "..."}
             elif source_tool in ("nmap", "masscan"):
                 host = entry.get("ip") or entry.get("host") or entry.get("addr", "")
                 if host:
@@ -114,7 +107,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                     else:
                         targets.add(host)
 
-            # ffuf: {"results": [...]} or {"url": "..."}
             elif source_tool == "ffuf":
                 if "results" in entry:
                     for r in entry["results"]:
@@ -123,8 +115,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                 elif entry.get("url"):
                     targets.add(entry["url"])
 
-            # gau: plain URL strings (line-delimited), already handled above as non-dict
-            # but also handle if wrapped in a dict
             elif source_tool == "gau":
                 for key in ("url", "data"):
                     val = entry.get(key, "")
@@ -132,7 +122,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                         targets.add(val)
                         break
 
-            # Generic fallback: try common field names
             else:
                 for key in ("url", "host", "domain", "target", "ip", "name", "data"):
                     val = entry.get(key, "")
@@ -188,7 +177,6 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
 
     all_targets: Set[str] = set()
 
-    # Mode 1: Auto-chain from a previous tool's report
     if source_tool:
         report_path = _find_latest_report(workspace_root, source_tool)
         if not report_path:
@@ -202,11 +190,9 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         logger.info(f"Extracted {len(extracted)} targets from {source_tool} report")
         all_targets.update(extracted)
 
-    # Mode 2: Explicit target list
     if targets_list:
         all_targets.update(t.strip() for t in targets_list if t.strip())
 
-    # Mode 3: Single target
     if single_target:
         all_targets.add(single_target)
 
@@ -218,10 +204,8 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
 
     logger.info(f"Final target count: {len(all_targets)}")
 
-    # Build base command — katana outputs JSONL, redirect to output_path
     cmd = ["katana", "-jsonl", "-o", str(output_path), "-silent"]
 
-    # Input: single target via -u, multiple via -list
     if len(all_targets) == 1:
         cmd.extend(["-u", next(iter(all_targets))])
     else:
@@ -229,7 +213,6 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         logger.info(f"Wrote {len(all_targets)} targets to {targets_file}")
         cmd.extend(["-list", str(targets_file)])
 
-    # Optional flags
     if config.get("depth"):
         cmd.extend(["-depth", str(config["depth"])])
 

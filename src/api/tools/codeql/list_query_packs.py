@@ -28,12 +28,10 @@ def list_query_packs(language: Optional[str] = None) -> dict:
         codeql_service = get_codeql_service()
         result = codeql_service.list_query_packs()
 
-        # The result from service is already structured
         return result
 
     except Exception as e:
         logger.error(f"Error listing query packs: {e}")
-        # Fallback to defaults if service call fails
         return _get_default_packs(language)
 
 

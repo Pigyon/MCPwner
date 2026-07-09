@@ -1,10 +1,8 @@
-# Stage 1: Install Python deps
 FROM python:3.12-alpine AS deps
 
 COPY docker/sast/pmd/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 2: Runtime on vendor image
 FROM pmdcode/pmd:7.22.0
 
 USER root

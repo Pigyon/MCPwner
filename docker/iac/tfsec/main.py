@@ -20,11 +20,9 @@ def build_tfsec_cmd(request: ScanRequest, output_path: Path):
 
     config = request.config or {}
 
-    # Minimum severity to report (LOW, MEDIUM, HIGH, CRITICAL)
     if config.get("minimum_severity"):
         cmd.extend(["--minimum-severity", config["minimum_severity"]])
 
-    # Comma-separated check IDs to exclude (e.g. ["aws-s3-enable-bucket-logging"])
     if config.get("exclude"):
         cmd.extend(["--exclude", ",".join(config["exclude"])])
 

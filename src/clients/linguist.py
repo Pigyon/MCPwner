@@ -55,12 +55,10 @@ class LinguistClient(BaseClient):
 
             languages_data = result.get("languages", {})
 
-            # Extract language names and map to CodeQL-compatible names
             detected_languages = []
             language_stats = {}
 
             for lang_name, stats in languages_data.items():
-                # Map linguist names to CodeQL language names
                 codeql_lang = self._map_to_codeql_language(lang_name)
                 if codeql_lang:
                     detected_languages.append(codeql_lang)
@@ -71,7 +69,7 @@ class LinguistClient(BaseClient):
                     }
 
             return {
-                "languages": list(set(detected_languages)),  # Remove duplicates
+                "languages": list(set(detected_languages)),
                 "statistics": language_stats,
                 "raw_output": languages_data,
             }

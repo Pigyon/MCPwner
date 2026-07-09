@@ -11,17 +11,11 @@ from repositories.workspace import WorkspaceRepository
 
 logger = logging.getLogger(__name__)
 
-# Report dirs live on the shared /workspaces volume and are written by tool
-# containers that may run under a different UID than this server. Pre-create them
-# world-writable so any container (root or non-root) can drop its report file in.
+# Report dirs are written by mixed-UID tool containers; pre-create them world-writable.
 _REPORT_DIR_MODE = 0o777
 
-# Cap concurrent outbound scans. FastMCP runs each (synchronous) tool call in a
-# worker thread, so a burst of parallel tool calls would otherwise fan out into
-# an unbounded number of simultaneous scans — exhausting memory/threads and
-# overwhelming the tool containers, which can drop the whole stdio connection
-# ("MCP server not connected"). This bounded semaphore queues excess scans
-# instead of letting them pile up. Tune via MCPWNER_MAX_CONCURRENT_SCANS.
+# Cap concurrent scans: unbounded parallel tool calls can drop the MCP stdio connection.
+# Tune via MCPWNER_MAX_CONCURRENT_SCANS.
 _MAX_CONCURRENT_SCANS = max(1, int(os.environ.get("MCPWNER_MAX_CONCURRENT_SCANS", "8")))
 _scan_semaphore = threading.BoundedSemaphore(_MAX_CONCURRENT_SCANS)
 
@@ -39,7 +33,6 @@ class BaseScanService:
         self.client = client
         self.tool_name = client.tool_name
         self.tool_category = category
-        # Cache of last scan result per workspace for reliable report retrieval
         self._last_scan_results: Dict[str, Dict[str, Any]] = {}
 
     def scan(
@@ -70,7 +63,6 @@ class BaseScanService:
 
         workspace = self.repository.find_by_id(workspace_id)
 
-        # Validate scan path if provided
         if scan_path:
             full_scan_path = Path(workspace_path) / scan_path
             if not full_scan_path.exists():
@@ -80,7 +72,6 @@ class BaseScanService:
                     "error_code": "SCAN_PATH_NOT_FOUND",
                 }
 
-        # Execute scan via client
         try:
             logger.info(
                 f"Executing {self.tool_name} scan on workspace {workspace_id}, path: {workspace_path}"
@@ -95,8 +86,6 @@ class BaseScanService:
             # into it (it owns the volume as UID 1000).
             self._ensure_report_dir(workspace_id)
 
-            # Bound concurrency so parallel tool calls queue rather than
-            # exhausting resources and dropping the MCP connection.
             with _scan_semaphore:
                 result = self.client.scan(
                     workspace_path=workspace_path,
@@ -108,14 +97,12 @@ class BaseScanService:
                 f"{self.tool_name} scan result: status={result.get('status')}, "
                 f"findings={result.get('finding_count', 'N/A')}"
             )
-            # Cache scan result for reliable report retrieval
             if result.get("status") == "success":
                 self._last_scan_results[workspace_id] = {
                     "workspace_path": workspace_path,
                     "report_path": result.get("report_path"),
                     "timestamp": result.get("timestamp"),
                 }
-                # Persist to disk for cross-restart reliability
                 self._persist_scan_result(workspace_id)
             return result
         except Exception as e:
@@ -168,7 +155,6 @@ class BaseScanService:
                 "error_code": "WORKSPACE_NOT_FOUND",
             }
 
-        # Find most recent report on the shared filesystem
         reports_base = self._get_reports_base(workspace_id)
         report_dir = Path(f"{reports_base}/reports/{self.tool_category}/{self.tool_name}")
 
@@ -200,9 +186,7 @@ class BaseScanService:
         else:
             logger.warning(f"Report dir does not exist: {report_dir}")
 
-        # Fallback 2: use cached scan result to read report directly
         cached = self._load_scan_result(workspace_id)
-        logger.info(f"Fallback 2: cached scan result for {workspace_id}: {cached}")
         if cached and cached.get("report_path"):
             cached_path = Path(cached["report_path"])
             if cached_path.exists():
@@ -215,7 +199,6 @@ class BaseScanService:
                 except Exception as e:
                     logger.warning(f"Failed to read cached report path {cached_path}: {e}")
 
-        # Fallback 3: fetch report via the tool container's HTTP API
         workspace_path = workspace.path or workspace.local_path
         if workspace_path and hasattr(self.client, "list_reports"):
             try:
@@ -246,10 +229,8 @@ class BaseScanService:
         self, workspace_id: str, report_path: Any, report_data: Any, timestamp: Optional[str] = None
     ) -> Dict[str, Any]:
         """Build a standardized report response dictionary."""
-        # Convert Path objects to string, handle None
         path_str = str(report_path) if report_path else ""
 
-        # Determine timestamp from path stem if not provided
         if not timestamp:
             timestamp = getattr(report_path, "stem", "") if hasattr(report_path, "stem") else ""
 
@@ -292,10 +273,8 @@ class BaseScanService:
 
     def _load_scan_result(self, workspace_id: str) -> Optional[Dict[str, Any]]:
         """Load a previously persisted scan result from disk."""
-        # Check in-memory first
         if workspace_id in self._last_scan_results:
             return self._last_scan_results[workspace_id]
-        # Try disk
         try:
             cache_file = self._scan_cache_path(workspace_id)
             if cache_file.exists():

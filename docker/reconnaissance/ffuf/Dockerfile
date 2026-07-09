@@ -1,15 +1,12 @@
-# Stage 1: Build ffuf
 FROM golang:1.21-alpine AS builder
 
 RUN go install github.com/ffuf/ffuf/v2@v2.1.0
 
-# Stage 2: Install Python deps
 FROM python:3.11-alpine AS deps
 
 COPY docker/reconnaissance/ffuf/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 3: Lean runtime
 FROM alpine:3.19
 
 RUN apk add --no-cache python3 ca-certificates wget
@@ -17,7 +14,7 @@ RUN apk add --no-cache python3 ca-certificates wget
 COPY --from=builder /go/bin/ffuf /usr/local/bin/ffuf
 COPY --from=deps /install /usr
 
-# Download wordlists (with fallbacks)
+# Wordlists via wget at build time; embedded printf fallbacks if download fails.
 RUN mkdir -p /usr/share/wordlists && \
     (wget -q -T 10 https://ffuf.me/wordlist/common.txt -O /usr/share/wordlists/common.txt || \
      printf '%s\n' admin api test login index config backup data files images js css static uploads downloads docs help about contact search profile settings dashboard users accounts services products cart checkout payment orders reports logs status health metrics api/v1 api/v2 admin/login admin/dashboard .git .env .htaccess robots.txt sitemap.xml favicon.ico wp-admin wp-content wp-includes > /usr/share/wordlists/common.txt) && \

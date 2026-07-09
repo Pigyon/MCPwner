@@ -14,7 +14,6 @@ def build_terrascan_cmd(request: ScanRequest, output_path: Path):
 
     cmd = ["terrascan", "scan", "-i", iac_type, "-d", str(full_scan_path), "-o", "sarif"]
 
-    # Restrict to specific policy/cloud providers (aws, gcp, azure, k8s, github, ...)
     if config.get("policy_type"):
         policy_type = config["policy_type"]
         for provider in policy_type if isinstance(policy_type, list) else [policy_type]:

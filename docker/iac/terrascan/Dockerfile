@@ -1,14 +1,11 @@
-# Stage 1: terrascan binary
 ARG TERRASCAN_VERSION=1.19.9
 FROM tenable/terrascan:${TERRASCAN_VERSION} AS terrascan
 
-# Stage 2: Install Python deps
 FROM python:3.11-alpine AS deps
 
 COPY docker/iac/terrascan/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 3: Lean runtime
 FROM python:3.11-alpine
 
 RUN apk add --no-cache gcompat
@@ -16,8 +13,7 @@ RUN apk add --no-cache gcompat
 COPY --from=terrascan /go/bin/terrascan /usr/local/bin/terrascan
 COPY --from=deps /install /usr/local
 
-# Pre-fetch Terrascan's policy bundle at build time. `terrascan init` uses go-git and
-# is flaky in Docker builds; download the matching source tarball instead.
+# Pre-fetch policies at build time; terrascan init/go-git is flaky in Docker.
 ARG TERRASCAN_VERSION=1.19.9
 ENV HOME=/home/scanner
 ENV TERRASCAN_VERSION=${TERRASCAN_VERSION}

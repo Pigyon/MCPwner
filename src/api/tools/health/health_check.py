@@ -11,9 +11,7 @@ from deps import get_client, get_codeql_client, get_linguist_client
 logger = logging.getLogger(__name__)
 
 
-# Every other tool is resolved generically from the registry, so all categories
-# (SAST, SCA, Secrets, Reconnaissance, Utilities, IaC) — and any tool added in
-# future — are health-checked automatically, in registry (display) order.
+# Registry-driven health checks for all categories, in display order.
 def _get_health_tools():
     return get_bespoke_tools() + list(TOOL_REGISTRY.keys())
 
@@ -82,7 +80,6 @@ def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:
     Returns:
         Dictionary with health status
     """
-    # Check specific tool
     health_tools = _get_health_tools()
     if tool_name:
         tool_name = tool_name.lower()
@@ -95,9 +92,8 @@ def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:
 
         return _check_service(tool_name, _client_for(tool_name))
 
-    # Check all services
     results = {
-        "status": "healthy",  # Overall status, will change to degraded if any service fails
+        "status": "healthy",  # degraded if any service fails
         "transport": os.environ.get("MCP_TRANSPORT", "stdio"),
         "services": {},
     }

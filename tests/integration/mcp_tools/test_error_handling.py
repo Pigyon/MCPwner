@@ -14,7 +14,6 @@ async def test_invalid_tool_name(docker_compose_up, mcp_session):
     """Test that calling a non-existent tool returns proper error."""
     result = await session.call_tool("nonexistent_tool_12345", arguments={})
 
-    # Server returns isError=True for invalid tools
     assert result.isError is True
     assert len(result.content) > 0
     print(f"\n✅ Invalid tool name properly rejected: {result.content[0].text}")
@@ -28,7 +27,6 @@ async def test_missing_required_arguments(docker_compose_up, mcp_session):
     # create_workspace requires workspace_id and source_type
     result = await session.call_tool("create_workspace", arguments={})
 
-    # Server returns isError=True for missing args
     assert result.isError is True
     assert len(result.content) > 0
     print("\n✅ Missing required arguments properly rejected")
@@ -45,7 +43,6 @@ async def test_invalid_argument_type(docker_compose_up, mcp_session):
         arguments={"workspace_id": 12345, "source_type": "empty"},
     )
 
-    # Server returns isError=True for invalid types
     assert result.isError is True
     assert len(result.content) > 0
     print("\n✅ Invalid argument type properly rejected")
@@ -56,7 +53,6 @@ async def test_invalid_workspace_id(docker_compose_up, mcp_session):
     session = mcp_session
     client = mcp_session
     """Test that operations on non-existent workspace return proper error."""
-    # Try to cleanup a workspace that doesn't exist
     result = await session.call_tool(
         "cleanup_workspace",
         arguments={"workspace_id": "nonexistent-workspace-xyz"},
@@ -74,7 +70,6 @@ async def test_invalid_codeql_database(docker_compose_up, mcp_session):
     session = mcp_session
     client = mcp_session
     """Test that operations on non-existent CodeQL database return proper error."""
-    # Try to execute query on non-existent database
     result = await session.call_tool(
         "execute_query",
         arguments={
@@ -84,7 +79,6 @@ async def test_invalid_codeql_database(docker_compose_up, mcp_session):
         },
     )
 
-    # Server returns isError=True for invalid database
     assert result.isError is True
     assert len(result.content) > 0
     print("\n✅ Invalid CodeQL database properly rejected")
@@ -98,7 +92,6 @@ async def test_empty_arguments_when_required(docker_compose_up, mcp_session):
     # detect_languages requires workspace_id
     result = await session.call_tool("detect_languages", arguments={})
 
-    # Server returns isError=True for missing required args
     assert result.isError is True
     assert len(result.content) > 0
     print("\n✅ Empty arguments properly rejected when required")
@@ -140,7 +133,6 @@ async def test_sast_tools_invalid_workspace(docker_compose_up, mcp_session, tool
     assert len(result.content) > 0
     content = result.content[0]
     assert hasattr(content, "text")
-    # Should return error for nonexistent workspace
     assert "error" in content.text.lower() or "not found" in content.text.lower()
 
     print(f"\n✅ {tool_action} error handling for invalid workspace works")

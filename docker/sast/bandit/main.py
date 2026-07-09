@@ -11,7 +11,6 @@ def build_bandit_cmd(request: ScanRequest, output_path: Path):
 
     config = request.config or {}
 
-    # Severity filtering
     if "severity" in config:
         severity = config["severity"].lower()
         if severity == "high":
@@ -19,7 +18,6 @@ def build_bandit_cmd(request: ScanRequest, output_path: Path):
         elif severity == "medium":
             cmd.append("-ll")
 
-    # Confidence filtering
     if "confidence" in config:
         confidence = config["confidence"].lower()
         if confidence == "high":
@@ -27,11 +25,9 @@ def build_bandit_cmd(request: ScanRequest, output_path: Path):
         elif confidence == "medium":
             cmd.append("-ii")
 
-    # Recursive scan
     cmd.append("-r")
     cmd.append(str(full_scan_path))
 
-    # Exclude paths
     if "exclude" in config:
         cmd.extend(["-x", ",".join(config["exclude"])])
 

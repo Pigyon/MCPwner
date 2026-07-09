@@ -97,7 +97,6 @@ DEEP_PRESETS = [
 
 def _parse_presets(preset_value: str) -> List[str]:
     """Parse a preset string into a list, supporting comma or space separation."""
-    # Replace commas with spaces then split
     return [p.strip() for p in preset_value.replace(",", " ").split() if p.strip()]
 
 
@@ -132,10 +131,8 @@ def _build_bbot_cmd(
     has_modules = bool(config.get("modules"))
 
     if not preset_raw and not has_flags and not has_modules:
-        # Default: subdomain enumeration
         cmd.extend(["-p", "subdomain-enum"])
     elif preset_raw == "deep":
-        # Deep scan: stack all heavy presets + aggressive flag
         cmd.extend(["-p"] + DEEP_PRESETS)
         cmd.extend(["-f", "aggressive"])
     else:
@@ -147,11 +144,9 @@ def _build_bbot_cmd(
         if has_modules:
             cmd.extend(["-m"] + config["modules"].split())
 
-    # Output modules — default to json
     output_modules = config.get("output_modules", "json")
     cmd.extend(["-om"] + output_modules.split())
 
-    # Filtering options
     if config.get("require_flags"):
         cmd.extend(["-rf"] + config["require_flags"].split())
     if config.get("exclude_flags"):
@@ -159,7 +154,6 @@ def _build_bbot_cmd(
     if config.get("exclude_modules"):
         cmd.extend(["-em"] + config["exclude_modules"].split())
 
-    # Boolean flags
     if config.get("allow_deadly"):
         cmd.append("--allow-deadly")
     if config.get("strict_scope"):
@@ -216,7 +210,6 @@ def _summarize_events(events: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     event_type_counts = {k: len(v) for k, v in sorted(by_type.items())}
 
-    # Suggest next steps based on what was found
     next_steps = []
     if subdomains and len(subdomains) > 1:
         next_steps.append(
@@ -269,7 +262,6 @@ def scan(request: ScanRequest):
                 ),
             )
 
-        # Determine workspace root and report output path
         parts = Path(request.workspace_path).parts
         if "workspaces" in parts:
             idx = parts.index("workspaces")
@@ -285,7 +277,6 @@ def scan(request: ScanRequest):
         report_dir.mkdir(parents=True, exist_ok=True)
         report_path = report_dir / f"{timestamp}.json"
 
-        # bbot writes to its own directory structure
         bbot_output_dir = str(workspace_root / "tmp" / "bbot")
         scan_name = f"scan_{timestamp}"
 
@@ -311,7 +302,6 @@ def scan(request: ScanRequest):
                 "output": stdout,
             }
 
-        # bbot writes JSON output to {output_dir}/{scan_name}/output.json
         bbot_json = Path(bbot_output_dir) / scan_name / "output.json"
 
         if not bbot_json.exists():
@@ -325,15 +315,12 @@ def scan(request: ScanRequest):
                 "stdout": result.stdout[-1000:] if result.stdout else "",
             }
 
-        # Copy bbot's output to the standard report path
         shutil.copy2(str(bbot_json), str(report_path))
 
-        # Parse events and build a structured summary for the LLM
         events = []
         try:
             with open(report_path, "r") as f:
                 events = [json.loads(line) for line in f if line.strip()]
-            # Persist as JSON array
             with open(report_path, "w") as f:
                 json.dump(events, f, indent=2)
         except Exception as e:

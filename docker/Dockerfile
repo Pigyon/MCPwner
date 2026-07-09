@@ -1,10 +1,8 @@
-# Stage 1: Install Python deps
 FROM python:3.11-slim AS builder
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 2: Lean runtime
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends git \

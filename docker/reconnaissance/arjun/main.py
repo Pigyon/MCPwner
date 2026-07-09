@@ -54,7 +54,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
             try:
                 data = json.load(f)
             except json.JSONDecodeError:
-                # Try NDJSON
                 f.seek(0)
                 data = [json.loads(line) for line in f if line.strip()]
 
@@ -63,22 +62,18 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
 
         for entry in data:
             if not isinstance(entry, dict):
-                # Plain string — could be a raw URL (e.g. from gau)
                 val = str(entry).strip()
                 if val and (val.startswith("http://") or val.startswith("https://")):
                     targets.add(val)
                 continue
 
-            # httpx: {"url": "https://example.com/path", ...}
             if source_tool == "httpx":
                 if entry.get("url"):
                     targets.add(entry["url"])
                 elif entry.get("input"):
                     targets.add(entry["input"])
 
-            # katana: {"request": {"endpoint": "https://..."}, ...} or {"url": "..."}
             elif source_tool == "katana":
-                # katana -jsonl wraps the URL inside request.endpoint
                 req = entry.get("request")
                 if isinstance(req, dict) and req.get("endpoint"):
                     url = req["endpoint"]
@@ -89,8 +84,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                 elif entry.get("endpoint"):
                     targets.add(entry["endpoint"])
 
-            # gau: plain URL strings (line-delimited), handled above as non-dict
-            # but also handle if wrapped in a dict
             elif source_tool == "gau":
                 for key in ("url", "data"):
                     val = entry.get(key, "")
@@ -98,7 +91,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                         targets.add(val)
                         break
 
-            # ffuf: {"results": [...]} or {"url": "..."}
             elif source_tool == "ffuf":
                 if "results" in entry:
                     for r in entry["results"]:
@@ -107,7 +99,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                 elif entry.get("url"):
                     targets.add(entry["url"])
 
-            # bbot: prefer URL type events
             elif source_tool == "bbot":
                 etype = entry.get("type", "")
                 edata = entry.get("data", "")
@@ -124,7 +115,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                     except (ValueError, AttributeError):
                         pass
 
-            # Generic fallback: try URL-like fields first
             else:
                 for key in ("url", "endpoint", "data"):
                     val = entry.get(key, "")
@@ -179,7 +169,6 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
 
     all_targets: Set[str] = set()
 
-    # Mode 1: Auto-chain from a previous tool's report
     if source_tool:
         report_path = _find_latest_report(workspace_root, source_tool)
         if not report_path:
@@ -195,11 +184,9 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         logger.info(f"Extracted {len(extracted)} URL targets from {source_tool} report")
         all_targets.update(extracted)
 
-    # Mode 2: Explicit target list
     if targets_list:
         all_targets.update(t.strip() for t in targets_list if t.strip())
 
-    # Mode 3: Single target
     if single_target:
         all_targets.add(single_target)
 
@@ -211,10 +198,8 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
 
     logger.info(f"Running arjun against {len(all_targets)} URL(s)")
 
-    # Build base command — arjun outputs JSON via -oJ
     cmd = ["arjun", "-oJ", str(output_path)]
 
-    # Input: single URL via -u, multiple via -i file
     if len(all_targets) == 1:
         cmd.extend(["-u", next(iter(all_targets))])
     else:
@@ -222,7 +207,6 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         logger.info(f"Wrote {len(all_targets)} targets to {targets_file}")
         cmd.extend(["-i", str(targets_file)])
 
-    # Optional flags
     if config.get("method"):
         cmd.extend(["-m", str(config["method"]).upper()])
 

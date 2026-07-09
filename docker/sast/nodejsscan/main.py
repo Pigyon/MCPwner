@@ -59,7 +59,6 @@ def scan(request: ScanRequest):
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / f"{timestamp}.json"
 
-        # nodejsscan CLI: positional path arg, --json for JSON output
         cmd = ["nodejsscan", "--json", "-o", str(output_path), str(full_scan_path)]
 
         logger.info(f"Executing nodejsscan: {' '.join(cmd)}")
@@ -84,9 +83,6 @@ def scan(request: ScanRequest):
                 "output": result.stdout,
             }
 
-        # nodejsscan JSON structure:
-        # {"nodejs": {"rule_id": {"files": [...], "metadata": {...}}}, "templates": {...}}
-        # Count total files across all rules in both nodejs and templates sections
         finding_count = 0
         try:
             with open(output_path) as f:

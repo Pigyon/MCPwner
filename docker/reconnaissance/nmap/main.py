@@ -33,7 +33,6 @@ def xml_to_json(xml_path: Path) -> Dict[str, Any]:
             "hosts": [],
         }
 
-        # Parse scan info
         scaninfo = root.find("scaninfo")
         if scaninfo is not None:
             result["scan_info"] = {
@@ -43,7 +42,6 @@ def xml_to_json(xml_path: Path) -> Dict[str, Any]:
                 "services": scaninfo.get("services", ""),
             }
 
-        # Parse hosts
         for host in root.findall("host"):
             host_data = {
                 "status": {},
@@ -53,7 +51,6 @@ def xml_to_json(xml_path: Path) -> Dict[str, Any]:
                 "os": {},
             }
 
-            # Status
             status = host.find("status")
             if status is not None:
                 host_data["status"] = {
@@ -61,7 +58,6 @@ def xml_to_json(xml_path: Path) -> Dict[str, Any]:
                     "reason": status.get("reason", ""),
                 }
 
-            # Addresses
             for address in host.findall("address"):
                 host_data["addresses"].append(
                     {
@@ -70,7 +66,6 @@ def xml_to_json(xml_path: Path) -> Dict[str, Any]:
                     }
                 )
 
-            # Hostnames
             hostnames = host.find("hostnames")
             if hostnames is not None:
                 for hostname in hostnames.findall("hostname"):
@@ -81,7 +76,6 @@ def xml_to_json(xml_path: Path) -> Dict[str, Any]:
                         }
                     )
 
-            # Ports
             ports = host.find("ports")
             if ports is not None:
                 for port in ports.findall("port"):
@@ -92,7 +86,6 @@ def xml_to_json(xml_path: Path) -> Dict[str, Any]:
                         "service": {},
                     }
 
-                    # Port state
                     state = port.find("state")
                     if state is not None:
                         port_data["state"] = {
@@ -100,7 +93,6 @@ def xml_to_json(xml_path: Path) -> Dict[str, Any]:
                             "reason": state.get("reason", ""),
                         }
 
-                    # Service info
                     service = port.find("service")
                     if service is not None:
                         port_data["service"] = {
@@ -112,7 +104,6 @@ def xml_to_json(xml_path: Path) -> Dict[str, Any]:
 
                     host_data["ports"].append(port_data)
 
-            # OS detection
             os_elem = host.find("os")
             if os_elem is not None:
                 osmatch = os_elem.find("osmatch")
@@ -136,7 +127,6 @@ def xml_to_json(xml_path: Path) -> Dict[str, Any]:
 
 def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     """Build Nmap scan command."""
-    # Get target from config
     target = ""
     if request.config:
         target = request.config.get("target", "")
@@ -144,38 +134,28 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     if not target:
         raise ValueError("Target is required in config for Nmap scan (use 'target' field)")
 
-    # Nmap outputs XML first, then we convert to JSON
     xml_path = output_path.with_suffix(".xml")
 
-    # Basic Nmap command with XML output
     cmd = ["nmap", "-oX", str(xml_path)]
 
     config = request.config or {}
 
-    # Add default timeouts to prevent hangs
     host_timeout = f"{config['timeout']}s" if config.get("timeout") else "5m"
     cmd.extend(["--host-timeout", host_timeout])
     cmd.extend(["--max-retries", "2"])  # Limit retries
 
-    # Timing template — default to -T4 so a default scan finishes well within
-    # the MCP client timeout (~50s) instead of backgrounding with no result.
-    # Override via config.timing (0-5, where 5 is fastest).
+    # Timing template — default -T4 to finish within the MCP client timeout (~50s).
     timing = config.get("timing", 4)
     cmd.append(f"-T{timing}")
 
-    # Port scope — when the caller doesn't pin ports, scan the top 100 ports
-    # (fast, covers the common services) rather than nmap's default 1000, which
-    # routinely exceeds the client timeout. Override with config.ports or
-    # config.top_ports.
+    # Default top-100 ports (not nmap's 1000) to stay within client timeout.
     ports = config.get("ports")
     if ports:
         cmd.extend(["-p", str(ports)])
     else:
         cmd.extend(["--top-ports", str(config.get("top_ports", 100))])
 
-    # Add optional parameters
     if request.config:
-        # Scan type
         scan_type = request.config.get("scan_type")
         if scan_type == "tcp_connect":
             cmd.append("-sT")  # TCP connect scan (no root required)
@@ -195,41 +175,30 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
             cmd.append("-sX")  # Xmas scan
         # If no scan_type specified, nmap defaults to -sS (SYN) when run as root
 
-        # (Port scope is handled above, before the optional block.)
-
-        # Service version detection
         if request.config.get("service_version", False):
             cmd.append("-sV")
 
         # OS detection (WARNING: Can be very slow and may hang)
         if request.config.get("os_detection", False):
             cmd.append("-O")
-            # Add --osscan-limit to skip OS detection if no open/closed ports
             cmd.append("--osscan-limit")
 
-        # Aggressive scan (enables OS detection, version detection, script scanning, and traceroute)
         if request.config.get("aggressive", False):
             cmd.append("-A")
 
-        # (Timing template is handled above, before the optional block.)
-
-        # Script scanning
         scripts = request.config.get("scripts")
         if scripts:
             cmd.extend(["--script", scripts])
 
-        # Verbose output
         if request.config.get("verbose", False):
             cmd.append("-v")
 
-    # Add target
     cmd.append(target)
 
     logger.info(f"Built nmap command: {cmd}")
     return cmd
 
 
-# Create custom FastAPI app with XML to JSON conversion
 app = FastAPI(title="Nmap Service", version="1.0.0")
 
 
@@ -261,16 +230,13 @@ def scan(request: ScanRequest):
     Execute Nmap scan on a workspace.
     """
     try:
-        # Build full scan path
         full_scan_path = Path(request.workspace_path) / request.scan_path
 
         if not full_scan_path.exists():
             raise HTTPException(status_code=404, detail=f"Scan path does not exist: {full_scan_path}")
 
-        # Create output directory
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
 
-        # Extract workspace root
         parts = Path(request.workspace_path).parts
         if "workspaces" in parts:
             idx = parts.index("workspaces")
@@ -285,10 +251,8 @@ def scan(request: ScanRequest):
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / f"{timestamp}.json"
 
-        # Build command (will create XML file)
         cmd = scan_cmd_builder(request, output_path)
 
-        # Execute scan. A hung tool must not block the request thread forever;
         # bound it with a timeout (10-minute default, overridable per-request).
         timeout_seconds = (request.config or {}).get("timeout_seconds", 600)
         logger.info(f"Executing {TOOL_NAME} scan: {' '.join(cmd)}")
@@ -309,7 +273,6 @@ def scan(request: ScanRequest):
                 "output": stdout,
             }
 
-        # Check if XML report was created
         xml_path = output_path.with_suffix(".xml")
         if not xml_path.exists():
             logger.error(f"Scan failed: {result.stderr}")
@@ -319,17 +282,14 @@ def scan(request: ScanRequest):
                 "output": result.stdout,
             }
 
-        # Convert XML to JSON
         logger.info(f"Converting XML to JSON: {xml_path} -> {output_path}")
         json_data = xml_to_json(xml_path)
 
-        # Write JSON output
         with open(output_path, "w") as f:
             json.dump(json_data, f, indent=2)
 
         logger.info(f"Successfully converted XML to JSON: {output_path}")
 
-        # Count findings (hosts with open ports)
         finding_count = 0
         for host in json_data.get("hosts", []):
             if host.get("ports"):

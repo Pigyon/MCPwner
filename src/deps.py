@@ -23,19 +23,12 @@ from services.workspace import WorkspaceService
 
 @lru_cache(maxsize=None)
 def get_config():
-    """Get configuration singleton."""
     return load_config("config/config.yaml")
 
 
 @lru_cache(maxsize=None)
 def get_workspace_repository():
-    """Get workspace repository singleton."""
     return WorkspaceRepository()
-
-
-# ---------------------------------------------------------------------------
-# Registry-driven clients and services
-# ---------------------------------------------------------------------------
 
 
 def _resolve_service_url(spec: ToolSpec) -> str:
@@ -49,26 +42,18 @@ def _resolve_service_url(spec: ToolSpec) -> str:
 
 @lru_cache(maxsize=None)
 def get_client(name: str) -> BaseScanClient:
-    """Get the HTTP client singleton for a registry tool."""
     spec = TOOL_REGISTRY[name]
     return BaseScanClient(_resolve_service_url(spec), name, spec.category)
 
 
 @lru_cache(maxsize=None)
 def get_service(name: str) -> BaseScanService:
-    """Get the service singleton for a registry tool."""
     spec = TOOL_REGISTRY[name]
     return BaseScanService(get_workspace_repository(), get_client(name), spec.category)
 
 
-# ---------------------------------------------------------------------------
-# Bespoke wiring: workspace, Linguist, CodeQL
-# ---------------------------------------------------------------------------
-
-
 @lru_cache(maxsize=None)
 def get_workspace_service():
-    """Get workspace service singleton."""
     return WorkspaceService(get_workspace_repository())
 
 
@@ -81,23 +66,19 @@ def _bespoke_service_url(section: str, default: str) -> str:
 
 @lru_cache(maxsize=None)
 def get_linguist_client():
-    """Get Linguist client singleton."""
     return LinguistClient(_bespoke_service_url("linguist", "http://linguist:8081"))
 
 
 @lru_cache(maxsize=None)
 def get_linguist_service():
-    """Get Linguist service singleton."""
     return LinguistService(get_workspace_repository(), get_linguist_client())
 
 
 @lru_cache(maxsize=None)
 def get_codeql_client():
-    """Get CodeQL client singleton."""
     return CodeQLClient(_bespoke_service_url("codeql", "http://codeql:8080"))
 
 
 @lru_cache(maxsize=None)
 def get_codeql_service():
-    """Get CodeQL service singleton."""
     return CodeQLService(get_workspace_repository(), get_codeql_client(), get_linguist_service())

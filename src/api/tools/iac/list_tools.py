@@ -4,10 +4,6 @@ from typing import Optional
 
 from api.tools.common import filter_tools_by_language, handle_tool_error
 
-# Tool metadata, mirroring the shape returned by the SAST/SCA/Secrets list_tools
-# tools. IaC scanners are driven by file type (Terraform, Kubernetes, Dockerfile,
-# etc.) rather than a detected programming language, so there is nothing to
-# filter on — every tool is always listed.
 IAC_TOOLS = {
     "checkov": {
         "name": "Checkov",

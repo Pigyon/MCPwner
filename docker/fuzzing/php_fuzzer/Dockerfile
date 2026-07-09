@@ -1,6 +1,4 @@
-# PHP-Fuzzer (nikic/php-fuzzer) forks a worker process per input to survive
-# crashes, so the image needs the pcntl extension. The MCPwner HTTP service runs
-# in an isolated Python venv; php-fuzzer is invoked as a subprocess.
+# pcntl extension required because php-fuzzer forks per input; service runs in Python venv.
 FROM php:8.2-cli-bookworm
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -11,7 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-venv git unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# PHP-Fuzzer pinned to the requested release, exposed on PATH.
 ENV COMPOSER_HOME=/opt/composer
 RUN composer global require nikic/php-fuzzer:0.0.11 --no-interaction \
     && ln -s /opt/composer/vendor/bin/php-fuzzer /usr/local/bin/php-fuzzer

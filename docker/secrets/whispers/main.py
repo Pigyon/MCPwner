@@ -18,7 +18,6 @@ VERSION_CMD = ["whispers", "--version"]
 
 def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     """Build Whispers scan command."""
-    # Build command
     cmd = [
         "whispers",
         str(request.workspace_path),
@@ -26,7 +25,6 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         str(output_path),
     ]
 
-    # If scan_path is provided, update source
     if request.scan_path:
         full_source = Path(request.workspace_path) / request.scan_path
         cmd[1] = str(full_source)

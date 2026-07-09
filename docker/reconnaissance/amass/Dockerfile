@@ -1,18 +1,14 @@
-# Stage 1: Build amass
 FROM golang:1.24-alpine AS builder
 
 RUN apk add --no-cache git && \
     go install -v github.com/owasp-amass/amass/v5/...@v5.0.1
 
-# Stage 2: Install Python deps
 FROM python:3.11-alpine AS deps
 
 COPY docker/reconnaissance/amass/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 3: Lean runtime
-# Use python:3.11-alpine (matches the deps builder) to avoid a Python ABI
-# mismatch between apk's python3 and the pip-compiled packages.
+# Match python:3.11-alpine to the deps builder to avoid ABI mismatch with apk python3.
 FROM python:3.11-alpine
 
 RUN apk add --no-cache ca-certificates curl

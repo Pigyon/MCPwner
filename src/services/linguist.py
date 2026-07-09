@@ -33,11 +33,9 @@ class LinguistService:
             return []
 
         try:
-            # Use linguist for language detection
             result = self.linguist_client.detect_languages(str(workspace_dir))
             detected_languages = result.get("languages", [])
 
-            # Filter to only CodeQL-supported languages if requested
             if filter_codeql:
                 detected_languages = [lang for lang in detected_languages if lang in CODEQL_LANGUAGES]
 

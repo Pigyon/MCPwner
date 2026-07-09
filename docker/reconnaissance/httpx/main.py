@@ -51,7 +51,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
             try:
                 data = json.load(f)
             except json.JSONDecodeError:
-                # Try NDJSON
                 f.seek(0)
                 data = [json.loads(line) for line in f if line.strip()]
 
@@ -60,25 +59,21 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
 
         for entry in data:
             if not isinstance(entry, dict):
-                # Plain string (e.g. a raw domain line)
                 val = str(entry).strip()
                 if val:
                     targets.add(val)
                 continue
 
-            # subfinder: {"host": "sub.example.com", ...}
             if source_tool == "subfinder":
                 if entry.get("host"):
                     targets.add(entry["host"])
 
-            # amass: {"name": "sub.example.com", ...}
             elif source_tool == "amass":
                 # amass writes {"subdomain": "..."}; raw/older formats use "name"
                 val = entry.get("subdomain") or entry.get("name")
                 if val:
                     targets.add(val)
 
-            # bbot: {"type": "DNS_NAME"|"URL"|"IP_ADDRESS"|"OPEN_TCP_PORT", "data": "..."}
             # OPEN_TCP_PORT data is "ip:port" (e.g. "45.33.32.156:80") — normalize to http(s)://
             elif source_tool == "bbot":
                 etype = entry.get("type", "")
@@ -88,7 +83,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                 if etype == "URL" or etype in ("DNS_NAME", "IP_ADDRESS"):
                     targets.add(edata)
                 elif etype == "OPEN_TCP_PORT":
-                    # "ip:port" or "host:port" — build http/https URL
                     try:
                         host, port_str = edata.rsplit(":", 1)
                         port = int(port_str)
@@ -97,8 +91,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                     except (ValueError, AttributeError):
                         targets.add(edata)
 
-            # nmap/masscan: {"ip": "...", "port": ...} or {"host": "..."}
-            # Build http(s):// URLs from ip+port combinations
             elif source_tool in ("nmap", "masscan"):
                 host = entry.get("ip") or entry.get("host") or entry.get("addr", "")
                 if host:
@@ -110,7 +102,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                     else:
                         targets.add(host)
 
-            # ffuf: {"results": [...]} or {"url": "..."}
             elif source_tool == "ffuf":
                 if "results" in entry:
                     for r in entry["results"]:
@@ -119,7 +110,6 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                 elif entry.get("url"):
                     targets.add(entry["url"])
 
-            # Generic fallback: try common field names
             else:
                 for key in ("host", "url", "domain", "target", "ip", "name", "data"):
                     val = entry.get(key, "")
@@ -153,30 +143,25 @@ def _deduplicate_targets(targets: Set[str]) -> Set[str]:
     e.g. if both "scanme.nmap.org" and "http://scanme.nmap.org/" are present,
     keep only the full URL. Also normalizes by stripping trailing slashes from URLs.
     """
-    # Normalize: strip trailing slashes from all entries
     normalized: Set[str] = set()
     for t in targets:
         normalized.add(t.rstrip("/"))
 
-    # Collect hostnames that already have a full URL representation
     covered_hosts: Set[str] = set()
     for t in normalized:
         if t.startswith("http://") or t.startswith("https://"):
             try:
-                # Extract host (without port) from the URL
                 without_scheme = t.split("://", 1)[1]
                 host = without_scheme.split("/")[0].split(":")[0]
                 covered_hosts.add(host)
             except IndexError:
                 pass
 
-    # Drop bare entries whose host is already covered by a full URL
     result: Set[str] = set()
     for t in normalized:
         if t.startswith("http://") or t.startswith("https://"):
             result.add(t)
         else:
-            # bare domain or IP — only keep if not already covered
             bare_host = t.split(":")[0]  # strip port if present
             if bare_host not in covered_hosts:
                 result.add(t)
@@ -212,7 +197,6 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
 
     all_targets: Set[str] = set()
 
-    # Mode 1: Auto-chain from a previous tool's report
     if source_tool:
         report_path = _find_latest_report(workspace_root, source_tool)
         if not report_path:
@@ -226,11 +210,9 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         logger.info(f"Extracted {len(extracted)} targets from {source_tool} report")
         all_targets.update(extracted)
 
-    # Mode 2: Explicit target list
     if targets_list:
         all_targets.update(t.strip() for t in targets_list if t.strip())
 
-    # Mode 3: Single target (always added if present, even alongside other modes)
     if single_target:
         all_targets.add(single_target)
 
@@ -240,21 +222,16 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
             "'targets' (list), or 'source_tool' (auto-chain from previous scan) in config."
         )
 
-    # Deduplicate: drop bare domains already covered by a full URL form
     all_targets = _deduplicate_targets(all_targets)
     logger.info(f"Final deduplicated target count: {len(all_targets)}")
 
-    # Build command
     if len(all_targets) == 1:
-        # Single target — use -u
         cmd = ["httpx", "-u", next(iter(all_targets)), "-json", "-o", str(output_path), "-silent"]
     else:
-        # Multiple targets — write to file and use -l
         targets_file = _write_targets_file(all_targets, workspace_root)
         logger.info(f"Wrote {len(all_targets)} targets to {targets_file}")
         cmd = ["httpx", "-l", str(targets_file), "-json", "-o", str(output_path), "-silent"]
 
-    # Optional flags
     if config.get("status_code"):
         cmd.extend(["-mc", str(config["status_code"])])
 

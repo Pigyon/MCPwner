@@ -98,7 +98,6 @@ def _extract_base_url_from_report(report_path: Path, source_tool: str) -> Option
         if not candidates:
             return None
 
-        # Return the shortest URL (most likely the base/root)
         return min(candidates, key=lambda u: len(u))
 
     except Exception as e:
@@ -132,7 +131,6 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     config: Dict[str, Any] = request.config or {}
     workspace_root = _resolve_workspace_root(request.workspace_path)
 
-    # Resolve URL: explicit config takes priority, then source_tool
     url = config.get("url") or config.get("target", "")
 
     if not url and config.get("source_tool"):
@@ -155,7 +153,6 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
             "or set 'source_tool' to chain from a previous scan (httpx, katana, gau)."
         )
 
-    # Auto-add FUZZ keyword if missing
     if "FUZZ" not in url:
         url = url + "FUZZ" if url.endswith("/") else url + "/FUZZ"
         logger.info(f"Auto-added FUZZ keyword to URL: {url}")

@@ -18,7 +18,6 @@ VERSION_CMD = ["gitleaks", "version"]
 
 def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     """Build Gitleaks scan command."""
-    # Build command
     cmd = [
         "gitleaks",
         "detect",
@@ -30,15 +29,10 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         "sarif",
         "--no-git",  # Scan files directly
         "--exit-code",
-        "0",  # Force exit code 0 even if leaks found (or rely on base_service handling)
-        # Actually, base_service handles non-zero exit codes, so we don't strictly need this,
-        # but it's safer to ensure consistent behavior if we wanted check=True.
-        # However, base_service uses check=False.
-        # Let's keep it simple.
+        "0",  # Avoid non-zero exit when leaks are found; base_service uses check=False
         "--verbose",
     ]
 
-    # If scan_path is provided, update source
     if request.scan_path:
         full_source = Path(request.workspace_path) / request.scan_path
         cmd[3] = str(full_source)

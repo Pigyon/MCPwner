@@ -13,10 +13,7 @@ app = FastAPI(title="Joern Service", version="1.0.0")
 
 SCAN_SCRIPT = "/service/scan.sc"
 
-# `joern --version` cold-starts the JVM (~16s). The health check hits /version
-# on every tool at once, so an uncached call here regularly exceeds the client's
-# 30s version timeout under load. Cache the result after the first resolution so
-# subsequent health checks are instant.
+# `joern --version` cold-starts the JVM (~16s); cache after first resolution.
 _version_cache: dict = {"value": None}
 
 
@@ -71,7 +68,6 @@ def scan(request: ScanRequest):
         if not full_scan_path.exists():
             raise HTTPException(status_code=404, detail=f"Scan path does not exist: {full_scan_path}")
 
-        # Build output path
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
         parts = Path(request.workspace_path).parts
         if "workspaces" in parts:
@@ -93,11 +89,9 @@ def scan(request: ScanRequest):
         # timeout (10-minute default, overridable per-request).
         timeout_seconds = config.get("timeout_seconds", 600)
 
-        # Determine scan mode: joern-scan (quick, uses query DB) or joern --script (custom)
         use_scan = config.get("mode", "script") == "scan"
 
         if use_scan:
-            # Use joern-scan for automated scanning with the query database
             cmd = ["joern-scan", str(full_scan_path), "--overwrite"]
 
             if "tags" in config:
@@ -120,20 +114,13 @@ def scan(request: ScanRequest):
                     "output": stdout,
                 }
 
-            # Parse joern-scan text output into JSON
             findings = _parse_joern_scan_output(result.stdout)
             with open(output_path, "w") as f:
                 json.dump(findings, f, indent=2)
 
             finding_count = len(findings)
         else:
-            # Custom CPG analysis. Build the CPG up-front with joern-parse so we
-            # can pass frontend-specific flags, then run the analysis script
-            # against the prebuilt CPG. This is necessary because Joern's default
-            # Java extraction runs delombok when a Lombok dependency is present
-            # (e.g. WebGoat), and a delombok failure silently yields an EMPTY CPG
-            # (0 methods/calls → 0 findings). Disabling delombok parses the raw
-            # source directly and keeps all the security-relevant call sites.
+            # Custom CPG path: disable Java delombok — failures silently yield an empty CPG.
             cpg_path = output_dir / f"{timestamp}.cpg.bin"
 
             parse_cmd = [
@@ -204,8 +191,7 @@ def scan(request: ScanRequest):
                 data = json.load(f)
             finding_count = len(data) if isinstance(data, list) else 0
 
-            # The intermediate CPG can be large; remove it so it doesn't get
-            # picked up as a report or bloat the workspace volume.
+            # Intermediate CPG files are large and must not be kept as reports.
             import contextlib
 
             with contextlib.suppress(OSError):
@@ -281,17 +267,12 @@ def _parse_joern_scan_output(output: str) -> list:
         if not line.startswith("Result:"):
             continue
         try:
-            # "Result: 8.0 : Dangerous function gets() used: /path/file.c:6:main"
             rest = line[len("Result:") :].strip()
             score_str, rest = rest.split(":", 1)
             score = float(score_str.strip())
-            # rest = " Dangerous function gets() used: /path/file.c:6:main"
-            # Split from the right to handle colons in the title
             parts = rest.rsplit(":", 3)
             if len(parts) >= 4:
                 title_and_path = parts[0]
-                # The last colon-separated segment before line:func is the filepath
-                # title_and_path = " Dangerous function gets() used: /path/file.c"
                 tp_parts = title_and_path.rsplit(":", 1)
                 title = tp_parts[0].strip() if len(tp_parts) > 1 else title_and_path.strip()
                 filepath = tp_parts[1].strip() if len(tp_parts) > 1 else ""

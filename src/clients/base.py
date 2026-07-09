@@ -5,13 +5,9 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-# HTTP timeouts (seconds). The scan timeout is deliberately kept under an IDE's
-# typical ~60s MCP timeout so a long scan backgrounds in the tool container
-# instead of having the MCP connection killed.
+# Scan timeout stays under typical ~60s MCP limits so long scans background cleanly.
 SCAN_TIMEOUT_SECONDS = 50
-# Generous enough for slow JVM-based tools (e.g. joern's `--version` ~16s cold
-# start). Joern caches its version after the first resolution, but allow a wide
-# margin for the first call when many tools' health checks run concurrently.
+# Joern cold-starts ~16s; allow headroom when many /version probes run in parallel.
 VERSION_TIMEOUT_SECONDS = 45
 # The /health endpoint is static (no CLI invocation), so a tight timeout is fine.
 HEALTH_TIMEOUT_SECONDS = 10
@@ -140,13 +136,10 @@ class BaseScanClient(BaseClient):
         payload = {"workspace_path": workspace_path}
         if scan_path:
             payload["scan_path"] = scan_path
-        # Always include config (even if None) so the service can give a clear error
         payload["config"] = config if config is not None else {}
         if report_base:
             payload["report_base"] = report_base
 
-        # Use a shorter timeout by default to prevent an IDE's ~60s MCP timeout from
-        # killing the connection. If it times out, the scan continues in the background.
         timeout_seconds = (
             config.get("mcp_timeout", SCAN_TIMEOUT_SECONDS) if config else SCAN_TIMEOUT_SECONDS
         )

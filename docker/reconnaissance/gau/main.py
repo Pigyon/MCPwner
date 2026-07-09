@@ -78,19 +78,16 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                     targets.add(_extract_domain(val))
                 continue
 
-            # subfinder: {"host": "sub.example.com", ...}
             if source_tool == "subfinder":
                 if entry.get("host"):
                     targets.add(entry["host"])
 
-            # amass: {"name": "sub.example.com", ...}
             elif source_tool == "amass":
                 # amass writes {"subdomain": "..."}; raw/older formats use "name"
                 val = entry.get("subdomain") or entry.get("name")
                 if val:
                     targets.add(val)
 
-            # bbot: {"type": "DNS_NAME"|"URL"|"IP_ADDRESS", "data": "..."}
             elif source_tool == "bbot":
                 etype = entry.get("type", "")
                 edata = entry.get("data", "")
@@ -101,13 +98,11 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                 elif etype == "URL":
                     targets.add(_extract_domain(edata))
 
-            # httpx: {"url": "https://sub.example.com", "input": "sub.example.com", ...}
             elif source_tool == "httpx":
                 url = entry.get("url") or entry.get("input", "")
                 if url:
                     targets.add(_extract_domain(url))
 
-            # Generic fallback
             else:
                 for key in ("host", "domain", "name", "url", "target", "data"):
                     val = entry.get(key, "")
@@ -165,7 +160,6 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
 
     all_targets: Set[str] = set()
 
-    # Mode 1: Auto-chain from a previous tool's report
     if source_tool:
         report_path = _find_latest_report(workspace_root, source_tool)
         if not report_path:
@@ -179,11 +173,9 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         logger.info(f"Extracted {len(extracted)} targets from {source_tool} report")
         all_targets.update(extracted)
 
-    # Mode 2: Explicit target list
     if targets_list:
         all_targets.update(_extract_domain(t) for t in targets_list if t.strip())
 
-    # Mode 3: Single target
     if single_target:
         all_targets.add(_extract_domain(single_target))
 
@@ -195,11 +187,8 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
 
     logger.info(f"Running gau against {len(all_targets)} domain(s)")
 
-    # Build command: gau [options] domain1 domain2 ...
-    # --o writes output to file; output is one URL per line (plain text / NDJSON-compatible)
     cmd = ["gau", "--o", str(output_path)]
 
-    # Optional flags
     if config.get("providers"):
         cmd.extend(["--providers", str(config["providers"])])
 
@@ -215,7 +204,6 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     if config.get("to"):
         cmd.extend(["--to", str(config["to"])])
 
-    # Append all target domains as positional arguments
     cmd.extend(sorted(all_targets))
 
     return cmd

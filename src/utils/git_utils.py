@@ -37,7 +37,6 @@ def run_git_command(
         )
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr if e.stderr else str(e)
-        # Use args[0] which is the git subcommand (e.g., 'init', 'config', 'add')
         cmd_name = args[0] if args else "command"
         raise RuntimeError(f"Failed to run git {cmd_name}: {error_msg}")
 

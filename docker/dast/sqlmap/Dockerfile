@@ -1,10 +1,9 @@
-# Stage 1: Install Python deps
 FROM python:3.11-slim AS deps
 
 COPY docker/dast/sqlmap/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 2: Runtime — sqlmap ships its own Python, we add the FastAPI wrapper
+# sqlmap bundles its own Python; this image only adds the FastAPI wrapper.
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

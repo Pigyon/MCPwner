@@ -26,7 +26,6 @@ from api.tools.workspace.create_workspace import create_workspace
 from api.tools.workspace.list_workspaces import list_workspaces
 from config.tools import tools_for_category
 
-# Standard category configurations: (list_tools_func, extra_tools_list)
 CATEGORY_CONFIGS = {
     "sast": (sast_list_tools, []),
     "sca": (sca_list_tools, []),
@@ -45,10 +44,8 @@ class MainRouter(MCPRouter):
     """
 
     def register_tools(self, mcp: FastMCP):
-        # Clear existing tools to support clean re-registries/reloads
         self._tools.clear()
 
-        # 1. Always register core tools
         self.add_tools(
             health_list_tools,
             health_check,
@@ -57,11 +54,9 @@ class MainRouter(MCPRouter):
             cleanup_workspace,
         )
 
-        # 2. Register detect_languages if linguist service is healthy
         if "linguist" in tools_module.HEALTHY_TOOLS:
             self.add_tools(detect_languages)
 
-        # 3. Register CodeQL tools if CodeQL is healthy
         if "codeql" in tools_module.HEALTHY_TOOLS:
             self.add_tools(
                 create_codeql_database,
@@ -70,7 +65,6 @@ class MainRouter(MCPRouter):
                 list_query_packs,
             )
 
-        # 4. Register standard category tools dynamically if they have healthy tools
         for category, (list_func, extra_tools) in CATEGORY_CONFIGS.items():
             if tools_for_category(category):
                 self.add_tools(
@@ -81,9 +75,7 @@ class MainRouter(MCPRouter):
                 if extra_tools:
                     self.add_tools(*extra_tools)
 
-        # 5. Call parent implementation to register all built list of tools
         super().register_tools(mcp)
 
 
-# Create main API router instance
 router = MainRouter()

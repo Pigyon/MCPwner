@@ -7,11 +7,6 @@ from common.models import ScanRequest
 def build_retirejs_cmd(request: ScanRequest, output_path: Path):
     full_scan_path = Path(request.workspace_path) / request.scan_path
 
-    # Retire.js command (v5.x)
-    # Basic usage: retire [options] [path]
-    # --outputformat: json
-    # --outputpath: Output file
-    # Path is provided as positional argument at the end
     cmd = [
         "retire",
         "--outputformat",
@@ -23,15 +18,11 @@ def build_retirejs_cmd(request: ScanRequest, output_path: Path):
 
     config = request.config or {}
 
-    # Ignore specific vulnerabilities or paths
     if "ignore" in config:
-        # --ignore <path>
         for ignore_item in config["ignore"]:
             cmd.extend(["--ignore", ignore_item])
 
-    # Severity threshold
     if "severity" in config:
-        # --severity <level>
         cmd.extend(["--severity", config["severity"]])
 
     return cmd

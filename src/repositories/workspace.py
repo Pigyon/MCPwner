@@ -26,11 +26,9 @@ class WorkspaceRepository:
         self.workspaces_file = self.storage_path / "workspaces.json"
         self.databases_file = self.storage_path / "databases.json"
 
-        # In-memory cache for performance
         self._workspaces: Dict[str, Workspace] = {}
         self._databases: Dict[str, Dict[str, CodeQLDatabase]] = {}
 
-        # Load existing data on initialization
         self._load_from_disk()
 
     @staticmethod
@@ -84,13 +82,11 @@ class WorkspaceRepository:
     def _save_workspaces_to_disk(self) -> None:
         """Save workspaces to disk atomically."""
         try:
-            # Write to temporary file first
             temp_file = self.workspaces_file.with_suffix(".tmp")
             data = {ws_id: workspace.model_dump() for ws_id, workspace in self._workspaces.items()}
             with open(temp_file, "w") as f:
                 json.dump(data, f, indent=2)
 
-            # Atomic rename
             temp_file.replace(self.workspaces_file)
             logger.debug(f"Saved {len(self._workspaces)} workspaces to disk")
         except Exception as e:
@@ -99,7 +95,6 @@ class WorkspaceRepository:
     def _save_databases_to_disk(self) -> None:
         """Save databases to disk atomically."""
         try:
-            # Write to temporary file first
             temp_file = self.databases_file.with_suffix(".tmp")
             data = {
                 ws_id: [db.model_dump() for db in dbs.values()] for ws_id, dbs in self._databases.items()
@@ -107,7 +102,6 @@ class WorkspaceRepository:
             with open(temp_file, "w") as f:
                 json.dump(data, f, indent=2)
 
-            # Atomic rename
             temp_file.replace(self.databases_file)
             logger.debug(f"Saved database metadata for {len(self._databases)} workspaces")
         except Exception as e:

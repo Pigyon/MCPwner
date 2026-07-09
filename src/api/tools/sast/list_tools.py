@@ -20,7 +20,6 @@ from config.languages import (
 logger = logging.getLogger(__name__)
 
 
-# Tool metadata with language support
 SAST_TOOLS = {
     "semgrep": {
         "name": "Semgrep",

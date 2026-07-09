@@ -33,10 +33,8 @@ async def test_mcp_initialization(docker_compose_up):
 
     async with stdio_client(server_params) as (read, write), ClientSession(read, write) as session:
         result = await session.initialize()
-        # Verify session is initialized
         assert session is not None
 
-        # Verify initialization result
         assert result is not None
         assert result.serverInfo is not None
         assert result.serverInfo.name == "MCPwner"

@@ -1,4 +1,3 @@
-# Stage 1: Download and install Joern
 FROM eclipse-temurin:21-jdk-jammy AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends wget unzip \
@@ -11,7 +10,6 @@ RUN wget -q https://github.com/joernio/joern/releases/download/${JOERN_VERSION}/
     && ./joern-install.sh --install-dir=/opt/joern \
     && rm joern-install.sh
 
-# Stage 2: Lean runtime with JRE only
 FROM eclipse-temurin:21-jre-jammy
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,11 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     php-cli \
     && rm -rf /var/lib/apt/lists/*
-# php-cli is required by Joern's php2cpg frontend (it shells out to `php` to run
-# its bundled php-parser). Without it, PHP repos produce an empty CPG. Other
-# frontends (Java, JS, Python, Go, Ruby) are self-contained in the Joern bundle.
+# php-cli required for php2cpg; without it PHP repos produce an empty CPG.
 
-# Copy only the joern CLI from builder
 COPY --from=builder /opt/joern /opt/joern
 ENV PATH="/opt/joern/joern-cli:${PATH}"
 

@@ -1,9 +1,4 @@
-# Jazzer.js runs on Node; the MCPwner HTTP service runs in an isolated Python
-# venv and shells out to the global `jazzer` CLI provided by @jazzer.js/core.
-#
-# @jazzer.js/core@4.0.0's prebuilt native addon (fuzzer-linux-x64.node) requires
-# GLIBC >= 2.38. Debian Bookworm ships 2.36, so we switch to Ubuntu 24.04 Noble
-# (glibc 2.39) and install Node.js 20 via the NodeSource repository.
+# @jazzer.js/core@4.0.0 needs glibc>=2.38; use Ubuntu 24.04 + Node 20 from NodeSource.
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -12,11 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Jazzer.js fuzzing CLI pinned to the requested version (provides the `jazzer` bin).
-# @jazzer.js/bug-detectors must be installed as a top-level sibling of core —
-# if it lands only as a nested dependency of core, the CLI path lookup fails.
-# NODE_PATH lets require() resolve globally installed packages like @babel/core
-# without needing them in a local node_modules directory.
+# bug-detectors must be a top-level sibling of core; NODE_PATH resolves global @babel/core.
 ENV NODE_PATH=/usr/lib/node_modules
 
 RUN npm install -g @jazzer.js/core@4.0.0 @jazzer.js/bug-detectors@4.0.0 @babel/core@7.29.7

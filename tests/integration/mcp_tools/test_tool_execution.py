@@ -116,7 +116,6 @@ async def test_workspace_create_workspace_tool(docker_compose_up, mcp_session):
 
     print("\n✅ create_workspace executed successfully")
 
-    # Cleanup
     await session.call_tool(
         "cleanup_workspace",
         arguments={"workspace_id": "test-workspace-mcp"},
@@ -128,13 +127,11 @@ async def test_workspace_cleanup_workspace_tool(docker_compose_up, mcp_session):
     session = mcp_session
     client = mcp_session
     """Test executing cleanup_workspace tool."""
-    # Create a workspace first
     await session.call_tool(
         "create_workspace",
         arguments={"workspace_id": "test-cleanup-mcp", "source_type": "empty"},
     )
 
-    # Now cleanup
     result = await session.call_tool(
         "cleanup_workspace",
         arguments={"workspace_id": "test-cleanup-mcp"},

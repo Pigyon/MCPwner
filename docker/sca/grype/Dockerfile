@@ -1,10 +1,8 @@
-# Stage 1: Install Python deps
 FROM python:3.11-alpine AS deps
 
 COPY docker/sca/grype/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 2: Lean runtime
 FROM python:3.11-alpine
 
 COPY --from=anchore/grype:v0.109.0-nonroot /grype /usr/local/bin/grype

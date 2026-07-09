@@ -1,13 +1,10 @@
-# Stage 1: kics binary + bundled query/library assets
 FROM checkmarx/kics:v2.1.20 AS kics
 
-# Stage 2: Install Python deps
 FROM python:3.11-alpine AS deps
 
 COPY docker/iac/kics/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 3: Lean runtime
 FROM python:3.11-alpine
 
 RUN apk add --no-cache gcompat

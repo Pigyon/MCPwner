@@ -34,12 +34,10 @@ def build_kics_cmd(request: ScanRequest, output_path: Path):
 
     config = request.config or {}
 
-    # Restrict to specific platforms (terraform, k8s, dockerfile, cloudformation, ...)
     if config.get("type"):
         types = config["type"]
         cmd.extend(["-t", ",".join(types) if isinstance(types, list) else types])
 
-    # Comma-separated paths to exclude from the scan
     if config.get("exclude_paths"):
         cmd.extend(["--exclude-paths", ",".join(config["exclude_paths"])])
 

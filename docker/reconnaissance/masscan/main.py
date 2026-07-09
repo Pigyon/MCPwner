@@ -20,7 +20,6 @@ VERSION_CMD = ["masscan", "--version"]
 
 def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     """Build Masscan scan command."""
-    # Get target from config
     target = ""
     if request.config:
         target = request.config.get("target", "")
@@ -30,14 +29,10 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
 
     # Resolve hostname to IP if needed (masscan doesn't resolve hostnames)
     try:
-        # Check if target is already an IP address
         socket.inet_aton(target)
         resolved_target = target
     except socket.error:
-        # Not an IP, try to resolve hostname. Docker's embedded DNS resolver
-        # (127.0.0.11) occasionally returns transient "Temporary failure in
-        # name resolution" errors under load, so retry a few times with a
-        # short backoff before giving up.
+        # Docker DNS (127.0.0.11) can transiently fail under load; retry with backoff.
         resolved_target = None
         last_error = None
         for attempt in range(3):
@@ -52,33 +47,25 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
         if resolved_target is None:
             raise ValueError(f"Failed to resolve hostname {target}: {last_error}")
 
-    # Get ports (default to common ports)
     ports = "1-1000"
     if request.config:
         ports = request.config.get("ports", ports)
 
-    # Masscan command with JSON output (-oJ)
-    # Correct syntax: masscan -p<ports> --rate <rate> <target> -oJ <output>
     cmd = ["masscan", "-p", ports]
 
-    # Add optional parameters before target
     if request.config:
-        # Rate limit (packets per second, default to 100 for safety)
         rate = request.config.get("rate", 100)
         cmd.extend(["--rate", str(rate)])
 
-        # Add exclude targets
         exclude = request.config.get("exclude")
         if exclude:
             cmd.extend(["--exclude", exclude])
 
-        # Add banners (grab service banners)
         if request.config.get("banners", False):
             cmd.append("--banners")
     else:
         cmd.extend(["--rate", "100"])
 
-    # Add resolved target and output file
     cmd.append(resolved_target)
     cmd.extend(["-oJ", str(output_path)])
 

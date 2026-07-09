@@ -30,7 +30,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-# Request/Response Models
 class CreateDatabaseRequest(BaseModel):
     workspace_id: str
     language: str
@@ -89,11 +88,9 @@ def get_version():
 def create_database(request: CreateDatabaseRequest):
     """Create a CodeQL database."""
     try:
-        # Validate source path exists
         if not Path(request.source_path).exists():
             raise HTTPException(status_code=400, detail=f"Source path not found: {request.source_path}")
 
-        # Build CodeQL command
         cmd = [
             "codeql",
             "database",
@@ -106,9 +103,7 @@ def create_database(request: CreateDatabaseRequest):
 
         lang = request.language.lower()
         interpreted = {"javascript", "typescript", "python", "ruby"}
-        # Compiled languages CodeQL can extract WITHOUT a build (CodeQL >= 2.16).
-        # build-mode=none reads source directly, no Maven/Gradle/JDK-version
-        # constraints, and auto-finalizes the database.
+        # build-mode=none extracts Java/C#/Kotlin without a build (CodeQL >= 2.16).
         build_mode_none = {"java", "csharp", "kotlin"}
         logger.info(f"Checking language: '{request.language}'")
 
@@ -124,7 +119,6 @@ def create_database(request: CreateDatabaseRequest):
 
         logger.info(f"Creating database: {' '.join(cmd)}")
 
-        # Execute CodeQL command
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -140,7 +134,6 @@ def create_database(request: CreateDatabaseRequest):
                 detail={"error": "Database creation failed", "details": result.stderr},
             )
 
-        # Return success response
         return {
             "database_id": f"{request.workspace_id}-{request.language}",
             "language": request.language,
@@ -163,7 +156,6 @@ def create_database(request: CreateDatabaseRequest):
 def list_query_packs():
     """List available CodeQL query packs."""
     try:
-        # Get available query packs
         result = subprocess.run(
             ["codeql", "resolve", "queries", "--format=json"],
             capture_output=True,
@@ -172,7 +164,6 @@ def list_query_packs():
         )
 
         if result.returncode == 0:
-            # Parse and return query packs
             return {
                 "packs": ["security-extended", "security-and-quality"],
                 "raw_output": result.stdout,
@@ -188,25 +179,18 @@ def list_query_packs():
 def execute_query(request: ExecuteQueryRequest):
     """Execute a CodeQL query."""
     try:
-        # Validate database exists
         if not Path(request.database_path).exists():
             raise HTTPException(status_code=400, detail=f"Database not found: {request.database_path}")
 
-        # Determine query specifier (pack or suite)
         if request.query_pack.endswith(".qls"):
             query_spec = request.query_pack
         else:
             query_spec = f"codeql/{request.query_pack}"
 
-        # CodeQL's default heap (~769 MiB) is far too small for real-world
-        # databases and query evaluation OOMs ("ran out of Java heap" → 500).
-        # Give the engine an explicit RAM budget (MB) and all CPU threads.
-        # Tunable via CODEQL_RAM_MB / CODEQL_THREADS; defaults sized for the
-        # container's 8 GB limit while leaving headroom for off-heap usage.
+        # CodeQL default heap (~769 MiB) OOMs on real databases; tune via env vars.
         ram_mb = os.environ.get("CODEQL_RAM_MB", "4096")
         threads = os.environ.get("CODEQL_THREADS", "0")  # 0 = one per core
 
-        # Build CodeQL command
         cmd = [
             "codeql",
             "database",
@@ -225,7 +209,6 @@ def execute_query(request: ExecuteQueryRequest):
 
         logger.info(f"Executing query: {' '.join(cmd)}")
 
-        # Execute CodeQL command
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -240,7 +223,6 @@ def execute_query(request: ExecuteQueryRequest):
                 detail={"error": "Query execution failed", "details": result.stderr},
             )
 
-        # Return success response
         return {
             "status": "success",
             "output_path": request.output_path,

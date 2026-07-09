@@ -80,7 +80,6 @@ class WorkspaceService:
             created_at=datetime.now(timezone.utc),
         )
 
-        # Handle virtual workspace (for tools that don't have source code)
         if source_type == "virtual":
             try:
                 workspace_dir = str(Path(base_path) / workspace.workspace_id)
@@ -94,7 +93,6 @@ class WorkspaceService:
                 logger.error(f"Failed to create virtual workspace: {e}")
                 raise
 
-        # Handle GitHub clone
         elif source_type == "github":
             try:
                 repo_path = clone_repository(source, workspace.workspace_id, base_path)
@@ -108,7 +106,6 @@ class WorkspaceService:
                 logger.error(f"Failed to clone repository: {e}")
                 raise
 
-        # Handle local mount (Docker-based: copies files to shared volume)
         elif source_type == "local":
             try:
                 mount_info = setup_local_mount(source, workspace.workspace_id, base_path)
@@ -139,7 +136,6 @@ class WorkspaceService:
                 logger.error(f"Failed to setup local mount: {e}")
                 raise
 
-        # Handle local_path (native: points directly at local codebase, no copy)
         elif source_type == "local_path":
             try:
                 validated_path = _validate_local_codebase(source)
@@ -249,7 +245,6 @@ class WorkspaceService:
             "details": [],
         }
 
-        # Handle file deletion
         if delete_files:
             if workspace.is_local_mount() or workspace.is_local_path():
                 # For local workspaces, only delete the reports/metadata dir, never the user's code
@@ -282,7 +277,6 @@ class WorkspaceService:
         else:
             result["details"].append("File deletion skipped (delete_files=False)")
 
-        # Handle metadata deletion
         if delete_metadata:
             if self.repository.delete(workspace_id):
                 result["deleted_metadata"] = True

@@ -7,7 +7,6 @@ from common.models import ScanRequest
 def build_pmd_cmd(request: ScanRequest, output_path: Path):
     full_scan_path = Path(request.workspace_path) / request.scan_path
 
-    # PMD 7.x uses: pmd check --dir <path> --rulesets <rulesets> --format sarif --report-file <output>
     cmd = [
         "pmd",
         "check",
@@ -21,11 +20,9 @@ def build_pmd_cmd(request: ScanRequest, output_path: Path):
 
     config = request.config or {}
 
-    # Add rulesets
     if "rulesets" in config and config["rulesets"]:
         cmd.extend(["--rulesets", ",".join(config["rulesets"])])
     else:
-        # Default rulesets if none provided
         cmd.extend(["--rulesets", "rulesets/java/quickstart.xml"])
 
     return cmd

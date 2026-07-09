@@ -14,9 +14,7 @@ logger = logging.getLogger(__name__)
 # Maximum serialized size of query results returned to the LLM.
 MAX_RESULT_BYTES = 10 * 1024 * 1024
 
-# A CodeQL analysis often exceeds the 50s HTTP client timeout and finishes in
-# the background. How long to keep polling the shared volume for the SARIF
-# output before giving up (the codeql subprocess itself caps at 600s).
+# CodeQL often exceeds the 50s MCP timeout; poll the shared SARIF path up to 600s.
 QUERY_BACKGROUND_WAIT_SECONDS = 600
 QUERY_POLL_INTERVAL_SECONDS = 3
 
@@ -43,23 +41,17 @@ def execute_query(
         Dictionary with query results and findings
     """
     try:
-        # Get database metadata from CodeQL service
         codeql_service = get_codeql_service()
 
-        # Handle custom query execution
         if custom_query:
             logger.debug(f"Custom query provided (length: {len(custom_query)})")
 
         if query_type == "custom":
-            # For now, custom queries are not fully supported in remote execution mode
-            # unless we implement a way to send the query content to the executor
             return {
                 "status": "error",
                 "error": "Custom queries are not currently supported in this environment configuration.",
             }
 
-        # Create temporary SARIF output file path (in the shared workspace volume)
-        # We assume /workspaces is shared between mcpwner and codeql-executor
         sarif_filename = f"{workspace_id}_{database_id}_{int(time.time())}.sarif"
         repo = get_workspace_repository()
         ws = repo.find_by_id(workspace_id)
@@ -70,12 +62,8 @@ def execute_query(
         try:
             start_time = time.time()
 
-            # Execute via CodeQL Service (HTTP to codeql-executor)
             logger.info(f"Executing query pack {query_pack} via CodeQL service")
 
-            # The service call should handle the execution remotely
-            # We pass the output_path where we expect the result to be written
-            # Since both containers share /workspaces, the executor writes it there, and we read it here.
             exec_result = codeql_service.execute_query(
                 workspace_id=workspace_id,
                 database_id=database_id,
@@ -83,12 +71,6 @@ def execute_query(
                 output_path=sarif_output,
             )
 
-            # A real CodeQL analysis (e.g. security-extended on a large repo)
-            # routinely takes longer than the 50s HTTP client timeout, so the
-            # service call returns status="backgrounded" while the query keeps
-            # running in the codeql-executor container and writes the SARIF on
-            # completion. Poll the shared volume for the output instead of
-            # failing immediately on a not-yet-written file.
             if not Path(sarif_output).exists():
                 backgrounded = (
                     isinstance(exec_result, dict) and exec_result.get("status") == "backgrounded"
@@ -105,7 +87,6 @@ def execute_query(
 
             duration = time.time() - start_time
 
-            # Check if output file exists
             if not Path(sarif_output).exists():
                 return {
                     "status": "error",
@@ -116,9 +97,7 @@ def execute_query(
                     "duration_seconds": round(duration, 2),
                 }
 
-            # Parse SARIF output. When the query finished in the background the
-            # file may have only just appeared, so retry briefly in case we
-            # caught it mid-write.
+            # Retry briefly: backgrounded queries may land mid-write.
             sarif_data = None
             for attempt in range(5):
                 try:
@@ -130,10 +109,8 @@ def execute_query(
                         raise
                     time.sleep(2)
 
-            # Extract findings
             findings = parse_sarif(sarif_data, workspace_id, ws_path)
 
-            # Enforce result size limit
             result_json = json.dumps(findings)
             if len(result_json) > MAX_RESULT_BYTES:
                 return {
@@ -154,7 +131,6 @@ def execute_query(
             }
 
         finally:
-            # Cleanup temporary file
             Path(sarif_output).unlink(missing_ok=True)
 
     except Exception:
@@ -184,7 +160,6 @@ def parse_sarif(
             rule_id = result.get("ruleId", "unknown")
             rule = rules.get(rule_id, {})
 
-            # Get primary location
             locations = result.get("locations", [])
             if not locations:
                 continue
@@ -193,7 +168,6 @@ def parse_sarif(
             artifact_location = primary_location.get("artifactLocation", {})
             region = primary_location.get("region", {})
 
-            # Sanitize file path (remove /workspaces/ prefix)
             file_path = artifact_location.get("uri", "")
             file_path = sanitize_path(file_path, workspace_id, ws_path)
 
@@ -232,12 +206,10 @@ def sanitize_path(path: str, workspace_id: str, ws_path: Optional[str] = None) -
         relative = path[len(ws_path) :]
         return relative.lstrip("/")
 
-    # Remove /workspaces/{workspace_id}/ prefix
     prefix = f"/workspaces/{workspace_id}/"
     if path.startswith(prefix):
         return path[len(prefix) :]
 
-    # Remove /workspaces/ prefix
     if path.startswith("/workspaces/"):
         parts = path.split("/", 3)
         if len(parts) > 3:

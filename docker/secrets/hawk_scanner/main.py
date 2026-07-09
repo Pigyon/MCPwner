@@ -19,9 +19,7 @@ VERSION_CMD = ["pip", "show", "hawk-scanner"]
 
 def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
     """Build Hawk-Scanner scan command."""
-    # hawk_scanner fs --connection-json ... --json output.json
 
-    # We need to construct connection json for fs scan
     scan_path = Path(request.workspace_path)
     if request.scan_path:
         scan_path = scan_path / request.scan_path

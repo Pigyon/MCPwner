@@ -3,10 +3,7 @@ FROM opensecurity/nodejsscan:v4.8@sha256:1f0c0c18f82c1771fba4f9712670d61fd501316
 
 USER root
 
-# This base is Debian 11 (bullseye, Python 3.9) which predates PEP 668 — it has
-# no EXTERNALLY-MANAGED marker and no ensurepip/venv, so a plain pip install into
-# the system interpreter is correct here (no --break-system-packages needed, and
-# a venv can't be created without python3-venv which the base lacks).
+# Bullseye predates PEP 668; plain system pip is correct (no venv bootstrap without python3-venv).
 COPY docker/sast/nodejsscan/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

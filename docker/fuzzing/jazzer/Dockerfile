@@ -1,14 +1,11 @@
-# Jazzer fuzzes JVM bytecode, so the image carries a full JDK (also lets the
-# testing plan compile a harness in-place). The MCPwner HTTP service runs in an
-# isolated Python venv; the jazzer driver is invoked as a subprocess.
+# Full JDK for in-image harness builds; MCPwner service runs in Python venv, shells out to jazzer.
 FROM eclipse-temurin:17-jdk-jammy
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-venv curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Jazzer standalone driver (binary + agent/standalone jars) pinned to the
-# requested release. The tarball extracts flat, so /opt/jazzer goes on PATH.
+# Jazzer standalone tarball extracts flat; /opt/jazzer is on PATH.
 ARG JAZZER_VERSION=0.30.0
 RUN mkdir -p /opt/jazzer \
     && curl -fsSL "https://github.com/CodeIntelligenceTesting/jazzer/releases/download/v${JAZZER_VERSION}/jazzer-linux-x86-64.tar.gz" \

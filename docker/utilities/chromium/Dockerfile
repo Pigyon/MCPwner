@@ -3,9 +3,7 @@ FROM python:3.12-slim
 COPY docker/utilities/chromium/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# playwright install --with-deps fails on Debian Trixie: it falls back to an Ubuntu
-# package list that includes ttf-unifont and ttf-ubuntu-font-family, which don't exist
-# here. Install the Chromium runtime deps manually then fetch the browser binary only.
+# playwright --with-deps fails on Trixie (Ubuntu font packages missing); install deps manually.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation \
     libasound2t64 \

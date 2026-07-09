@@ -1,4 +1,3 @@
-# Stage 1: Download dalfox binary
 FROM alpine:3.19 AS builder
 
 ARG DALFOX_VERSION=2.9.3
@@ -9,13 +8,11 @@ RUN apk add --no-cache curl \
     && chmod +x /usr/local/bin/dalfox \
     && rm /tmp/dalfox.tar.gz
 
-# Stage 2: Install Python deps
 FROM python:3.11-alpine AS deps
 
 COPY docker/dast/dalfox/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 3: Lean runtime
 FROM alpine:3.19
 
 RUN apk add --no-cache python3 curl

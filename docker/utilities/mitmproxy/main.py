@@ -89,9 +89,7 @@ def request(flow):
 {header_lines}
 
 def response(flow):
-    # get_text(strict=False) falls back to latin-1 instead of raising ValueError
-    # on responses without an explicit charset.  The outer try prevents any hook
-    # failure from silently swallowing the flow and leaving the capture file empty.
+    # get_text(strict=False) avoids charset errors; outer try keeps capture from going empty.
     try:
         try:
             body = flow.response.get_text(strict=False)[:500] if flow.response else ""
@@ -154,12 +152,10 @@ def scan(request: ScanRequest):
             capture_path = os.path.join(tmpdir, "flows.json")
             addon_path = os.path.join(tmpdir, "addon.py")
 
-            # Write the addon script (user-supplied or default capture script)
             addon_source = user_script if user_script else _default_addon(capture_path, modify_headers)
             with open(addon_path, "w") as f:
                 f.write(addon_source)
 
-            # Start mitmdump
             proc = subprocess.Popen(
                 [
                     "mitmdump",
@@ -174,7 +170,6 @@ def scan(request: ScanRequest):
                 stderr=subprocess.PIPE,
             )
 
-            # Allow mitmdump to bind
             time.sleep(2)
 
             proxy_cfg = {
@@ -182,7 +177,6 @@ def scan(request: ScanRequest):
                 "https": f"http://localhost:{proxy_port}",
             }
 
-            # Send each target through the proxy
             intercepted = []
             for url in all_targets:
                 try:
@@ -197,7 +191,6 @@ def scan(request: ScanRequest):
                 except Exception as e:
                     intercepted.append({"url": url, "error": str(e)})
 
-            # Give the addon time to flush
             time.sleep(1)
             proc.send_signal(signal.SIGTERM)
             try:
@@ -205,7 +198,6 @@ def scan(request: ScanRequest):
             except subprocess.TimeoutExpired:
                 proc.kill()
 
-            # Read captured flows
             captured_flows = []
             if os.path.exists(capture_path):
                 try:
@@ -214,7 +206,6 @@ def scan(request: ScanRequest):
                 except Exception:
                     pass
 
-        # Write report to workspace
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
         output_dir = _report_dir(request.workspace_path, request.report_base)
         output_dir.mkdir(parents=True, exist_ok=True)

@@ -33,18 +33,14 @@ def validate_local_path(path: str) -> str:
     Raises:
         LocalMountError: If path is invalid, doesn't exist, or is not a directory
     """
-    # Check if path is absolute
     if not os.path.isabs(path):
         raise LocalMountError(f"Path must be absolute: {path}")
 
-    # Normalize path
     normalized_path = os.path.abspath(os.path.expanduser(path))
 
-    # Check if path exists
     if not os.path.exists(normalized_path):
         raise LocalMountError(f"Path does not exist: {normalized_path}")
 
-    # Check if path is a directory
     if not os.path.isdir(normalized_path):
         raise LocalMountError(f"Path is not a directory: {normalized_path}")
 
@@ -74,10 +70,8 @@ def setup_local_mount(
     Raises:
         LocalMountError: If local path validation fails
     """
-    # Validate local path
     validated_path = validate_local_path(local_path)
 
-    # Determine mount path in container
     mount_path = f"{base_path}/{workspace_id}/source"
 
     return {

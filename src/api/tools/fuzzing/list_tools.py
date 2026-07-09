@@ -14,10 +14,6 @@ from config.languages import (
 logger = logging.getLogger(__name__)
 
 
-# Tool metadata with language support and config options, mirroring the shape
-# returned by sast_list_tools. Source fuzzers are language-specific (one per
-# language already covered by SAST), so the list is filtered by detected
-# language when a workspace_id is supplied.
 FUZZING_TOOLS = {
     "atheris": {
         "name": "Atheris",

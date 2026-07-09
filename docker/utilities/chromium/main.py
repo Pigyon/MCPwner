@@ -119,12 +119,10 @@ async def _analyze_page(
         page.on("pageerror", lambda err: js_errors.append(str(err)))
         page.on("request", lambda req: network_requests.append(req.url))
 
-        # Navigate to target
         try:
             wait_condition = "networkidle" if wait_for == "networkidle" else "domcontentloaded"
             await page.goto(target, wait_until=wait_condition, timeout=timeout_ms)
             if wait_for not in ("networkidle", "domcontentloaded", "load"):
-                # Wait for a specific CSS selector
                 await page.wait_for_selector(wait_for, timeout=timeout_ms)
         except Exception as e:
             logger.warning(f"Navigation issue: {e}")
@@ -143,7 +141,6 @@ async def _analyze_page(
         with contextlib.suppress(Exception):
             dom_snippet = (await page.content())[:2000]
 
-        # XSS detection
         xss_findings: List[Dict[str, Any]] = []
         if check_xss:
             for probe in XSS_PROBES:
@@ -215,7 +212,6 @@ def scan(request: ScanRequest):
 
         finding_count = len(page_data["xss_findings"]) + len(page_data["js_errors"])
 
-        # Write report
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
         output_dir = _report_dir(request.workspace_path, request.report_base)
         output_dir.mkdir(parents=True, exist_ok=True)

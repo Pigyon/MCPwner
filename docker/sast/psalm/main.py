@@ -18,9 +18,6 @@ def build_psalm_cmd(request: ScanRequest, output_path: Path):
     vendor_dir = full_scan_path / "vendor"
 
     if composer_json.exists():
-        # Always try to install/update dependencies to ensure consistency in the container
-        # Use --dry-run first? No, just install.
-        # If vendor exists, composer install is usually fast.
         logger.info("Ensuring dependencies are installed...")
         try:
             install_cmd = [
@@ -34,23 +31,17 @@ def build_psalm_cmd(request: ScanRequest, output_path: Path):
                 "--no-progress",
             ]
 
-            # If vendor exists, we might want to optimize, but let's be safe for now.
             install_result = subprocess.run(
                 install_cmd, cwd=str(full_scan_path), capture_output=True, text=True, check=True
             )
             logger.info("Composer install completed successfully")
         except subprocess.CalledProcessError as e:
             logger.error(f"Composer install failed: {e.stderr}")
-            # We don't abort here, as the scan might still work partially,
-            # or the user might have provided vendor in a way we didn't expect.
-            # But we log it.
+            # Non-fatal: scan may still work with a partial vendor tree.
 
-    # Initialize basic psalm config if none exists
-    # We check for psalm.xml or psalm.xml.dist
     if not (full_scan_path / "psalm.xml").exists() and not (full_scan_path / "psalm.xml.dist").exists():
         logger.info("Initializing Psalm config from fallback...")
 
-        # Copy the default config from the service directory if available
         service_config = Path("/service/psalm.xml")
         if service_config.exists():
             try:
@@ -59,7 +50,6 @@ def build_psalm_cmd(request: ScanRequest, output_path: Path):
             except Exception as e:
                 logger.error(f"Failed to copy default config: {e}")
 
-        # If copy failed or config missing, try init
         if not (full_scan_path / "psalm.xml").exists():
             logger.info("Running psalm --init...")
             subprocess.run(
@@ -78,13 +68,6 @@ def build_psalm_cmd(request: ScanRequest, output_path: Path):
         # otherwise crashes trying to create its cache directory.
         "--no-cache",
     ]
-
-    # Psalm runs from the project root usually
-    # We need to execute it inside the directory
-    # But our base service runs subprocess with default cwd.
-    # For Psalm, it's better to pass the target directory as an argument if supported,
-    # or rely on the fact that we might need to change CWD.
-    # Psalm accepts file/directory arguments.
 
     cmd.append(str(full_scan_path))
 

@@ -1,13 +1,10 @@
-# Stage 1: hadolint binary (musl-static, from the alpine variant)
 FROM hadolint/hadolint:v2.14.0-alpine AS hadolint
 
-# Stage 2: Install Python deps
 FROM python:3.11-alpine AS deps
 
 COPY docker/iac/hadolint/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 3: Lean runtime
 FROM python:3.11-alpine
 
 COPY --from=hadolint /bin/hadolint /usr/local/bin/hadolint

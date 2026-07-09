@@ -1,4 +1,4 @@
-# Stage 1: Install Python deps (hawk-scanner has native deps needing build tools)
+# hawk-scanner native deps need gcc + libglib2.0-dev in the builder stage.
 FROM python:3.11-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY docker/secrets/hawk_scanner/requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 2: Slim runtime (needs libgl1 + libglib2.0-0 at runtime)
+# Runtime needs libgl1 + libglib2.0-0 for hawk-scanner's OpenCV stack.
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -18,7 +18,6 @@ CODEQL_LANGUAGES: Dict[str, List[str]] = {
     "typescript": [".ts", ".tsx"],
 }
 
-# SAST tool supported languages (kept in alphabetical order)
 SEMGREP_LANGUAGES: List[str] = [
     "c",
     "cpp",
@@ -133,8 +132,7 @@ OPENGREP_LANGUAGES: List[str] = [
 
 JAVASCRIPT_LANGUAGES: List[str] = ["javascript", "typescript", "jsx", "tsx"]
 
-# Source fuzzing engines — one per language already covered by SAST. The list
-# drives fuzzing_list_tools' language filtering, mirroring the SAST tools.
+# Fuzzing language lists mirror SAST coverage for list_tools filtering.
 ATHERIS_LANGUAGES: List[str] = ["python"]
 JAZZER_LANGUAGES: List[str] = ["java", "kotlin"]
 JAZZERJS_LANGUAGES: List[str] = ["javascript", "typescript"]

@@ -37,8 +37,8 @@ class ToolSpec:
     """Describes how to reach and classify a single scan tool."""
 
     name: str
-    category: str  # one of ToolCategory values
-    config_path: Tuple[str, ...]  # keys to walk in config.yaml to find service_url
+    category: str
+    config_path: Tuple[str, ...]
     default_url: str
 
 
@@ -46,8 +46,7 @@ def _spec(name: str, category: ToolCategory, config_path: Tuple[str, ...], defau
     return ToolSpec(name=name, category=category.value, config_path=config_path, default_url=default_url)
 
 
-# Order within each category is LLM-facing (it drives SUPPORTED_TOOLS), so it is
-# preserved here. Dict insertion order is guaranteed in Python 3.7+.
+# Order within each category is LLM-facing (drives SUPPORTED_TOOLS).
 _SAST = ToolCategory.SAST
 _SCA = ToolCategory.SCA
 _SECRETS = ToolCategory.SECRETS
@@ -58,7 +57,6 @@ _FUZZING = ToolCategory.FUZZING
 _DAST = ToolCategory.DAST
 
 _SPECS: Tuple[ToolSpec, ...] = (
-    # --- SAST ---
     _spec("semgrep", _SAST, ("semgrep",), "http://semgrep:8082"),
     _spec("bandit", _SAST, ("bandit",), "http://bandit:8083"),
     _spec("gosec", _SAST, ("gosec",), "http://gosec:8084"),
@@ -69,18 +67,15 @@ _SPECS: Tuple[ToolSpec, ...] = (
     _spec("joern", _SAST, ("joern",), "http://joern:8089"),
     _spec("yasa", _SAST, ("yasa",), "http://yasa:8095"),
     _spec("opengrep", _SAST, ("opengrep",), "http://opengrep:8096"),
-    # --- SCA ---
     _spec("osv-scanner", _SCA, ("osv_scanner",), "http://osv-scanner:8100"),
     _spec("grype", _SCA, ("grype",), "http://grype:8101"),
     _spec("retirejs", _SCA, ("retirejs",), "http://retirejs:8104"),
     _spec("syft", _SCA, ("syft",), "http://syft:8102"),
-    # --- Secrets ---
     _spec("gitleaks", _SECRETS, ("gitleaks",), "http://gitleaks:8090"),
     _spec("trufflehog", _SECRETS, ("trufflehog",), "http://trufflehog:8091"),
     _spec("whispers", _SECRETS, ("whispers",), "http://whispers:8092"),
     _spec("detect-secrets", _SECRETS, ("detect_secrets",), "http://detect-secrets:8093"),
     _spec("hawk-scanner", _SECRETS, ("hawk_scanner",), "http://hawk-scanner:8094"),
-    # --- Reconnaissance ---
     _spec("subfinder", _RECON, ("reconnaissance", "subfinder"), "http://subfinder:8110"),
     _spec("amass", _RECON, ("reconnaissance", "amass"), "http://amass:8111"),
     _spec("httpx", _RECON, ("reconnaissance", "httpx"), "http://httpx:8112"),
@@ -93,23 +88,19 @@ _SPECS: Tuple[ToolSpec, ...] = (
     _spec("gau", _RECON, ("reconnaissance", "gau"), "http://gau:8115"),
     _spec("wafw00f", _RECON, ("reconnaissance", "wafw00f"), "http://wafw00f:8120"),
     _spec("kiterunner", _RECON, ("reconnaissance", "kiterunner"), "http://kiterunner:8121"),
-    # --- Utilities ---
     _spec("wiremock", _UTIL, ("utilities", "wiremock"), "http://wiremock:8130"),
     _spec("mitmproxy", _UTIL, ("utilities", "mitmproxy"), "http://mitmproxy:8131"),
     _spec("fuzzer", _UTIL, ("utilities", "fuzzer"), "http://fuzzer:8132"),
     _spec("chromium", _UTIL, ("utilities", "chromium"), "http://chromium:8133"),
-    # --- Infrastructure & IaC Security ---
     _spec("checkov", _IAC, ("iac", "checkov"), "http://checkov:8140"),
     _spec("kics", _IAC, ("iac", "kics"), "http://kics:8141"),
     _spec("terrascan", _IAC, ("iac", "terrascan"), "http://terrascan:8142"),
     _spec("tfsec", _IAC, ("iac", "tfsec"), "http://tfsec:8143"),
     _spec("hadolint", _IAC, ("iac", "hadolint"), "http://hadolint:8144"),
-    # --- Source Fuzzing ---
     _spec("atheris", _FUZZING, ("fuzzing", "atheris"), "http://atheris:8150"),
     _spec("jazzer", _FUZZING, ("fuzzing", "jazzer"), "http://jazzer:8151"),
     _spec("jazzerjs", _FUZZING, ("fuzzing", "jazzerjs"), "http://jazzerjs:8152"),
     _spec("php-fuzzer", _FUZZING, ("fuzzing", "php_fuzzer"), "http://php-fuzzer:8153"),
-    # --- DAST ---
     _spec("sqlmap", _DAST, ("dast", "sqlmap"), "http://sqlmap:8160"),
     _spec("nosqlmap", _DAST, ("dast", "nosqlmap"), "http://nosqlmap:8161"),
     _spec("commix", _DAST, ("dast", "commix"), "http://commix:8162"),
@@ -134,7 +125,6 @@ TOOL_ALIASES: Dict[str, str] = {
     "detect_secrets": "detect-secrets",
     "osv": "osv-scanner",
     "osv_scanner": "osv-scanner",
-    # Source fuzzing — accept the spellings used in the README / docs.
     "jazzer.js": "jazzerjs",
     "jazzer-js": "jazzerjs",
     "jazzer_js": "jazzerjs",

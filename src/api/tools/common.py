@@ -37,9 +37,6 @@ def filter_tools_by_language(
     workspace_id: Optional[str] = None,
     show_all: bool = False,
 ) -> Dict[str, Any]:
-    """
-    Filter tools for a category by workspace languages.
-    """
     healthy = set(tools_for_category(category))
     available_tools = {}
     for k, v in all_tools_dict.items():
@@ -145,7 +142,7 @@ def get_report(category: str, tool: str, workspace_id: str) -> Dict[str, Any]:
 def create_scan_tool(category: str):
     """Factory to create a scan tool function for FastMCP."""
     if category in ("dast", "utilities", "reconnaissance"):
-        # Custom scan tools that take target, auto-create workspaces, and have custom target validation
+
         def scan_tool(
             tool: str,
             target: Optional[str] = None,
@@ -160,7 +157,6 @@ def create_scan_tool(category: str):
             if tool not in supported:
                 return _unsupported(tool, supported)
 
-            # Target validation
             is_chained = (
                 category == "reconnaissance"
                 and config
@@ -175,7 +171,6 @@ def create_scan_tool(category: str):
             elif is_chained:
                 pass
             elif not (category == "dast" and tool == "interactsh-client"):
-                # Missing target
                 expected_format = (
                     "example.com" if category == "reconnaissance" else "https://example.com/page"
                 )
@@ -216,7 +211,6 @@ Args:
 """
         return scan_tool
 
-    # Generic scan tool
     def scan_tool(
         tool: str,
         workspace_id: str,

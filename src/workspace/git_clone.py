@@ -50,24 +50,20 @@ def validate_github_url(source: str) -> str:
     Raises:
         RepositoryError: If URL format is invalid
     """
-    # Remove trailing .git if present
     source = source.rstrip("/")
     if source.endswith(".git"):
         source = source[:-4]
 
-    # Pattern 1: https://github.com/owner/repo
     if source.startswith("https://github.com/"):
         match = re.match(r"^https://github\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_.-]+)$", source)
         if match:
             return source
 
-    # Pattern 2: github.com/owner/repo
     elif source.startswith("github.com/"):
         match = re.match(r"^github\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_.-]+)$", source)
         if match:
             return f"https://{source}"
 
-    # Pattern 3: owner/repo
     else:
         match = re.match(r"^([a-zA-Z0-9_-]+)/([a-zA-Z0-9_.-]+)$", source)
         if match:
@@ -101,10 +97,8 @@ def clone_repository(
         RepositoryError: If clone fails (network, not found, invalid URL)
         CloneTimeoutError: If clone operation exceeds timeout
     """
-    # Validate and normalize URL
     validated_url = validate_github_url(github_url)
 
-    # Create target directory
     target_path = Path(base_path) / workspace_id / "source"
     target_path.mkdir(parents=True, exist_ok=True)
 
