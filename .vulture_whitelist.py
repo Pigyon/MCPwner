@@ -14,3 +14,11 @@ cleanup_old_workspaces
 Config
 from_attributes
 status  # Model field
+
+# False positives
+get_workspace
+handlers
+__doc__
+init_git
+config_git
+commit_git
