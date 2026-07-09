@@ -161,3 +161,16 @@ def resolve_tool_name(name: str) -> str:
 def tools_for_category(category: str) -> List[str]:
     """Return tool names for a category, in registry (LLM-facing) order."""
     return [spec.name for spec in _SPECS if spec.category == category]
+
+
+HEALTHY_TOOLS = set()
+
+
+def filter_unhealthy_tools(healthy_names: set):
+    """Update the registry to only include healthy tools."""
+    global _SPECS, HEALTHY_TOOLS
+    HEALTHY_TOOLS.clear()
+    HEALTHY_TOOLS.update(healthy_names)
+    _SPECS = tuple(spec for spec in _SPECS if spec.name in healthy_names)
+    TOOL_REGISTRY.clear()
+    TOOL_REGISTRY.update({spec.name: spec for spec in _SPECS})

@@ -58,9 +58,7 @@ def _count_findings(report_path: Path) -> int:
     return 0
 
 
-def _wait_for_fresh_report(
-    workspace_id: str, tool: str, since: float, timeout: float
-) -> Optional[Path]:
+def _wait_for_fresh_report(workspace_id: str, tool: str, since: float, timeout: float) -> Optional[Path]:
     """Poll for a report written at/after ``since`` (epoch seconds).
 
     A backgrounded scan keeps running in its tool container after the MCP client
@@ -209,9 +207,7 @@ def run_reconnaissance_chain(
                     wait_timeout = tool_config.get(
                         "background_wait_seconds", DEFAULT_BACKGROUND_WAIT_SECONDS
                     )
-                    logger.info(
-                        f"{tool} backgrounded — waiting up to {wait_timeout}s for its report"
-                    )
+                    logger.info(f"{tool} backgrounded — waiting up to {wait_timeout}s for its report")
                     report = _wait_for_fresh_report(workspace_id, tool, start, wait_timeout)
                     if report:
                         result = {
@@ -220,8 +216,7 @@ def run_reconnaissance_chain(
                             "report_path": str(report),
                         }
                         logger.info(
-                            f"{tool} report landed: {report} "
-                            f"({result['finding_count']} findings)"
+                            f"{tool} report landed: {report} ({result['finding_count']} findings)"
                         )
                     else:
                         logger.warning(

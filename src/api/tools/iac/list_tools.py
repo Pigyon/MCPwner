@@ -1,5 +1,7 @@
 """List available Infrastructure-as-Code (IaC) tools."""
 
+from config.tools import tools_for_category
+
 # Tool metadata, mirroring the shape returned by the SAST/SCA/Secrets list_tools
 # tools. IaC scanners are driven by file type (Terraform, Kubernetes, Dockerfile,
 # etc.) rather than a detected programming language, so there is nothing to
@@ -54,4 +56,6 @@ def iac_list_tools() -> dict:
     Returns:
         Dictionary with available tools and their metadata
     """
-    return {"tools": IAC_TOOLS, "filtered": False}
+    healthy = set(tools_for_category("iac"))
+    available_tools = {k: v for k, v in IAC_TOOLS.items() if k in healthy}
+    return {"tools": available_tools, "filtered": True}

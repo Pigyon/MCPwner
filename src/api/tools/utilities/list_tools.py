@@ -2,6 +2,8 @@
 
 from typing import Optional
 
+from config.tools import tools_for_category
+
 UTILITIES_TOOLS = {
     "linguist": {
         "name": "Linguist",
@@ -82,7 +84,9 @@ def utilities_list_tools(workspace_id: Optional[str] = None, show_all: bool = Fa
         Dictionary with available tools and their metadata
     """
     try:
-        return {"tools": UTILITIES_TOOLS, "filtered": False}
+        healthy = set(tools_for_category("utilities"))
+        available_tools = {k: v for k, v in UTILITIES_TOOLS.items() if k in healthy}
+        return {"tools": available_tools, "filtered": False}
 
     except Exception as e:
         return {"status": "error", "error": str(e)}

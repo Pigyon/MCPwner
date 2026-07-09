@@ -25,8 +25,7 @@ _SPECIAL_TOOL_HINTS = {
         "(see list_query_packs and list_databases)."
     ),
     "linguist": (
-        "Linguist is not a scan tool. Use detect_languages to identify a "
-        "workspace's languages."
+        "Linguist is not a scan tool. Use detect_languages to identify a workspace's languages."
     ),
 }
 

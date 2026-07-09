@@ -59,8 +59,10 @@ class BaseScanClient:
 
         # Use a shorter timeout by default to prevent an IDE's ~60s MCP timeout from
         # killing the connection. If it times out, the scan continues in the background.
-        timeout_seconds = config.get("mcp_timeout", SCAN_TIMEOUT_SECONDS) if config else SCAN_TIMEOUT_SECONDS
-        
+        timeout_seconds = (
+            config.get("mcp_timeout", SCAN_TIMEOUT_SECONDS) if config else SCAN_TIMEOUT_SECONDS
+        )
+
         logger.info(f"Sending scan request to {self.service_url}/scan with payload: {payload}")
         try:
             response = requests.post(f"{self.service_url}/scan", json=payload, timeout=timeout_seconds)
@@ -71,10 +73,14 @@ class BaseScanClient:
                 )
             return response.json()
         except requests.exceptions.ReadTimeout:
-            logger.warning(f"{self.tool_name} scan exceeded {timeout_seconds}s timeout. It is likely still running in the background.")
+            logger.warning(
+                f"{self.tool_name} scan exceeded {timeout_seconds}s timeout. "
+                "It is likely still running in the background."
+            )
             return {
                 "status": "backgrounded",
-                "message": f"Scan exceeded {timeout_seconds}s MCP timeout and is continuing in the background.",
+                "message": f"Scan exceeded {timeout_seconds}s MCP timeout "
+                "and is continuing in the background.",
                 "next_steps": f"Use the {self.report_tool} tool later to check if the report is ready.",
             }
         except requests.exceptions.ConnectionError as e:

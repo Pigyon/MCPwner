@@ -103,13 +103,11 @@ def execute_query(
             # failing immediately on a not-yet-written file.
             if not Path(sarif_output).exists():
                 backgrounded = (
-                    isinstance(exec_result, dict)
-                    and exec_result.get("status") == "backgrounded"
+                    isinstance(exec_result, dict) and exec_result.get("status") == "backgrounded"
                 )
                 wait_timeout = QUERY_BACKGROUND_WAIT_SECONDS if backgrounded else 30
                 logger.info(
-                    f"SARIF not yet present; polling up to {wait_timeout}s "
-                    f"(backgrounded={backgrounded})"
+                    f"SARIF not yet present; polling up to {wait_timeout}s (backgrounded={backgrounded})"
                 )
                 deadline = time.time() + wait_timeout
                 while time.time() < deadline:

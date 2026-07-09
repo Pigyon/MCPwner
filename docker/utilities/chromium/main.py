@@ -21,6 +21,7 @@ Config options (passed via ScanRequest.config):
 
 import asyncio
 import base64
+import contextlib
 import json
 import logging
 import os
@@ -40,7 +41,7 @@ TOOL_NAME = "chromium"
 TOOL_CATEGORY = "utilities"
 
 XSS_PROBES = [
-    '<script>window.__xss=1</script>',
+    "<script>window.__xss=1</script>",
     '"><img src=x onerror=window.__xss=1>',
     "javascript:void(window.__xss=1)",
 ]
@@ -89,10 +90,7 @@ def _inject_xss_probe(url: str, probe: str) -> List[str]:
     parsed = urlparse(url)
     params = parse_qs(parsed.query, keep_blank_values=True)
     if not params:
-        return [
-            urlunparse(parsed._replace(query=urlencode({p: probe})))
-            for p in _COMMON_PARAMS
-        ]
+        return [urlunparse(parsed._replace(query=urlencode({p: probe}))) for p in _COMMON_PARAMS]
     injected = []
     for key in params:
         modified = {k: (probe if k == key else v[0]) for k, v in params.items()}
@@ -142,10 +140,8 @@ async def _analyze_page(
                 title = ""
 
         dom_snippet = ""
-        try:
+        with contextlib.suppress(Exception):
             dom_snippet = (await page.content())[:2000]
-        except Exception:
-            pass
 
         # XSS detection
         xss_findings: List[Dict[str, Any]] = []
@@ -215,9 +211,7 @@ def scan(request: ScanRequest):
 
         logger.info(f"Analyzing {target} with headless Chromium")
 
-        page_data = asyncio.run(
-            _analyze_page(target, wait_for, check_xss, take_screenshot, timeout_ms)
-        )
+        page_data = asyncio.run(_analyze_page(target, wait_for, check_xss, take_screenshot, timeout_ms))
 
         finding_count = len(page_data["xss_findings"]) + len(page_data["js_errors"])
 
@@ -274,5 +268,6 @@ def get_report(timestamp: str, workspace_path: str, report_base: str = None):
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.getenv("PORT", 8133))
     uvicorn.run(app, host="0.0.0.0", port=port)

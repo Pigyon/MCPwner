@@ -76,8 +76,7 @@ def _default_addon(capture_path: str, modify_headers: Dict[str, str]) -> str:
     """Return a mitmdump addon script that captures flows to a JSON file."""
     if modify_headers:
         header_lines = "\n".join(
-            f'    flow.request.headers["{k}"] = "{v}"'
-            for k, v in modify_headers.items()
+            f'    flow.request.headers["{k}"] = "{v}"' for k, v in modify_headers.items()
         )
     else:
         header_lines = "    pass"
@@ -164,10 +163,12 @@ def scan(request: ScanRequest):
             proc = subprocess.Popen(
                 [
                     "mitmdump",
-                    "--listen-port", str(proxy_port),
+                    "--listen-port",
+                    str(proxy_port),
                     "--ssl-insecure",
                     "--quiet",
-                    "-s", addon_path,
+                    "-s",
+                    addon_path,
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -186,11 +187,13 @@ def scan(request: ScanRequest):
             for url in all_targets:
                 try:
                     resp = requests.get(url, proxies=proxy_cfg, verify=False, timeout=proxy_timeout)
-                    intercepted.append({
-                        "url": url,
-                        "status_code": resp.status_code,
-                        "body_snippet": resp.text[:500],
-                    })
+                    intercepted.append(
+                        {
+                            "url": url,
+                            "status_code": resp.status_code,
+                            "body_snippet": resp.text[:500],
+                        }
+                    )
                 except Exception as e:
                     intercepted.append({"url": url, "error": str(e)})
 
@@ -267,5 +270,6 @@ def get_report(timestamp: str, workspace_path: str, report_base: str = None):
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.getenv("PORT", 8131))
     uvicorn.run(app, host="0.0.0.0", port=port)

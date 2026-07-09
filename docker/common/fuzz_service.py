@@ -42,9 +42,7 @@ def create_fuzzer_app(tool_name: str, engine: str, version_cmd: List[str]):
             if not config.get("target_class"):
                 raise ValueError("config.target_class is required for jazzer")
             if not config.get("classpath"):
-                raise ValueError(
-                    "config.classpath is required for jazzer (compiled classes/jars)"
-                )
+                raise ValueError("config.classpath is required for jazzer (compiled classes/jars)")
         elif not config.get("harness"):
             raise ValueError(f"config.harness is required for {tool_name}")
 

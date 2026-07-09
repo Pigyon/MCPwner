@@ -19,6 +19,7 @@ Note: kiterunner (kr) has no --output-file flag; output is captured from stdout.
 
 import json
 import logging
+import os
 import subprocess
 import tempfile
 from datetime import datetime, timezone
@@ -114,9 +115,7 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                 edata = entry.get("data", "")
                 if not isinstance(edata, str) or not edata:
                     continue
-                if etype == "URL":
-                    targets.add(edata)
-                elif etype == "DNS_NAME":
+                if etype == "URL" or etype == "DNS_NAME":
                     targets.add(edata)
                 elif etype == "OPEN_TCP_PORT":
                     try:
@@ -160,7 +159,9 @@ def _find_latest_report(workspace_root: Path, source_tool: str) -> Optional[Path
 def _write_targets_file(targets: Set[str], workspace_root: Path) -> Path:
     targets_dir = workspace_root / "tmp" / "kiterunner"
     targets_dir.mkdir(parents=True, exist_ok=True)
-    targets_file = Path(tempfile.mktemp(dir=str(targets_dir), suffix=".txt"))
+    fd, tmp_path = tempfile.mkstemp(dir=str(targets_dir), suffix=".txt")
+    targets_file = Path(tmp_path)
+    os.close(fd)
     targets_file.write_text("\n".join(sorted(targets)) + "\n")
     return targets_file
 

@@ -69,10 +69,7 @@ def _resolve(base: Path, rel: Optional[str]) -> Optional[Path]:
 
 def _classpath_arg(base: Path, classpath: Any) -> str:
     """Build a JVM classpath string from a list or ':'-separated config value."""
-    if isinstance(classpath, (list, tuple)):
-        parts = list(classpath)
-    else:
-        parts = str(classpath).split(":")
+    parts = list(classpath) if isinstance(classpath, (list, tuple)) else str(classpath).split(":")
     resolved = [str(_resolve(base, part.strip())) for part in parts if part.strip()]
     return ":".join(resolved)
 
@@ -291,7 +288,7 @@ def run(engine: str, base: Path, out_path: Path, config: Dict[str, Any]) -> Dict
     # when CWD == corpus dir, so the glob above misses them.  Parse "CRASH in
     # <path>!" / "CORPUS CRASH in <path>!" lines to grab the exact file path.
     if engine == "php-fuzzer":
-        for m in re.finditer(r'(?:CORPUS )?CRASH in (.+?)!', combined):
+        for m in re.finditer(r"(?:CORPUS )?CRASH in (.+?)!", combined):
             p = Path(m.group(1).strip())
             if p.is_file() and p not in artifacts:
                 artifacts.append(p)

@@ -114,9 +114,12 @@ def _build_bbot_cmd(
     """
     cmd = [
         "bbot",
-        "-t", target,
-        "-o", output_dir,
-        "-n", scan_name,
+        "-t",
+        target,
+        "-o",
+        output_dir,
+        "-n",
+        scan_name,
         "-y",
         "--no-deps",
     ]
@@ -204,7 +207,11 @@ def _summarize_events(events: List[Dict[str, Any]]) -> Dict[str, Any]:
     ]
     emails = sorted({ev.get("data", "") for ev in by_type.get("EMAIL_ADDRESS", []) if ev.get("data")})
     storage = sorted(
-        {ev.get("data", {}).get("url", str(ev.get("data", ""))) for ev in by_type.get("STORAGE_BUCKET", []) if ev.get("data")}
+        {
+            ev.get("data", {}).get("url", str(ev.get("data", "")))
+            for ev in by_type.get("STORAGE_BUCKET", [])
+            if ev.get("data")
+        }
     )
 
     event_type_counts = {k: len(v) for k, v in sorted(by_type.items())}
@@ -213,20 +220,17 @@ def _summarize_events(events: List[Dict[str, Any]]) -> Dict[str, Any]:
     next_steps = []
     if subdomains and len(subdomains) > 1:
         next_steps.append(
-            "Run 'web-basic' or 'web-thorough' preset against discovered subdomains for HTTP probing and vuln detection"
+            "Run 'web-basic' or 'web-thorough' preset against discovered subdomains "
+            "for HTTP probing and vuln detection"
         )
     if open_ports:
-        next_steps.append(
-            "Run 'nuclei' preset against discovered URLs/ports for vulnerability scanning"
-        )
+        next_steps.append("Run 'nuclei' preset against discovered URLs/ports for vulnerability scanning")
     if urls and not vulns:
         next_steps.append(
             "Run 'web-thorough' or 'paramminer' preset to find hidden parameters and web vulnerabilities"
         )
     if not next_steps:
-        next_steps.append(
-            "Run 'subdomain-enum,web-basic' to discover subdomains and probe web services"
-        )
+        next_steps.append("Run 'subdomain-enum,web-basic' to discover subdomains and probe web services")
 
     return {
         "event_type_counts": event_type_counts,
@@ -316,7 +320,8 @@ def scan(request: ScanRequest):
             logger.error(f"stderr: {result.stderr[-2000:] if result.stderr else 'empty'}")
             return {
                 "status": "error",
-                "error": f"bbot scan did not produce output. stderr: {result.stderr[-500:] if result.stderr else 'none'}",
+                "error": "bbot scan did not produce output. stderr: "
+                f"{result.stderr[-500:] if result.stderr else 'none'}",
                 "stdout": result.stdout[-1000:] if result.stdout else "",
             }
 

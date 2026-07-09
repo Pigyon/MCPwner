@@ -208,6 +208,13 @@ Curated payload and wordlist corpora to back the tools above:
 
 Once Docker containers are running, add MCPwner to your MCP client:
 
+**Important: Dynamic Tool Registration**
+MCPwner uses a modular, opt-in architecture. Security tools are governed by Docker Compose `profiles`.
+1. The `.env` file (`COMPOSE_PROFILES=sast,secrets,reconnaissance,etc`) dictates which containers are brought online. Alternatively, you can override this and launch specific profiles via the CLI: `docker compose --profile sast --profile secrets up -d`.
+2. The MCP server dynamically probes the running containers at startup and registers *only* the healthy tools with your LLM.
+3. If you want to omit specific tools (e.g., `semgrep`), omit its category (`sast`) from `.env` and manually list the other tools you want (`bandit,gosec,codeql`).
+4. **Note:** Tools in the `utilities` category (e.g., Linguist, WireMock, Chromium) are treated as permanent core dependencies. They run unconditionally on `docker compose up -d` to ensure critical cross-tool dependencies (like language detection) always function.
+
 **Configuration File Locations:**
 
 - Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
@@ -403,7 +410,6 @@ MCPwner exposes the following tools through the MCP interface:
 
 - `health_check` - Check server and tool availability
 - `list_tools` - List all available tools and their status
-
 
 ## Security Considerations
 

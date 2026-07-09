@@ -1,5 +1,7 @@
 """List available Secrets tools."""
 
+from config.tools import tools_for_category
+
 # Tool metadata, mirroring the shape returned by the SAST/SCA list_tools tools.
 # Secrets scanners are language-agnostic, so there is nothing to filter on.
 SECRETS_TOOLS = {
@@ -43,4 +45,6 @@ def secrets_list_tools() -> dict:
     Returns:
         Dictionary with available tools and their metadata
     """
-    return {"tools": SECRETS_TOOLS, "filtered": False}
+    healthy = set(tools_for_category("secrets"))
+    available_tools = {k: v for k, v in SECRETS_TOOLS.items() if k in healthy}
+    return {"tools": available_tools, "filtered": True}

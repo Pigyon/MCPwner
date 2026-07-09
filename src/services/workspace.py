@@ -10,8 +10,8 @@ from typing import Any, Dict, List
 
 from models import Workspace
 from repositories.workspace import WorkspaceRepository
-from workspace.local_mount import LocalMountError, setup_local_mount
 from workspace.git_clone import RepositoryError, clone_repository
+from workspace.local_mount import LocalMountError, setup_local_mount
 
 logger = logging.getLogger(__name__)
 

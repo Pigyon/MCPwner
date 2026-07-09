@@ -1,5 +1,7 @@
 """List available DAST tools."""
 
+from config.tools import tools_for_category
+
 DAST_TOOLS = {
     "sqlmap": {
         "name": "SQLMap",
@@ -61,4 +63,6 @@ DAST_TOOLS = {
 
 def dast_list_tools() -> dict:
     """List available DAST security scanning tools."""
-    return {"tools": DAST_TOOLS, "filtered": False}
+    healthy = set(tools_for_category("dast"))
+    available_tools = {k: v for k, v in DAST_TOOLS.items() if k in healthy}
+    return {"tools": available_tools, "filtered": True}

@@ -41,7 +41,15 @@ class CodeQLService:
 
         # Auto-detect language if not provided
         if not language:
-            detected_languages = self.linguist_service.detect_languages(workspace_id)
+            try:
+                detected_languages = self.linguist_service.detect_languages(workspace_id)
+            except Exception as e:
+                logger.error(f"Linguist language detection failed for workspace {workspace_id}: {e}")
+                raise ValueError(
+                    f"Language auto-detection failed because the language detector "
+                    f"(Linguist) is unavailable: {e}. "
+                    "Please specify the 'language' parameter manually."
+                )
             if not detected_languages:
                 raise ValueError("No supported languages detected in workspace")
             language = detected_languages[0]

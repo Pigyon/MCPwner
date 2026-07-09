@@ -26,9 +26,7 @@ def build_hadolint_cmd(request: ScanRequest, output_path: Path):
         "*.Dockerfile",
     ]
 
-    dockerfiles = sorted(
-        {str(p) for pat in patterns for p in full_scan_path.rglob(pat) if p.is_file()}
-    )
+    dockerfiles = sorted({str(p) for pat in patterns for p in full_scan_path.rglob(pat) if p.is_file()})
 
     out_q = shlex.quote(str(output_path))
 

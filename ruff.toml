@@ -35,9 +35,14 @@ ignore = [
 # Auto-fix when possible
 fixable = ["ALL"]
 
+exclude = [
+    ".vulture_whitelist.py"
+]
+
 [lint.per-file-ignores]
 # Allow assert and other test-specific patterns in test files
 "tests/**/*.py" = ["S101", "S105", "S106"]
+"docker/utilities/**/main.py" = ["S501"]
 
 [format]
 # Use double quotes for strings

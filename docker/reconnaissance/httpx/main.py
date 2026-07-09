@@ -18,6 +18,7 @@ Config options:
 
 import json
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -84,9 +85,7 @@ def _extract_targets_from_report(report_path: Path, source_tool: str) -> Set[str
                 edata = entry.get("data", "")
                 if not isinstance(edata, str) or not edata:
                     continue
-                if etype == "URL":
-                    targets.add(edata)
-                elif etype in ("DNS_NAME", "IP_ADDRESS"):
+                if etype == "URL" or etype in ("DNS_NAME", "IP_ADDRESS"):
                     targets.add(edata)
                 elif etype == "OPEN_TCP_PORT":
                     # "ip:port" or "host:port" — build http/https URL
@@ -189,7 +188,9 @@ def _write_targets_file(targets: Set[str], workspace_root: Path) -> Path:
     """Write targets to a temporary file and return its path."""
     targets_dir = workspace_root / "tmp" / "httpx"
     targets_dir.mkdir(parents=True, exist_ok=True)
-    targets_file = Path(tempfile.mktemp(dir=str(targets_dir), suffix=".txt"))
+    fd, tmp_path = tempfile.mkstemp(dir=str(targets_dir), suffix=".txt")
+    targets_file = Path(tmp_path)
+    os.close(fd)
     targets_file.write_text("\n".join(sorted(targets)) + "\n")
     return targets_file
 
@@ -221,9 +222,7 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
             )
         extracted = _extract_targets_from_report(report_path, source_tool)
         if not extracted:
-            raise ValueError(
-                f"Could not extract any targets from {source_tool} report at {report_path}"
-            )
+            raise ValueError(f"Could not extract any targets from {source_tool} report at {report_path}")
         logger.info(f"Extracted {len(extracted)} targets from {source_tool} report")
         all_targets.update(extracted)
 

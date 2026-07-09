@@ -19,6 +19,7 @@ Config options:
 
 import json
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -137,7 +138,9 @@ def _write_targets_file(targets: Set[str], workspace_root: Path) -> Path:
     """Write targets to a temporary file and return its path."""
     targets_dir = workspace_root / "tmp" / "gau"
     targets_dir.mkdir(parents=True, exist_ok=True)
-    targets_file = Path(tempfile.mktemp(dir=str(targets_dir), suffix=".txt"))
+    fd, tmp_path = tempfile.mkstemp(dir=str(targets_dir), suffix=".txt")
+    targets_file = Path(tmp_path)
+    os.close(fd)
     targets_file.write_text("\n".join(sorted(targets)) + "\n")
     return targets_file
 
@@ -172,9 +175,7 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
             )
         extracted = _extract_targets_from_report(report_path, source_tool)
         if not extracted:
-            raise ValueError(
-                f"Could not extract any targets from {source_tool} report at {report_path}"
-            )
+            raise ValueError(f"Could not extract any targets from {source_tool} report at {report_path}")
         logger.info(f"Extracted {len(extracted)} targets from {source_tool} report")
         all_targets.update(extracted)
 

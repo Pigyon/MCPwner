@@ -47,9 +47,7 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
                 break
             except socket.gaierror as e:
                 last_error = e
-                logger.warning(
-                    f"DNS resolution for {target} failed (attempt {attempt + 1}/3): {e}"
-                )
+                logger.warning(f"DNS resolution for {target} failed (attempt {attempt + 1}/3): {e}")
                 time.sleep(1)
         if resolved_target is None:
             raise ValueError(f"Failed to resolve hostname {target}: {last_error}")

@@ -37,6 +37,25 @@ mcp = FastMCP("MCPwner")
 
 # Register tools using main API router
 logger.info("Loading tools...")
+try:
+    import config.tools as tools_module
+    from config.health import update_healthy_tools
+
+    # CRITICAL IMPORT ORDER GUARD:
+    # update_healthy_tools() MUST be executed before api.router and its tool modules
+    # are imported. The tool discovery process dynamically resolves and captures
+    # HEALTHY_TOOLS state at module-load time, so the global registry must be pruned first.
+    update_healthy_tools()
+
+    if not tools_module.HEALTHY_TOOLS:
+        logger.warning("=================================================================")
+        logger.warning(" ZERO TOOLS DETECTED: No tool containers are running/healthy!")
+        logger.warning(" If you did not configure your .env file, Docker Compose will")
+        logger.warning(" not start any tools by default. Please copy .env.example to")
+        logger.warning(" .env and set COMPOSE_PROFILES to enable tools.")
+        logger.warning("=================================================================")
+except Exception as e:
+    logger.error(f"Failed to probe health: {e}")
 
 try:
     from api.router import router as api_router

@@ -2,6 +2,8 @@
 
 from typing import Optional
 
+from config.tools import tools_for_category
+
 RECONNAISSANCE_TOOLS = {
     "subfinder": {
         "name": "Subfinder",
@@ -30,7 +32,8 @@ RECONNAISSANCE_TOOLS = {
         "name": "Katana",
         "description": (
             "Web crawling framework for spidering and URL extraction. "
-            "Supports chaining: pass source_tool='httpx' (or subfinder, amass, bbot, nmap, masscan, ffuf, gau) "
+            "Supports chaining: pass source_tool='httpx' "
+            "(or subfinder, amass, bbot, nmap, masscan, ffuf, gau) "
             "to auto-read targets from a previous scan's report. "
             "Also accepts 'targets' list for batch crawling or single 'target'. "
             "Optional: depth, js_crawl, headless, scope."
@@ -145,7 +148,9 @@ def reconnaissance_list_tools(workspace_id: Optional[str] = None, show_all: bool
     """
     try:
         # Reconnaissance tools are not language-specific, so we always return all tools
-        return {"tools": RECONNAISSANCE_TOOLS, "filtered": False}
+        healthy = set(tools_for_category("reconnaissance"))
+        available_tools = {k: v for k, v in RECONNAISSANCE_TOOLS.items() if k in healthy}
+        return {"tools": available_tools, "filtered": False}
 
     except Exception as e:
         return {"status": "error", "error": str(e)}

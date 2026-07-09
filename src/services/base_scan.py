@@ -282,9 +282,7 @@ class BaseScanService:
         tree keeps the report directories clean.
         """
         reports_base = self._get_reports_base(workspace_id)
-        return Path(
-            f"{reports_base}/reports/.scan_cache/{self.tool_category}/{self.tool_name}.json"
-        )
+        return Path(f"{reports_base}/reports/.scan_cache/{self.tool_category}/{self.tool_name}.json")
 
     def _persist_scan_result(self, workspace_id: str) -> None:
         """Write the cached scan result to disk."""

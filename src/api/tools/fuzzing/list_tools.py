@@ -1,5 +1,4 @@
-"""Source-fuzzing tool discovery MCP tool."""
-
+import logging
 from typing import Optional
 
 from config.languages import (
@@ -8,7 +7,14 @@ from config.languages import (
     JAZZERJS_LANGUAGES,
     PHP_FUZZER_LANGUAGES,
 )
+from config.tools import tools_for_category
 from deps import get_linguist_service
+
+"""Source-fuzzing tool discovery MCP tool."""
+
+
+logger = logging.getLogger(__name__)
+
 
 # Tool metadata with language support and config options, mirroring the shape
 # returned by sast_list_tools. Source fuzzers are language-specific (one per
@@ -78,27 +84,41 @@ def fuzzing_list_tools(workspace_id: Optional[str] = None, show_all: bool = Fals
         Dictionary with available engines and their metadata
     """
     try:
+        healthy = set(tools_for_category("fuzzing"))
+        available_tools = {k: v for k, v in FUZZING_TOOLS.items() if k in healthy}
+
         # If show_all or no workspace_id, return all engines
         if show_all or not workspace_id:
-            return {"tools": FUZZING_TOOLS, "filtered": False}
+            return {"tools": available_tools, "filtered": False}
 
         # Detect languages in workspace
-        linguist_service = get_linguist_service()
-        detected_languages = linguist_service.detect_languages(workspace_id, filter_codeql=False)
+        try:
+            linguist_service = get_linguist_service()
+            detected_languages = linguist_service.detect_languages(workspace_id, filter_codeql=False)
 
-        # Filter engines by language compatibility
-        compatible_tools = {}
-        for tool_id, tool_info in FUZZING_TOOLS.items():
-            tool_languages = set(tool_info["languages"])
-            if tool_languages.intersection(detected_languages):
-                compatible_tools[tool_id] = tool_info
+            # Filter engines by language compatibility
+            compatible_tools = {}
+            for tool_id, tool_info in available_tools.items():
+                tool_languages = set(tool_info["languages"])
+                if tool_languages.intersection(detected_languages):
+                    compatible_tools[tool_id] = tool_info
 
-        return {
-            "workspace_id": workspace_id,
-            "detected_languages": detected_languages,
-            "tools": compatible_tools,
-            "filtered": True,
-        }
+            return {
+                "workspace_id": workspace_id,
+                "detected_languages": detected_languages,
+                "tools": compatible_tools,
+                "filtered": True,
+            }
+        except Exception as e:
+            logger.warning(
+                f"Linguist language detection failed: {e}. "
+                "Gracefully returning all healthy fuzzing tools."
+            )
+            return {
+                "tools": available_tools,
+                "filtered": False,
+                "note": f"Language detection unavailable: {e}",
+            }
 
     except Exception as e:
         return {"status": "error", "error": str(e)}

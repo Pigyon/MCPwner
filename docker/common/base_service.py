@@ -124,7 +124,8 @@ def create_scanner_app(
                     cmd,
                     capture_output=True,
                     text=True,
-                    check=False,  # Don't raise on non-zero exit code as scanners often return 1 for findings
+                    # Don't raise on non-zero exit code as scanners often return 1 for findings
+                    check=False,
                     timeout=timeout_seconds,
                 )
             except subprocess.TimeoutExpired as e:

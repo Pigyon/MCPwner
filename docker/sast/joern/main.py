@@ -206,10 +206,10 @@ def scan(request: ScanRequest):
 
             # The intermediate CPG can be large; remove it so it doesn't get
             # picked up as a report or bloat the workspace volume.
-            try:
+            import contextlib
+
+            with contextlib.suppress(OSError):
                 cpg_path.unlink(missing_ok=True)
-            except OSError:
-                pass
 
         return {
             "status": "success",

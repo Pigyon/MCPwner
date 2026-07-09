@@ -33,11 +33,15 @@ class CodeQLClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.ReadTimeout:
-            logger.warning(f"CodeQL database creation exceeded 50s timeout. It is likely still running in the background.")
+            logger.warning(
+                "CodeQL database creation exceeded 50s timeout. "
+                "It is likely still running in the background."
+            )
             return {
                 "status": "backgrounded",
-                "message": "Database creation exceeded 50s MCP timeout and is continuing in the background.",
-                "database_path": db_path
+                "message": "Database creation exceeded 50s MCP timeout "
+                "and is continuing in the background.",
+                "database_path": db_path,
             }
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to create database: {e}")
@@ -67,11 +71,15 @@ class CodeQLClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.ReadTimeout:
-            logger.warning(f"CodeQL query execution exceeded 50s timeout. It is likely still running in the background.")
+            logger.warning(
+                "CodeQL query execution exceeded 50s timeout. "
+                "It is likely still running in the background."
+            )
             return {
                 "status": "backgrounded",
-                "message": "Query execution exceeded 50s MCP timeout and is continuing in the background.",
-                "output_path": output_path
+                "message": "Query execution exceeded 50s MCP timeout "
+                "and is continuing in the background.",
+                "output_path": output_path,
             }
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to execute query: {e}")

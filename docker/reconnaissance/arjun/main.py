@@ -18,6 +18,7 @@ Config options:
 
 import json
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -154,7 +155,9 @@ def _write_targets_file(targets: Set[str], workspace_root: Path) -> Path:
     """Write targets to a temporary file and return its path."""
     targets_dir = workspace_root / "tmp" / "arjun"
     targets_dir.mkdir(parents=True, exist_ok=True)
-    targets_file = Path(tempfile.mktemp(dir=str(targets_dir), suffix=".txt"))
+    fd, tmp_path = tempfile.mkstemp(dir=str(targets_dir), suffix=".txt")
+    targets_file = Path(tmp_path)
+    os.close(fd)
     targets_file.write_text("\n".join(sorted(targets)) + "\n")
     return targets_file
 

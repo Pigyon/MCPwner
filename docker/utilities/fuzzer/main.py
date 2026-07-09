@@ -96,7 +96,10 @@ async def _fuzz_single(
 ) -> Dict[str, Any]:
     start = time.monotonic()
     try:
-        kwargs: Dict[str, Any] = {"headers": extra_headers, "timeout": aiohttp.ClientTimeout(total=timeout)}
+        kwargs: Dict[str, Any] = {
+            "headers": extra_headers,
+            "timeout": aiohttp.ClientTimeout(total=timeout),
+        }
         if method == "GET":
             kwargs["params"] = {param: payload}
             async with session.get(url, **kwargs) as resp:
@@ -122,9 +125,17 @@ async def _fuzz_single(
                     "body_snippet": body[:300],
                 }
     except asyncio.TimeoutError:
-        return {"payload": payload, "error": "timeout", "elapsed_ms": round((time.monotonic() - start) * 1000, 1)}
+        return {
+            "payload": payload,
+            "error": "timeout",
+            "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
+        }
     except Exception as e:
-        return {"payload": payload, "error": str(e), "elapsed_ms": round((time.monotonic() - start) * 1000, 1)}
+        return {
+            "payload": payload,
+            "error": str(e),
+            "elapsed_ms": round((time.monotonic() - start) * 1000, 1),
+        }
 
 
 async def _run_fuzzer(
@@ -203,7 +214,9 @@ def scan(request: ScanRequest):
         timeout: float = float(cfg.get("timeout", 10))
 
         if method not in ("GET", "POST", "PUT"):
-            raise HTTPException(status_code=400, detail=f"Unsupported method: {method}. Use GET, POST, or PUT.")
+            raise HTTPException(
+                status_code=400, detail=f"Unsupported method: {method}. Use GET, POST, or PUT."
+            )
 
         logger.info(f"Fuzzing {target} with {len(payloads)} payloads (concurrency={concurrency})")
 
@@ -272,5 +285,6 @@ def get_report(timestamp: str, workspace_path: str, report_base: str = None):
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.getenv("PORT", 8132))
     uvicorn.run(app, host="0.0.0.0", port=port)

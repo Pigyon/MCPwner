@@ -18,8 +18,6 @@ Config options (passed via ScanRequest.config):
 import json
 import logging
 import os
-import subprocess
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -139,7 +137,9 @@ def scan(request: ScanRequest):
                     timeout=10,
                     verify=False,
                 )
-                test_results.append({"url": url, "status_code": resp.status_code, "body_snippet": resp.text[:500]})
+                test_results.append(
+                    {"url": url, "status_code": resp.status_code, "body_snippet": resp.text[:500]}
+                )
             except Exception as e:
                 test_results.append({"url": url, "error": str(e)})
 
@@ -206,5 +206,6 @@ def get_report(timestamp: str, workspace_path: str, report_base: str = None):
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.getenv("PORT", 8130))
     uvicorn.run(app, host="0.0.0.0", port=port)

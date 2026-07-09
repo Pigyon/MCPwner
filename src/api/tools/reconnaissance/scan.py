@@ -1,7 +1,7 @@
 """Generic Reconnaissance scan tool."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from config.tools import resolve_tool_name, tools_for_category
 from deps import get_service, get_workspace_service

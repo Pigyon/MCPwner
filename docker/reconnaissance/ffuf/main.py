@@ -145,9 +145,7 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
             )
         base_url = _extract_base_url_from_report(report_path, source_tool)
         if not base_url:
-            raise ValueError(
-                f"Could not extract a base URL from {source_tool} report at {report_path}"
-            )
+            raise ValueError(f"Could not extract a base URL from {source_tool} report at {report_path}")
         url = _get_base_url(base_url)
         logger.info(f"Derived base URL from {source_tool} report: {url}")
 
@@ -159,10 +157,7 @@ def scan_cmd_builder(request: ScanRequest, output_path: Path) -> List[str]:
 
     # Auto-add FUZZ keyword if missing
     if "FUZZ" not in url:
-        if url.endswith("/"):
-            url = url + "FUZZ"
-        else:
-            url = url + "/FUZZ"
+        url = url + "FUZZ" if url.endswith("/") else url + "/FUZZ"
         logger.info(f"Auto-added FUZZ keyword to URL: {url}")
 
     wordlist = "/usr/share/wordlists/common.txt"

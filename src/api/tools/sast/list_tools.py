@@ -1,5 +1,4 @@
-"""SAST tool discovery MCP tool."""
-
+import logging
 from typing import Optional
 
 from config.languages import (
@@ -14,7 +13,14 @@ from config.languages import (
     SEMGREP_LANGUAGES,
     YASA_LANGUAGES,
 )
+from config.tools import tools_for_category
 from deps import get_linguist_service
+
+"""SAST tool discovery MCP tool."""
+
+
+logger = logging.getLogger(__name__)
+
 
 # Tool metadata with language support
 SAST_TOOLS = {
@@ -100,27 +106,41 @@ def sast_list_tools(workspace_id: Optional[str] = None, show_all: bool = False) 
         Dictionary with available tools and their metadata
     """
     try:
+        # Filter available tools based on health
+        healthy = set(tools_for_category("sast"))
+        available_tools = {k: v for k, v in SAST_TOOLS.items() if k in healthy}
+
         # If show_all or no workspace_id, return all tools
         if show_all or not workspace_id:
-            return {"tools": SAST_TOOLS, "filtered": False}
+            return {"tools": available_tools, "filtered": False}
 
         # Detect languages in workspace
-        linguist_service = get_linguist_service()
-        detected_languages = linguist_service.detect_languages(workspace_id, filter_codeql=False)
+        try:
+            linguist_service = get_linguist_service()
+            detected_languages = linguist_service.detect_languages(workspace_id, filter_codeql=False)
 
-        # Filter tools by language compatibility
-        compatible_tools = {}
-        for tool_id, tool_info in SAST_TOOLS.items():
-            tool_languages = set(tool_info["languages"])
-            if tool_languages.intersection(detected_languages):
-                compatible_tools[tool_id] = tool_info
+            # Filter tools by language compatibility
+            compatible_tools = {}
+            for tool_id, tool_info in available_tools.items():
+                tool_languages = set(tool_info["languages"])
+                if tool_languages.intersection(detected_languages):
+                    compatible_tools[tool_id] = tool_info
 
-        return {
-            "workspace_id": workspace_id,
-            "detected_languages": detected_languages,
-            "tools": compatible_tools,
-            "filtered": True,
-        }
+            return {
+                "workspace_id": workspace_id,
+                "detected_languages": detected_languages,
+                "tools": compatible_tools,
+                "filtered": True,
+            }
+        except Exception as e:
+            logger.warning(
+                f"Linguist language detection failed: {e}. Gracefully returning all healthy SAST tools."
+            )
+            return {
+                "tools": available_tools,
+                "filtered": False,
+                "note": f"Language detection unavailable: {e}",
+            }
 
     except Exception as e:
         return {"status": "error", "error": str(e)}

@@ -14,7 +14,6 @@ services:
         chown -R 1000:1000 /workspaces /var/log/mcpwner
         chmod 1777 /workspaces
     restart: "no"
-
   mcpwner:
     build:
       context: .
@@ -49,70 +48,102 @@ services:
     depends_on:
       volume-init:
         condition: service_completed_successfully
+        required: false
       codeql:
         condition: service_healthy
+        required: false
       linguist:
         condition: service_healthy
       bandit:
         condition: service_healthy
+        required: false
       gosec:
         condition: service_healthy
+        required: false
       brakeman:
         condition: service_healthy
+        required: false
       pmd:
         condition: service_healthy
+        required: false
       psalm:
         condition: service_healthy
+        required: false
       nodejsscan:
         condition: service_healthy
+        required: false
       joern:
         condition: service_healthy
+        required: false
       yasa:
         condition: service_healthy
+        required: false
       opengrep:
         condition: service_healthy
+        required: false
       gitleaks:
         condition: service_healthy
+        required: false
       trufflehog:
         condition: service_healthy
+        required: false
       whispers:
         condition: service_healthy
+        required: false
       detect-secrets:
         condition: service_healthy
+        required: false
       hawk-scanner:
         condition: service_healthy
+        required: false
       osv-scanner:
         condition: service_healthy
+        required: false
       grype:
         condition: service_healthy
+        required: false
       syft:
         condition: service_healthy
+        required: false
       retirejs:
         condition: service_healthy
+        required: false
       subfinder:
         condition: service_healthy
+        required: false
       amass:
         condition: service_healthy
+        required: false
       masscan:
         condition: service_healthy
+        required: false
       nmap:
         condition: service_healthy
+        required: false
       ffuf:
         condition: service_healthy
+        required: false
       bbot:
         condition: service_healthy
+        required: false
       httpx:
         condition: service_healthy
+        required: false
       katana:
         condition: service_healthy
+        required: false
       gau:
         condition: service_healthy
+        required: false
       arjun:
         condition: service_healthy
+        required: false
       wafw00f:
         condition: service_healthy
+        required: false
       kiterunner:
         condition: service_healthy
+        required: false
       wiremock:
         condition: service_healthy
       mitmproxy:
@@ -123,39 +154,55 @@ services:
         condition: service_healthy
       checkov:
         condition: service_healthy
+        required: false
       kics:
         condition: service_healthy
+        required: false
       terrascan:
         condition: service_healthy
+        required: false
       tfsec:
         condition: service_healthy
+        required: false
       hadolint:
         condition: service_healthy
+        required: false
       atheris:
         condition: service_healthy
+        required: false
       jazzer:
         condition: service_healthy
+        required: false
       jazzerjs:
         condition: service_healthy
+        required: false
       php-fuzzer:
         condition: service_healthy
+        required: false
       sqlmap:
         condition: service_healthy
+        required: false
       nosqlmap:
         condition: service_healthy
+        required: false
       commix:
         condition: service_healthy
+        required: false
       dalfox:
         condition: service_healthy
+        required: false
       sstimap:
         condition: service_healthy
+        required: false
       ssrfmap:
         condition: service_healthy
+        required: false
       jwt-tool:
         condition: service_healthy
+        required: false
       interactsh-client:
         condition: service_healthy
-
+        required: false
   codeql:
     # Using digest for reproducibility (equivalent to latest as of 2026-01-23)
     # To update: docker pull mcr.microsoft.com/cstsectools/codeql-container:latest
@@ -200,6 +247,9 @@ services:
       retries: 3
       start_period: 45s
 
+    profiles:
+      - codeql
+      - sast
   linguist:
     build:
       context: .
@@ -278,6 +328,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - semgrep
+      - sast
   bandit:
 
     build:
@@ -305,6 +358,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - bandit
+      - sast
   gosec:
 
     build:
@@ -332,6 +388,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - gosec
+      - sast
   brakeman:
 
     build:
@@ -359,6 +418,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - brakeman
+      - sast
   pmd:
 
     build:
@@ -386,6 +448,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - pmd
+      - sast
   psalm:
 
     build:
@@ -414,6 +479,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - psalm
+      - sast
   nodejsscan:
 
     build:
@@ -441,6 +509,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - nodejsscan
+      - sast
   joern:
 
     build:
@@ -475,6 +546,9 @@ services:
       retries: 3
       start_period: 30s
 
+    profiles:
+      - joern
+      - sast
   yasa:
 
     build:
@@ -502,6 +576,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - yasa
+      - sast
   opengrep:
 
     build:
@@ -533,6 +610,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - opengrep
+      - sast
   gitleaks:
 
     build:
@@ -560,6 +640,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - gitleaks
+      - secrets
   trufflehog:
 
     build:
@@ -587,6 +670,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - trufflehog
+      - secrets
   whispers:
 
     build:
@@ -614,6 +700,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - whispers
+      - secrets
   detect-secrets:
 
     build:
@@ -641,6 +730,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - detect-secrets
+      - secrets
   hawk-scanner:
 
     build:
@@ -668,6 +760,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - hawk-scanner
+      - secrets
   osv-scanner:
 
     build:
@@ -695,6 +790,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - osv-scanner
+      - sca
   grype:
 
     build:
@@ -722,6 +820,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - grype
+      - sca
   syft:
 
     build:
@@ -749,6 +850,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - syft
+      - sca
   retirejs:
 
     build:
@@ -776,6 +880,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - retirejs
+      - sca
   subfinder:
 
     build:
@@ -803,6 +910,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - subfinder
+      - reconnaissance
   amass:
 
     build:
@@ -830,6 +940,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - amass
+      - reconnaissance
   masscan:
 
     build:
@@ -860,6 +973,9 @@ services:
       timeout: 10s
       retries: 3
 
+    profiles:
+      - masscan
+      - reconnaissance
   nmap:
 
     build:
@@ -891,6 +1007,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - nmap
+      - reconnaissance
   ffuf:
 
     build:
@@ -918,6 +1037,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - ffuf
+      - reconnaissance
   bbot:
 
     build:
@@ -952,6 +1074,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - bbot
+      - reconnaissance
   httpx:
 
     build:
@@ -979,6 +1104,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - httpx
+      - reconnaissance
   katana:
 
     build:
@@ -1006,6 +1134,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - katana
+      - reconnaissance
   gau:
 
     build:
@@ -1033,6 +1164,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - gau
+      - reconnaissance
   arjun:
 
     build:
@@ -1060,6 +1194,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - arjun
+      - reconnaissance
   wafw00f:
 
     build:
@@ -1087,6 +1224,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - wafw00f
+      - reconnaissance
   kiterunner:
 
     build:
@@ -1114,6 +1254,9 @@ services:
       retries: 3
       start_period: 10s
 
+    profiles:
+      - kiterunner
+      - reconnaissance
   wiremock:
 
     build:
@@ -1263,6 +1406,9 @@ services:
       retries: 3
       start_period: 30s
 
+    profiles:
+      - checkov
+      - iac
   kics:
 
     build:
@@ -1290,6 +1436,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - kics
+      - iac
   terrascan:
 
     build:
@@ -1318,6 +1467,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - terrascan
+      - iac
   tfsec:
 
     build:
@@ -1345,6 +1497,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - tfsec
+      - iac
   hadolint:
 
     build:
@@ -1371,9 +1526,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+    profiles:
+      - hadolint
+      - iac
 
   # ---- Source Fuzzing (white-box, coverage-guided fuzzers) ----
-
   atheris:
 
     build:
@@ -1401,6 +1558,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - atheris
+      - fuzzing
   jazzer:
 
     build:
@@ -1428,6 +1588,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - jazzer
+      - fuzzing
   jazzerjs:
 
     build:
@@ -1455,6 +1618,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - jazzerjs
+      - fuzzing
   php-fuzzer:
 
     build:
@@ -1482,6 +1648,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - php-fuzzer
+      - fuzzing
   sqlmap:
 
     build:
@@ -1509,6 +1678,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - sqlmap
+      - dast
   nosqlmap:
 
     build:
@@ -1536,6 +1708,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - nosqlmap
+      - dast
   commix:
 
     build:
@@ -1563,6 +1738,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - commix
+      - dast
   dalfox:
 
     build:
@@ -1590,6 +1768,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - dalfox
+      - dast
   sstimap:
 
     build:
@@ -1617,6 +1798,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - sstimap
+      - dast
   ssrfmap:
 
     build:
@@ -1644,6 +1828,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - ssrfmap
+      - dast
   jwt-tool:
 
     build:
@@ -1671,6 +1858,9 @@ services:
       retries: 3
       start_period: 15s
 
+    profiles:
+      - jwt-tool
+      - dast
   interactsh-client:
 
     build:
@@ -1698,6 +1888,9 @@ services:
       retries: 3
       start_period: 20s
 
+    profiles:
+      - interactsh-client
+      - dast
 volumes:
   workspaces:
     driver: local

@@ -148,8 +148,7 @@ def scan(request: ScanRequest):
         # to parse stdout (an empty result is a valid "0 findings" outcome).
         if subs_result.returncode != 0:
             logger.warning(
-                f"amass subs exited {subs_result.returncode}: "
-                f"{subs_result.stderr.strip()[:300]}"
+                f"amass subs exited {subs_result.returncode}: {subs_result.stderr.strip()[:300]}"
             )
 
         # Each stdout line is a discovered FQDN. When nothing is found, amass
