@@ -1,6 +1,9 @@
+"""SAST tool discovery MCP tool."""
+
 import logging
 from typing import Optional
 
+from api.tools.common import filter_tools_by_language, handle_tool_error
 from config.languages import (
     BANDIT_LANGUAGES,
     BRAKEMAN_LANGUAGES,
@@ -13,11 +16,6 @@ from config.languages import (
     SEMGREP_LANGUAGES,
     YASA_LANGUAGES,
 )
-from config.tools import tools_for_category
-from deps import get_linguist_service
-
-"""SAST tool discovery MCP tool."""
-
 
 logger = logging.getLogger(__name__)
 
@@ -28,43 +26,36 @@ SAST_TOOLS = {
         "name": "Semgrep",
         "description": "Multi-language SAST tool for security and code quality",
         "languages": SEMGREP_LANGUAGES,
-        "category": "sast",
     },
     "bandit": {
         "name": "Bandit",
         "description": "Python-specific security linter",
         "languages": BANDIT_LANGUAGES,
-        "category": "sast",
     },
     "gosec": {
         "name": "Gosec",
         "description": "Go security checker",
         "languages": GOSEC_LANGUAGES,
-        "category": "sast",
     },
     "brakeman": {
         "name": "Brakeman",
         "description": "Ruby on Rails security scanner",
         "languages": BRAKEMAN_LANGUAGES,
-        "category": "sast",
     },
     "pmd": {
         "name": "PMD",
         "description": "Multi-language code analyzer",
         "languages": PMD_LANGUAGES,
-        "category": "sast",
     },
     "psalm": {
         "name": "Psalm",
         "description": "PHP static analysis tool",
         "languages": PSALM_LANGUAGES,
-        "category": "sast",
     },
     "nodejsscan": {
         "name": "NodeJsScan",
         "description": "Node.js/JavaScript SAST scanner for Express, Hapi, and other frameworks",
         "languages": NODEJSSCAN_LANGUAGES,
-        "category": "sast",
     },
     "joern": {
         "name": "Joern",
@@ -72,7 +63,6 @@ SAST_TOOLS = {
             "Code property graph based multi-language SAST platform for deep vulnerability analysis"
         ),
         "languages": JOERN_LANGUAGES,
-        "category": "sast",
     },
     "yasa": {
         "name": "YASA",
@@ -81,7 +71,6 @@ SAST_TOOLS = {
             " analysis for JavaScript/TypeScript, Java, Go, and Python"
         ),
         "languages": YASA_LANGUAGES,
-        "category": "sast",
     },
     "opengrep": {
         "name": "Opengrep",
@@ -89,11 +78,11 @@ SAST_TOOLS = {
             "Open-source multi-language SAST engine supporting 30+ languages with pattern-based analysis"
         ),
         "languages": OPENGREP_LANGUAGES,
-        "category": "sast",
     },
 }
 
 
+@handle_tool_error
 def sast_list_tools(workspace_id: Optional[str] = None, show_all: bool = False) -> dict:
     """
     List available SAST tools with language compatibility.
@@ -105,42 +94,4 @@ def sast_list_tools(workspace_id: Optional[str] = None, show_all: bool = False) 
     Returns:
         Dictionary with available tools and their metadata
     """
-    try:
-        # Filter available tools based on health
-        healthy = set(tools_for_category("sast"))
-        available_tools = {k: v for k, v in SAST_TOOLS.items() if k in healthy}
-
-        # If show_all or no workspace_id, return all tools
-        if show_all or not workspace_id:
-            return {"tools": available_tools, "filtered": False}
-
-        # Detect languages in workspace
-        try:
-            linguist_service = get_linguist_service()
-            detected_languages = linguist_service.detect_languages(workspace_id, filter_codeql=False)
-
-            # Filter tools by language compatibility
-            compatible_tools = {}
-            for tool_id, tool_info in available_tools.items():
-                tool_languages = set(tool_info["languages"])
-                if tool_languages.intersection(detected_languages):
-                    compatible_tools[tool_id] = tool_info
-
-            return {
-                "workspace_id": workspace_id,
-                "detected_languages": detected_languages,
-                "tools": compatible_tools,
-                "filtered": True,
-            }
-        except Exception as e:
-            logger.warning(
-                f"Linguist language detection failed: {e}. Gracefully returning all healthy SAST tools."
-            )
-            return {
-                "tools": available_tools,
-                "filtered": False,
-                "note": f"Language detection unavailable: {e}",
-            }
-
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    return filter_tools_by_language("sast", SAST_TOOLS, workspace_id, show_all)

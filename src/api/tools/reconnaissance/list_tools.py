@@ -2,13 +2,12 @@
 
 from typing import Optional
 
-from config.tools import tools_for_category
+from api.tools.common import filter_tools_by_language, handle_tool_error
 
 RECONNAISSANCE_TOOLS = {
     "subfinder": {
         "name": "Subfinder",
         "description": "Subdomain discovery tool. Accepts 'target' (domain) or 'domain' in config.",
-        "category": "reconnaissance",
     },
     "amass": {
         "name": "Amass",
@@ -16,7 +15,6 @@ RECONNAISSANCE_TOOLS = {
             "Network mapping and attack surface discovery. "
             "Config: target/domain (required), passive (bool), timeout (minutes, default: 30)."
         ),
-        "category": "reconnaissance",
     },
     "httpx": {
         "name": "httpx",
@@ -26,7 +24,6 @@ RECONNAISSANCE_TOOLS = {
             "to auto-read targets from a previous scan's report. "
             "Also accepts 'targets' list for batch probing or single 'target'."
         ),
-        "category": "reconnaissance",
     },
     "katana": {
         "name": "Katana",
@@ -38,7 +35,6 @@ RECONNAISSANCE_TOOLS = {
             "Also accepts 'targets' list for batch crawling or single 'target'. "
             "Optional: depth, js_crawl, headless, scope."
         ),
-        "category": "reconnaissance",
     },
     "ffuf": {
         "name": "ffuf",
@@ -49,7 +45,6 @@ RECONNAISSANCE_TOOLS = {
             "Requires 'url' or 'target' with FUZZ keyword (auto-appended if missing). "
             "Optional: wordlist, extensions, match_codes, filter_codes, threads, rate."
         ),
-        "category": "reconnaissance",
     },
     "nmap": {
         "name": "Nmap",
@@ -57,7 +52,6 @@ RECONNAISSANCE_TOOLS = {
             "Network scanner for host and service discovery. "
             "Config: target (required), ports (default: '1-1000'), timeout (seconds, default: 300)."
         ),
-        "category": "reconnaissance",
     },
     "masscan": {
         "name": "Masscan",
@@ -66,7 +60,6 @@ RECONNAISSANCE_TOOLS = {
             "Config: target (required, IP or hostname), ports (default: '1-1000'), "
             "rate (packets/sec, default: 100)."
         ),
-        "category": "reconnaissance",
     },
     "arjun": {
         "name": "Arjun",
@@ -77,7 +70,6 @@ RECONNAISSANCE_TOOLS = {
             "Also accepts 'targets' list for batch testing or single 'target'. "
             "Optional: method (GET/POST/JSON), headers, threads, wordlist."
         ),
-        "category": "reconnaissance",
     },
     "bbot": {
         "name": "bbot",
@@ -97,7 +89,6 @@ RECONNAISSANCE_TOOLS = {
             "  deep – stacks 8 presets + aggressive (very slow)\n\n"
             "WORKFLOW: subdomain-enum first → web-thorough on findings → nuclei for vulns"
         ),
-        "category": "reconnaissance",
     },
     "gau": {
         "name": "gau",
@@ -108,7 +99,6 @@ RECONNAISSANCE_TOOLS = {
             "Also accepts 'targets' list for batch querying or single 'target'. "
             "Optional: providers, blacklist, threads, from, to."
         ),
-        "category": "reconnaissance",
     },
     "wafw00f": {
         "name": "wafw00f",
@@ -119,7 +109,6 @@ RECONNAISSANCE_TOOLS = {
             "Also accepts 'targets' list for batch testing or single 'target'. "
             "Optional: test_all (test all WAF signatures), verbose."
         ),
-        "category": "reconnaissance",
     },
     "kiterunner": {
         "name": "Kiterunner",
@@ -130,11 +119,11 @@ RECONNAISSANCE_TOOLS = {
             "Also accepts 'targets' list for batch scanning or single 'target'. "
             "Optional: wordlist, threads, max_connection_per_host."
         ),
-        "category": "reconnaissance",
     },
 }
 
 
+@handle_tool_error
 def reconnaissance_list_tools(workspace_id: Optional[str] = None, show_all: bool = False) -> dict:
     """
     List available Reconnaissance tools.
@@ -146,11 +135,4 @@ def reconnaissance_list_tools(workspace_id: Optional[str] = None, show_all: bool
     Returns:
         Dictionary with available tools and their metadata
     """
-    try:
-        # Reconnaissance tools are not language-specific, so we always return all tools
-        healthy = set(tools_for_category("reconnaissance"))
-        available_tools = {k: v for k, v in RECONNAISSANCE_TOOLS.items() if k in healthy}
-        return {"tools": available_tools, "filtered": False}
-
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    return filter_tools_by_language("reconnaissance", RECONNAISSANCE_TOOLS, workspace_id, show_all)

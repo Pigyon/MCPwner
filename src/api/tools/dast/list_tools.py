@@ -1,6 +1,8 @@
 """List available DAST tools."""
 
-from config.tools import tools_for_category
+from typing import Optional
+
+from api.tools.common import filter_tools_by_language, handle_tool_error
 
 DAST_TOOLS = {
     "sqlmap": {
@@ -9,19 +11,16 @@ DAST_TOOLS = {
             "Automatic SQL injection detection and exploitation. Config: target, raw_request, data"
         ),
         "languages": [],
-        "category": "dast",
     },
     "nosqlmap": {
         "name": "NoSQLMap",
         "description": "NoSQL injection scanner for MongoDB and other NoSQL backends. Config: target",
         "languages": [],
-        "category": "dast",
     },
     "commix": {
         "name": "Commix",
         "description": "Command injection exploitation tool. Config: target, data",
         "languages": [],
-        "category": "dast",
     },
     "dalfox": {
         "name": "Dalfox",
@@ -29,25 +28,21 @@ DAST_TOOLS = {
             "Parameter-based XSS and open-redirect scanner with native JSON output. Config: target"
         ),
         "languages": [],
-        "category": "dast",
     },
     "sstimap": {
         "name": "SSTImap",
         "description": "Server-side template injection scanner. Config: target",
         "languages": [],
-        "category": "dast",
     },
     "ssrfmap": {
         "name": "SSRFmap",
         "description": "SSRF exploitation framework. Config: target, raw_request, param, module",
         "languages": [],
-        "category": "dast",
     },
     "jwt_tool": {
         "name": "jwt_tool",
         "description": "JWT vulnerability scanner. Config: target, token",
         "languages": [],
-        "category": "dast",
     },
     "interactsh-client": {
         "name": "Interactsh Client",
@@ -56,13 +51,11 @@ DAST_TOOLS = {
             "Config: optional target"
         ),
         "languages": [],
-        "category": "dast",
     },
 }
 
 
-def dast_list_tools() -> dict:
+@handle_tool_error
+def dast_list_tools(workspace_id: Optional[str] = None, show_all: bool = False) -> dict:
     """List available DAST security scanning tools."""
-    healthy = set(tools_for_category("dast"))
-    available_tools = {k: v for k, v in DAST_TOOLS.items() if k in healthy}
-    return {"tools": available_tools, "filtered": True}
+    return filter_tools_by_language("dast", DAST_TOOLS, workspace_id, show_all)

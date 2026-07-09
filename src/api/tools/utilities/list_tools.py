@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from config.tools import tools_for_category
+from api.tools.common import filter_tools_by_language, handle_tool_error
 
 UTILITIES_TOOLS = {
     "linguist": {
@@ -12,7 +12,6 @@ UTILITIES_TOOLS = {
             "present in a workspace. Use detect_languages instead of run_utilities_scan "
             "for this tool — it has a dedicated MCP tool."
         ),
-        "category": "utilities",
     },
     "wiremock": {
         "name": "WireMock",
@@ -26,7 +25,6 @@ UTILITIES_TOOLS = {
             "WireMock stub definitions to register), test_requests (list of URLs to "
             "exercise the configured stubs)."
         ),
-        "category": "utilities",
     },
     "mitmproxy": {
         "name": "Mitmproxy",
@@ -39,7 +37,6 @@ UTILITIES_TOOLS = {
             "inline Python addon script for mitmproxy), modify_request (dict of header/param "
             "overrides to apply to intercepted requests)."
         ),
-        "category": "utilities",
     },
     "fuzzer": {
         "name": "aiohttp Fuzzer",
@@ -53,7 +50,6 @@ UTILITIES_TOOLS = {
             "concurrency (max parallel requests, default 50), headers (dict), "
             "timeout (per-request seconds, default 10)."
         ),
-        "category": "utilities",
     },
     "chromium": {
         "name": "Headless Chromium",
@@ -67,11 +63,11 @@ UTILITIES_TOOLS = {
             "default 'networkidle'), check_xss (bool, inject XSS probes into URL params), "
             "screenshot (bool, capture page screenshot), timeout (ms, default 30000)."
         ),
-        "category": "utilities",
     },
 }
 
 
+@handle_tool_error
 def utilities_list_tools(workspace_id: Optional[str] = None, show_all: bool = False) -> dict:
     """
     List available Utilities tools.
@@ -83,10 +79,4 @@ def utilities_list_tools(workspace_id: Optional[str] = None, show_all: bool = Fa
     Returns:
         Dictionary with available tools and their metadata
     """
-    try:
-        healthy = set(tools_for_category("utilities"))
-        available_tools = {k: v for k, v in UTILITIES_TOOLS.items() if k in healthy}
-        return {"tools": available_tools, "filtered": False}
-
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    return filter_tools_by_language("utilities", UTILITIES_TOOLS, workspace_id, show_all)
