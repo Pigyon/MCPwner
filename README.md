@@ -365,6 +365,14 @@ MCPwner exposes the following tools through the MCP interface:
 - `list_workspaces` - List all available workspaces
 - `cleanup_workspace` - Remove workspace and associated data
 
+**Findings Ledger:**
+
+Workspace-scoped, persisted to disk (`<workspace>/findings/<id>.json`), and always available — no container or health gate required. This is the source of truth for the multi-agent deep-research pipeline: every hypothesis, PoC result, and review verdict is a finding entry rather than prose.
+
+- `upsert_finding` - Create or update a finding. Deep-merges into an existing entry by default, so one agent can write its own sub-object (e.g. `poc`) without clobbering another agent's fields (e.g. `review`)
+- `list_findings` - List all findings in a workspace, optionally filtered by `status` (e.g. `poc-confirmed`, `review-approved`)
+- `get_finding` - Retrieve a single finding by id
+
 **SAST (Static Analysis):**
 
 - `run_sast_scan` - Run static analysis tools (Semgrep, Bandit, Gosec, Brakeman, PMD, Psalm, NodeJsScan, Joern, YASA)

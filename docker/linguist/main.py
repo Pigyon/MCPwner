@@ -2,7 +2,9 @@
 
 import json
 import logging
+import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -41,22 +43,30 @@ def detect_languages(request: DetectLanguagesRequest):
 
     Returns language breakdown and statistics.
     """
+    tmp_dir = None
     try:
-        if not Path(request.path).exists():
+        source = Path(request.path)
+        if not source.exists():
             raise HTTPException(status_code=404, detail=f"Path does not exist: {request.path}")
 
-        # Linguist requires a git repo; init one if missing.
-        try:
-            if not (Path(request.path) / ".git").exists():
-                init_git(request.path)
-                config_git(request.path, email="mcpwner@local", name="MCPwner")
-                commit_git(request.path, message="Initial commit")
-        except RuntimeError as e:
-            # Non-fatal: linguist may still work or fail with a clearer error later.
-            logger.warning(f"Failed to initialize git repo: {e}")
+        # linguist requires .git. Cloned workspaces already have one; local/local_path
+        # workspaces don't, and /workspaces is mounted read-only, so `git init` has to
+        # happen on a tmpfs copy instead.
+        analyze_path = request.path
+        if not (source / ".git").exists():
+            tmp_dir = tempfile.mkdtemp(prefix="linguist-", dir="/tmp")
+            analyze_path = str(Path(tmp_dir) / "source")
+            shutil.copytree(source, analyze_path)
+            try:
+                init_git(analyze_path)
+                config_git(analyze_path, email="mcpwner@local", name="MCPwner")
+                commit_git(analyze_path, message="Initial commit")
+            except RuntimeError as e:
+                # Non-fatal: e.g. an empty tree has nothing to commit.
+                logger.warning(f"Failed to initialize git repo: {e}")
 
         result = subprocess.run(
-            ["github-linguist", "--json", request.path],
+            ["github-linguist", "--json", analyze_path],
             capture_output=True,
             text=True,
             timeout=60,
@@ -80,6 +90,10 @@ def detect_languages(request: DetectLanguagesRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        if tmp_dir:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 @app.get("/version", response_model=VersionResponse)

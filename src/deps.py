@@ -17,6 +17,7 @@ from config.tools import TOOL_REGISTRY, ToolSpec
 from repositories.workspace import WorkspaceRepository
 from services.base_scan import BaseScanService
 from services.codeql import CodeQLService
+from services.findings import FindingsService
 from services.linguist import LinguistService
 from services.workspace import WorkspaceService
 
@@ -55,6 +56,11 @@ def get_service(name: str) -> BaseScanService:
 @lru_cache(maxsize=None)
 def get_workspace_service():
     return WorkspaceService(get_workspace_repository())
+
+
+@lru_cache(maxsize=None)
+def get_findings_service():
+    return FindingsService(get_workspace_repository())
 
 
 def _bespoke_service_url(section: str, default: str) -> str:
