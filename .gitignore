@@ -21,10 +21,14 @@ venv/
 config/config.yaml
 
 # Editor/IDE-specific files
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .config.kiro
 
 # Documentation
 *.md
 !README.md
 !tests/llm/*.md
+
+.claude

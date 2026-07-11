@@ -3,18 +3,16 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.4
     hooks:
-      # Format first (fixes many lint issues automatically)
+      # Verify formatting only — editor format-on-save applies fixes (see .vscode/settings.json)
       - id: ruff-format
         name: Format code with ruff
+        args: [--check]
         exclude: '^\.vulture_whitelist\.py$'
         stages: [pre-commit]
-      
-      # Then lint (on formatted code)
+
+      # Lint check only — fixes are applied on save or via `ruff check --fix` before commit
       - id: ruff
         name: Run ruff linter
-        args:
-          - --fix
-          - --exit-non-zero-on-fix
         exclude: '^\.vulture_whitelist\.py$'
         stages: [pre-commit]
 

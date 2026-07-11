@@ -1,5 +1,4 @@
 # Ruff configuration for linting and formatting
-# This allows your editor to show issues in real-time
 
 # Line length
 line-length = 105
