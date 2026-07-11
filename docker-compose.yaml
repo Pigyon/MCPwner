@@ -30,8 +30,6 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
-    ports:
-      - "13370:13370"
     volumes:
       - workspaces:/workspaces
       - logs:/var/log/mcpwner
@@ -43,8 +41,6 @@ services:
     networks:
       - mcpwner-internal
       - mcpwner-recon
-    environment:
-      - MCP_TRANSPORT=${MCP_TRANSPORT:-stdio}
     depends_on:
       volume-init:
         condition: service_completed_successfully

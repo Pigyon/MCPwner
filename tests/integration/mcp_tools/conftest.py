@@ -26,7 +26,6 @@ async def create_mcp_client():
         args=["-m", "server"],
         cwd=src_dir,
         env={
-            "MCP_TRANSPORT": "stdio",
             "CODEQL_SERVICE_URL": "http://localhost:8080",
             "LINGUIST_SERVICE_URL": "http://localhost:8081",
             "SEMGREP_SERVICE_URL": "http://localhost:8082",

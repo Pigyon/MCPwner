@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Supports STDIO and SSE transports with namespaced tools.
+Supports STDIO transport with namespaced tools.
 """
 
 import logging
@@ -12,7 +12,6 @@ from fastmcp import FastMCP
 try:
     from config.config import load_config
     from config.logging import setup_logging
-    from config.transport import get_transport_config
 
     config_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -63,31 +62,12 @@ except Exception:
 
 
 def run_server():
-    """Run the MCP server with appropriate transport."""
-    transport_config = get_transport_config(config)
-    transport = transport_config["transport"]
+    """Run the MCP server."""
+    logger.info("Starting MCPwner MCP server in STDIO mode...")
+    logger.info("Reading from stdin, writing to stdout")
+    logger.info("Compatible with: Claude Desktop, MCP CLI tools")
 
-    logger.info("Starting MCPwner MCP server...")
-    logger.info(f"Transport: {transport}")
-
-    if transport == "sse":
-        host = transport_config["host"]
-        port = transport_config["port"]
-        logger.info(f"SSE endpoint: http://{host}:{port}/sse")
-        logger.info(f"Health check: http://{host}:{port}/health")
-
-        mcp.run(transport="sse", host=host, port=port)
-
-    elif transport == "stdio":
-        logger.info("STDIO mode: Reading from stdin, writing to stdout")
-        logger.info("Compatible with: Claude Desktop, MCP CLI tools")
-
-        mcp.run()
-
-    else:
-        logger.error(f"ERROR: Unknown transport '{transport}'")
-        logger.error("Supported transports: stdio, sse")
-        sys.exit(1)
+    mcp.run()
 
 
 if __name__ == "__main__":

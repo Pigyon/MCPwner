@@ -33,24 +33,6 @@ def docker_compose_up():
                     raise RuntimeError(f"❌ {service_name} service failed to start")
                 time.sleep(1)
 
-    print("⏳ Checking MCP SSE service...")
-    max_retries = 30
-    for i in range(max_retries):
-        try:
-            response = requests.post(
-                "http://localhost:13370/sse",
-                json={"jsonrpc": "2.0", "id": 1, "method": "ping", "params": {}},
-                timeout=5,
-            )
-            # Any response means the server is up
-            print("✅ MCP SSE service is healthy")
-            break
-        except requests.exceptions.RequestException:
-            if i == max_retries - 1:
-                print("⚠️  MCP SSE service not responding, but continuing...")
-                break
-            time.sleep(1)
-
     yield
 
     # Teardown - don't stop services, let them keep running

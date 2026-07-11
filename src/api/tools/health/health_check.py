@@ -2,7 +2,6 @@
 
 import concurrent.futures
 import logging
-import os
 from typing import Any, Dict, Optional
 
 from config.tools import TOOL_REGISTRY, get_bespoke_tools
@@ -94,7 +93,7 @@ def health_check(tool_name: Optional[str] = None) -> Dict[str, Any]:
 
     results = {
         "status": "healthy",  # degraded if any service fails
-        "transport": os.environ.get("MCP_TRANSPORT", "stdio"),
+        "transport": "stdio",
         "services": {},
     }
 
