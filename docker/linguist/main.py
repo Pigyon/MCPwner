@@ -32,17 +32,11 @@ class VersionResponse(BaseModel):
 
 @app.get("/health", response_model=HealthResponse)
 def health():
-    """Health check endpoint."""
     return {"status": "healthy", "service": "linguist"}
 
 
 @app.post("/detect")
 def detect_languages(request: DetectLanguagesRequest):
-    """
-    Detect languages in a directory.
-
-    Returns language breakdown and statistics.
-    """
     tmp_dir = None
     try:
         source = Path(request.path)
@@ -96,9 +90,67 @@ def detect_languages(request: DetectLanguagesRequest):
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
+class CodeFactsRequest(BaseModel):
+    path: str
+
+
+@app.post("/facts")
+def index_code_facts(request: CodeFactsRequest):
+    source = Path(request.path)
+    if not source.exists():
+        raise HTTPException(status_code=404, detail=f"Path does not exist: {request.path}")
+
+    try:
+        cmd = [
+            "ctags",
+            "--output-format=json",
+            "--fields=+nKS",
+            "--kinds-all=*",
+            "-R",
+            str(source),
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        if result.returncode not in (0, 1):
+            raise HTTPException(status_code=500, detail=f"ctags failed: {result.stderr[:500]}")
+
+        facts = []
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                tag = json.loads(line)
+                facts.append(
+                    {
+                        "name": tag.get("name"),
+                        "file": str(Path(tag.get("path", "")).relative_to(source))
+                        if tag.get("path")
+                        else None,
+                        "line": tag.get("line"),
+                        "kind": tag.get("kind"),
+                        "scope": tag.get("scope"),
+                        "scopeKind": tag.get("scopeKind"),
+                    }
+                )
+            except (json.JSONDecodeError, ValueError):
+                continue
+
+        return {
+            "status": "success",
+            "total_symbols": len(facts),
+            "facts": facts,
+        }
+
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="ctags indexing timed out")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/version", response_model=VersionResponse)
 def version():
-    """Get linguist version."""
     try:
         result = subprocess.run(
             ["github-linguist", "--version"],

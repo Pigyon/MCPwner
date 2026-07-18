@@ -81,6 +81,22 @@ class LinguistClient(BaseClient):
         except Exception as e:
             raise RuntimeError(f"Language detection failed: {e}")
 
+    def index_code_facts(self, workspace_path: str) -> Dict[str, Any]:
+        """Extract structural code facts (functions, classes, methods) via ctags."""
+        try:
+            response = requests.post(
+                f"{self.service_url}/facts", json={"path": workspace_path}, timeout=120
+            )
+            response.raise_for_status()
+            result = response.json()
+            if result.get("status") != "success":
+                raise RuntimeError(result.get("error", "Unknown error"))
+            return result
+        except requests.exceptions.Timeout:
+            raise RuntimeError("Code facts indexing timed out")
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"Code facts request failed: {e}")
+
     def _map_to_codeql_language(self, linguist_name: str) -> str:
         """
         Map linguist language names to CodeQL language names.

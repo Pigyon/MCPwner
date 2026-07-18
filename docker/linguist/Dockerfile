@@ -8,7 +8,7 @@ FROM crazymax/linguist:9.2.0
 USER root
 
 # Alpine sys.path includes /usr site-packages; prefix copy works without venv or --break-system-packages.
-RUN apk add --no-cache python3 curl
+RUN apk add --no-cache python3 curl universal-ctags
 COPY --from=deps /install /usr
 
 WORKDIR /service
