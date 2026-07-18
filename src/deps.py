@@ -19,6 +19,7 @@ from services.base_scan import BaseScanService
 from services.codeql import CodeQLService
 from services.findings import FindingsService
 from services.linguist import LinguistService
+from services.report import ReportService
 from services.workspace import WorkspaceService
 
 
@@ -61,6 +62,11 @@ def get_workspace_service():
 @lru_cache(maxsize=None)
 def get_findings_service():
     return FindingsService(get_workspace_repository())
+
+
+@lru_cache(maxsize=None)
+def get_report_service():
+    return ReportService(get_workspace_repository(), get_findings_service())
 
 
 def _bespoke_service_url(section: str, default: str) -> str:

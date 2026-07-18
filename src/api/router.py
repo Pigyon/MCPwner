@@ -17,13 +17,18 @@ from api.tools.fuzzing.list_tools import fuzzing_list_tools
 from api.tools.health.health_check import health_check
 from api.tools.health.list_tools import health_list_tools
 from api.tools.iac.list_tools import iac_list_tools
+from api.tools.poc.list_tools import poc_list_tools
 from api.tools.reconnaissance.chain import run_reconnaissance_chain
 from api.tools.reconnaissance.list_tools import reconnaissance_list_tools
+from api.tools.report.generate_report import generate_report
 from api.tools.sast.list_tools import sast_list_tools
 from api.tools.sca.list_tools import sca_list_tools
 from api.tools.secrets.list_tools import secrets_list_tools
 from api.tools.utilities.detect_languages import detect_languages
+from api.tools.utilities.diff_discovery import diff_discovery
+from api.tools.utilities.index_code_facts import index_code_facts
 from api.tools.utilities.list_tools import utilities_list_tools
+from api.tools.utilities.query_code_facts import query_code_facts
 from api.tools.workspace.cleanup_workspace import cleanup_workspace
 from api.tools.workspace.create_workspace import create_workspace
 from api.tools.workspace.list_workspaces import list_workspaces
@@ -38,6 +43,7 @@ CATEGORY_CONFIGS = {
     "fuzzing": (fuzzing_list_tools, []),
     "dast": (dast_list_tools, []),
     "iac": (iac_list_tools, []),
+    "poc": (poc_list_tools, []),
 }
 
 
@@ -59,10 +65,12 @@ class MainRouter(MCPRouter):
             upsert_finding,
             list_findings,
             get_finding,
+            diff_discovery,
+            generate_report,
         )
 
         if "linguist" in tools_module.HEALTHY_TOOLS:
-            self.add_tools(detect_languages)
+            self.add_tools(detect_languages, index_code_facts, query_code_facts)
 
         if "codeql" in tools_module.HEALTHY_TOOLS:
             self.add_tools(

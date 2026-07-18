@@ -1,10 +1,10 @@
-"""Findings ledger — persistent source of truth for the multi-agent research pipeline.
+"""Findings ledger - persistent store for security findings in a workspace.
 
 One JSON file per finding under the workspace volume (<reports_base>/findings/F-NNN.json),
-so it survives restarts and Review can always re-read what earlier agents wrote.
-Findings are free-form (only `id` is required); different agents own different
-sub-objects of the same finding (PoC writes `poc`, Review writes `review`), so
-`upsert_finding` deep-merges by default instead of clobbering a peer's fields.
+so it survives restarts and can always be re-read later in an assessment.
+Findings are free-form (only `id` is required); a caller may own different
+sub-objects of the same finding (e.g. `poc`, `review`), so `upsert_finding`
+deep-merges by default instead of clobbering previously written fields.
 """
 
 import json
