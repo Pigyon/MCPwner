@@ -24,7 +24,7 @@ def probe_all_tools() -> Set[str]:
             logger.debug(f"Tool {spec.name} is not healthy: {e}")
         return None
 
-    # max_workers=17 handles the ~52 total probes efficiently (~4 waves if all timeout).
+    # max_workers=17
     # This prevents the 10s worst-case timeout from stacking serially into 520s.
     with concurrent.futures.ThreadPoolExecutor(max_workers=17) as executor:
         futures = []
