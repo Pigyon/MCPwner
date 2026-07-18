@@ -4,12 +4,10 @@ Headless Chromium Service (Playwright)
 Drives a headless Chromium browser to analyze JavaScript-heavy single-page
 applications and detect client-side vulnerabilities that raw HTTP clients miss.
 
-The LLM uses this to:
-  - Execute client-side JavaScript and observe the rendered DOM.
-  - Detect DOM-based XSS by injecting probes into URL parameters.
-  - Identify open redirects, authentication bypasses, or JS errors.
-  - Capture console output and network requests from the live page.
-  - Optionally take a screenshot for visual confirmation.
+Two modes:
+  1. One-shot (legacy): visit a URL, optionally inject XSS probes.
+  2. Scripted actions: run a multi-step Playwright sequence (navigate/click/fill/
+     submit/assert) for testing auth flows, IDOR, CSRF, open-redirect oracles.
 
 Config options (passed via ScanRequest.config):
   target:      Required. URL to visit (e.g. "https://example.com").
@@ -17,6 +15,8 @@ Config options (passed via ScanRequest.config):
   check_xss:   Bool — inject XSS probes into URL query parameters (default: false).
   screenshot:  Bool — capture a base64 PNG screenshot (default: false).
   timeout:     Navigation timeout in milliseconds (default: 30000).
+  actions:     List[dict] - scripted Playwright steps (see _run_actions). When
+               provided, the one-shot analysis is skipped; actions drive the page.
 """
 
 import asyncio
@@ -97,6 +97,161 @@ def _inject_xss_probe(url: str, probe: str) -> List[str]:
         new_query = urlencode(modified)
         injected.append(urlunparse(parsed._replace(query=new_query)))
     return injected
+
+
+async def _run_actions(
+    actions: List[Dict[str, Any]],
+    target: str,
+    timeout_ms: int,
+) -> Dict[str, Any]:
+    """Execute a scripted Playwright action sequence.
+
+    Supported action types:
+      navigate   - {url}
+      click      - {selector}
+      fill       - {selector, value}
+      wait       - {selector} or {ms}
+      screenshot - captures at that point
+      assert_text     - {selector, contains} oracle: text is present
+      assert_url      - {pattern} oracle: current URL matches regex
+      assert_visible  - {selector} oracle: element is visible
+      assert_hidden   - {selector} oracle: element not visible/absent
+      check_xss       - fires the XSS probe oracle on current URL
+    """
+    results: List[Dict[str, Any]] = []
+    oracle_pass: List[Dict[str, Any]] = []
+    oracle_fail: List[Dict[str, Any]] = []
+    screenshots: List[str] = []
+    console_messages: List[Dict[str, str]] = []
+    js_errors: List[str] = []
+
+    import re
+
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"])
+        context = await browser.new_context(ignore_https_errors=True)
+        page = await context.new_page()
+
+        page.on("console", lambda msg: console_messages.append({"type": msg.type, "text": msg.text}))
+        page.on("pageerror", lambda err: js_errors.append(str(err)))
+
+        if target:
+            try:
+                await page.goto(target, wait_until="domcontentloaded", timeout=timeout_ms)
+            except Exception as e:
+                results.append({"action": "initial_navigate", "status": "error", "error": str(e)})
+
+        for i, step in enumerate(actions):
+            action = step.get("action", "")
+            step_result: Dict[str, Any] = {"index": i, "action": action}
+            try:
+                if action == "navigate":
+                    await page.goto(step["url"], wait_until="domcontentloaded", timeout=timeout_ms)
+                    step_result["status"] = "ok"
+
+                elif action == "click":
+                    await page.click(step["selector"], timeout=timeout_ms)
+                    step_result["status"] = "ok"
+
+                elif action == "fill":
+                    await page.fill(step["selector"], step["value"], timeout=timeout_ms)
+                    step_result["status"] = "ok"
+
+                elif action == "wait":
+                    if "selector" in step:
+                        await page.wait_for_selector(step["selector"], timeout=timeout_ms)
+                    elif "ms" in step:
+                        await asyncio.sleep(min(int(step["ms"]), 10000) / 1000)
+                    step_result["status"] = "ok"
+
+                elif action == "screenshot":
+                    shot = await page.screenshot(type="png")
+                    screenshots.append(base64.b64encode(shot).decode())
+                    step_result["status"] = "ok"
+
+                elif action == "assert_text":
+                    el = await page.query_selector(step["selector"])
+                    text = (await el.inner_text()) if el else ""
+                    expected = step["contains"]
+                    if expected in text:
+                        oracle_pass.append({"step": i, "type": "assert_text", "detail": expected})
+                        step_result["status"] = "pass"
+                    else:
+                        oracle_fail.append({"step": i, "type": "assert_text", "detail": expected})
+                        step_result["status"] = "fail"
+
+                elif action == "assert_url":
+                    current = page.url
+                    pattern = step["pattern"]
+                    if len(pattern) > 1000:
+                        oracle_fail.append(
+                            {"step": i, "type": "assert_url", "error": "pattern too long"}
+                        )
+                        step_result["status"] = "fail"
+                    elif re.search(pattern, current):
+                        oracle_pass.append({"step": i, "type": "assert_url", "url": current})
+                        step_result["status"] = "pass"
+                    else:
+                        oracle_fail.append({"step": i, "type": "assert_url", "url": current})
+                        step_result["status"] = "fail"
+
+                elif action == "assert_visible":
+                    el = await page.query_selector(step["selector"])
+                    visible = (await el.is_visible()) if el else False
+                    if visible:
+                        oracle_pass.append({"step": i, "type": "assert_visible"})
+                        step_result["status"] = "pass"
+                    else:
+                        oracle_fail.append({"step": i, "type": "assert_visible"})
+                        step_result["status"] = "fail"
+
+                elif action == "assert_hidden":
+                    el = await page.query_selector(step["selector"])
+                    hidden = (not await el.is_visible()) if el else True
+                    if hidden:
+                        oracle_pass.append({"step": i, "type": "assert_hidden"})
+                        step_result["status"] = "pass"
+                    else:
+                        oracle_fail.append({"step": i, "type": "assert_hidden"})
+                        step_result["status"] = "fail"
+
+                elif action == "check_xss":
+                    current_url = page.url
+                    xss_hit = False
+                    for probe in XSS_PROBES:
+                        for probe_url in _inject_xss_probe(current_url, probe):
+                            try:
+                                await page.goto(probe_url, wait_until="domcontentloaded", timeout=10000)
+                                await page.wait_for_function("() => window.__xss === 1", timeout=4000)
+                                oracle_pass.append({"step": i, "type": "xss", "url": probe_url})
+                                xss_hit = True
+                                break
+                            except Exception:
+                                pass
+                        if xss_hit:
+                            break
+                    step_result["status"] = "pass" if xss_hit else "no_trigger"
+
+                else:
+                    step_result["status"] = "unknown_action"
+
+            except Exception as e:
+                step_result["status"] = "error"
+                step_result["error"] = str(e)
+
+            results.append(step_result)
+
+        await browser.close()
+
+    return {
+        "steps": results,
+        "oracle_pass": oracle_pass,
+        "oracle_fail": oracle_fail,
+        "oracle_verdict": "pass" if oracle_pass else ("fail" if oracle_fail else "inconclusive"),
+        "screenshots": screenshots[:10],
+        "console_messages": console_messages,
+        "js_errors": js_errors,
+    }
 
 
 async def _analyze_page(
@@ -201,10 +356,36 @@ def scan(request: ScanRequest):
         if not target:
             raise HTTPException(status_code=400, detail="config.target is required")
 
+        timeout_ms: int = int(cfg.get("timeout", 30000))
+        actions: Optional[List[Dict[str, Any]]] = cfg.get("actions")
+
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
+        output_dir = _report_dir(request.workspace_path, request.report_base)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / f"{timestamp}.json"
+
+        if actions:
+            logger.info(f"Running {len(actions)} scripted actions against {target}")
+            action_data = asyncio.run(_run_actions(actions, target, timeout_ms))
+
+            report = {"target": target, "mode": "actions", **action_data}
+            with open(output_path, "w") as f:
+                json.dump(report, f, indent=2)
+
+            return {
+                "status": "success",
+                "mode": "actions",
+                "finding_count": len(action_data["oracle_pass"]),
+                "oracle_verdict": action_data["oracle_verdict"],
+                "oracle_pass": action_data["oracle_pass"],
+                "oracle_fail": action_data["oracle_fail"],
+                "report_path": str(output_path),
+                "timestamp": timestamp,
+            }
+
         wait_for: str = cfg.get("wait_for", "networkidle")
         check_xss: bool = bool(cfg.get("check_xss", False))
         take_screenshot: bool = bool(cfg.get("screenshot", False))
-        timeout_ms: int = int(cfg.get("timeout", 30000))
 
         logger.info(f"Analyzing {target} with headless Chromium")
 
@@ -212,17 +393,13 @@ def scan(request: ScanRequest):
 
         finding_count = len(page_data["xss_findings"]) + len(page_data["js_errors"])
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")[:-3] + "Z"
-        output_dir = _report_dir(request.workspace_path, request.report_base)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = output_dir / f"{timestamp}.json"
-
-        report = {"target": target, **page_data}
+        report = {"target": target, "mode": "one-shot", **page_data}
         with open(output_path, "w") as f:
             json.dump(report, f, indent=2)
 
         return {
             "status": "success",
+            "mode": "one-shot",
             "finding_count": finding_count,
             "report_path": str(output_path),
             "timestamp": timestamp,

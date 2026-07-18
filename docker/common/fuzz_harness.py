@@ -22,7 +22,9 @@ its FastAPI service.
 
 import argparse
 import base64
+import contextlib
 import glob
+import hashlib
 import json
 import os
 import re
@@ -211,6 +213,25 @@ def _crash_signature(output: str) -> str:
     return ""
 
 
+def _dedup_key(output: str, signature: str, artifact: Optional[Path]) -> str:
+    """Dedup key for a single crash artifact.
+
+    The artifact's own content hash comes FIRST so two distinct crashing inputs
+    are never collapsed onto one key (over-reporting a duplicate is far safer
+    than silently dropping a real, distinct crash). Only when there is no
+    artifact file do we fall back to a run-level DEDUP_TOKEN / signature.
+    """
+    if artifact and artifact.is_file():
+        with contextlib.suppress(OSError):
+            return "hash:" + hashlib.sha1(artifact.read_bytes()).hexdigest()[:16]  # noqa: S324
+    token = re.search(r"DEDUP_TOKEN:\s*(\S+)", output)
+    if token:
+        return f"token:{token.group(1)}"
+    if signature:
+        return "sig:" + hashlib.sha1(signature.encode("utf-8", "replace")).hexdigest()[:16]  # noqa: S324
+    return "unknown"
+
+
 def _input_fields(artifact: Path) -> Dict[str, Any]:
     try:
         raw = artifact.read_bytes()
@@ -302,14 +323,22 @@ def run(engine: str, base: Path, out_path: Path, config: Dict[str, Any]) -> Dict
     crash_found = bool(artifacts) or crash_by_marker or crash_by_exit
     signature = _crash_signature(combined)
 
+    # Dedup crash artifacts by content so a campaign reports each distinct crash
+    # once; the crashing bytes ride along inline as input_base64 per result.
     results: List[Dict[str, Any]] = []
+    seen_keys = set()
     for artifact in artifacts:
+        key = _dedup_key(combined, signature, artifact)
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
         entry = {
             "ruleId": "fuzzing/crash",
             "engine": engine,
             "crash_type": signature or "crash",
             "message": signature or f"{engine} produced a crashing input",
             "artifact": artifact.name,
+            "dedup_key": key,
             "stack_trace": _tail(combined, 60),
         }
         entry.update(_input_fields(artifact))
@@ -324,6 +353,7 @@ def run(engine: str, base: Path, out_path: Path, config: Dict[str, Any]) -> Dict
                 "crash_type": signature or "crash",
                 "message": signature or f"{engine} reported a crash (no artifact file captured)",
                 "artifact": None,
+                "dedup_key": _dedup_key(combined, signature, None),
                 "input_base64": None,
                 "stack_trace": _tail(combined, 60),
             }
@@ -333,6 +363,7 @@ def run(engine: str, base: Path, out_path: Path, config: Dict[str, Any]) -> Dict
         {
             "crash_found": crash_found,
             "results": results,
+            "unique_crash_count": len(results) if crash_found else 0,
             "executions": _executions(combined),
             "duration_seconds": duration,
             "exit_code": exit_code,
