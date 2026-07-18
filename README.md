@@ -2,7 +2,7 @@
   <h1>MCPwner</h1>
   <img src="readme/avatar.png" width="200" alt="MCPwner Badger Avatar">
   <h3><i>Beware the Badger</i></h3>
-  <p>Model Context Protocol server for security research automation</p>
+  <p>Model Context Protocol server for autonomous security research</p>
 
 [![Docker](https://img.shields.io/badge/Docker-ready-1F2937?logo=docker&logoColor=2496ED)](https://www.docker.com/)
 [![MCP](https://img.shields.io/badge/MCP-compatible-065F46)](https://modelcontextprotocol.io)
@@ -21,13 +21,39 @@
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Workflow](#workflow)
+- [Integrated Tools](#integrated-tools)
+- [Installation](#installation)
+- [Architecture](#architecture)
+- [Data Persistence](#data-persistence)
+- [Security Considerations](#security-considerations)
+- [License](#license)
+
 ## Overview
 
-MCPwner is a Model Context Protocol (MCP) server that integrates security testing tools into LLM-driven workflows. It provides a unified interface for secret scanning, static analysis (SAST), software composition analysis (SCA), infrastructure-as-code (IaC) security, source fuzzing, reconnaissance, dynamic application security testing (DAST), and vulnerability research including 0-day discovery.
+MCPwner is an MCP server that gives your LLM agent a full offensive-security toolkit. It exposes 55+ containerized tools through a single MCP interface - SAST, SCA, secrets, IaC, reconnaissance, DAST, coverage-guided fuzzing, CodeQL (builtin and custom queries), a headless browser, an OOB callback server, a PoC-script sandbox with deterministic oracles, and a persistent findings ledger.
 
-Instead of manually chaining tools and pasting outputs into your LLM, MCPwner standardizes and streams results directly into the model's working context. This enables continuous reasoning, correlation, and attack path discovery across the security research lifecycle - from mapping attack surfaces and identifying known vulnerabilities to uncovering novel attack vectors.
+The architecture is designed for **agent-driven vulnerability research**: a single agent session - model-agnostic (Claude, Cursor, Kiro, Gemini, or any MCP-capable coding agent) - works through the research phases (recon, code audit, PoC validation, adversarial review), recording every step in the shared findings ledger. Each finding progresses from hypothesis through empirical proof to verified report - "no exploit, no report."
 
 > **Note**: This project is under active development. Learn more about MCPs [here](https://modelcontextprotocol.io).
+
+## Workflow
+
+MCPwner is the tool server; your LLM agent is the brain. A typical deep-research engagement:
+
+| Phase         | What happens                                    | MCPwner tools used                                                                               |
+| ------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Workspace** | Clone target, detect stack                      | `create_workspace`, `detect_languages`                                                           |
+| **Discover**  | Broad scan for known patterns                   | `run_sast_scan`, `run_sca_scan`, `run_secrets_scan`, `run_reconnaissance_chain`, `execute_query` |
+| **Triage**    | Kill false positives, prove reachability        | `index_code_facts`, `query_code_facts`, `execute_query` (custom CodeQL)                          |
+| **Research**  | Hunt novel bugs via diffs and variant analysis  | `diff_discovery`, `run_fuzzing_scan`, custom CodeQL                                              |
+| **Prove**     | Empirical validation with deterministic oracles | `run_poc_scan` (sandbox), `run_dast_scan`, `run_utilities_scan` (chromium)                       |
+| **Report**    | Only oracle-verified findings ship              | `upsert_finding`, `generate_report`                                                              |
+
+The ledger uses deep-merge upserts, so a later phase's `review` verdict never clobbers the earlier `poc` data (and vice-versa) - and it stays consistent if the agent's context is reset mid-engagement.
 
 ## Integrated Tools
 
@@ -47,7 +73,7 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 | :------------------------------------------------------: | :-------------------------------------------------------: |
 | [**wafw00f**](https://github.com/EnableSecurity/wafw00f) | [**Kiterunner**](https://github.com/assetnote/kiterunner) |
 
-## Static Application Security Testing (SAST) Scanning Tools
+## Static Application Security Testing (SAST)
 
 |   <img src="readme/codeql.png" width="100">    |  <img src="readme/psalm.png" width="100">   |    <img src="readme/gosec.png" width="100">    |   <img src="readme/bandit.png" width="100">   |    <img src="readme/semgrep.jpg" width="100">     |
 | :--------------------------------------------: | :-----------------------------------------: | :--------------------------------------------: | :-------------------------------------------: | :-----------------------------------------------: |
@@ -55,9 +81,9 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 
 <br>
 
-|        <img src="readme/brakeman.png" width="100">        | <img src="readme/pmd.png" width="100"> |        <img src="readme/nodejsscan.png" width="100">        |   <img src="readme/joern.png" width="100">    |       <img src="readme/yasa.png" width="100">       |
-| :-------------------------------------------------------: | :------------------------------------: | :---------------------------------------------------------: | :-------------------------------------------: | :-------------------------------------------------: |
-| [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  | [**NodeJsScan**](https://github.com/ajinabraham/NodeJsScan) | [**Joern**](https://github.com/joernio/joern) | [**YASA**](https://github.com/antgroup/YASA-Engine) |
+|        <img src="readme/brakeman.png" width="100">        | <img src="readme/pmd.png" width="100"> |        <img src="readme/nodejsscan.png" width="100">        |   <img src="readme/joern.png" width="100">    |       <img src="readme/yasa.png" width="100">       |     <img src="readme/opengrep.png" width="100">      |
+| :-------------------------------------------------------: | :------------------------------------: | :---------------------------------------------------------: | :-------------------------------------------: | :-------------------------------------------------: | :--------------------------------------------------: |
+| [**Brakeman**](https://github.com/presidentbeef/brakeman) | [**PMD**](https://github.com/pmd/pmd)  | [**NodeJsScan**](https://github.com/ajinabraham/NodeJsScan) | [**Joern**](https://github.com/joernio/joern) | [**YASA**](https://github.com/antgroup/YASA-Engine) | [**OpenGrep**](https://github.com/opengrep/opengrep) |
 
 ## Source Fuzzing
 
@@ -65,13 +91,13 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 | :----------------------------------------------: | :-------------------------------------------------------------: | :-------------------------------------------------------------------: | :---------------------------------------------------: |
 | [**Atheris**](https://github.com/google/atheris) | [**Jazzer**](https://github.com/CodeIntelligenceTesting/jazzer) | [**Jazzer.js**](https://github.com/CodeIntelligenceTesting/jazzer.js) | [**PHP-Fuzzer**](https://github.com/nikic/php-fuzzer) |
 
-## Secrets Scanning Tools
+## Secrets Scanning
 
 |       <img src="readme/gitleaks.png" width="100">       |          <img src="readme/trufflehog.png" width="100">          |      <img src="readme/detect-secrets.png" width="100">       |      <img src="readme/whispers.png" width="100">       |      <img src="readme/hawk-eye.jpeg" width="100">      |
 | :-----------------------------------------------------: | :-------------------------------------------------------------: | :----------------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------------: |
 | [**Gitleaks**](https://github.com/zricethezav/gitleaks) | [**TruffleHog**](https://github.com/trufflesecurity/trufflehog) | [**detect-secrets**](https://github.com/Yelp/detect-secrets) | [**Whispers**](https://github.com/Skyscanner/whispers) | [**Hawk-Eye**](https://github.com/rohitcoder/hawk-eye) |
 
-## Software Composition Analysis (SCA) Tools
+## Software Composition Analysis (SCA)
 
 |   <img src="readme/grype.png" width="100">    |   <img src="readme/syft.png" width="100">   |      <img src="readme/osv-scanner.png" width="100">      |      <img src="readme/retirejs.png" width="100">       |
 | :-------------------------------------------: | :-----------------------------------------: | :------------------------------------------------------: | :----------------------------------------------------: |
@@ -101,72 +127,15 @@ Instead of manually chaining tools and pasting outputs into your LLM, MCPwner st
 | :---------------------------------------------------------: | :--------------------------------------------------: | :-----------------------------------------------------: | :------------------------------------------------: | :-------------------------------------------------------------------: |
 | [**Linguist**](https://github.com/github-linguist/linguist) | [**WireMock**](https://github.com/wiremock/wiremock) | [**Mitmproxy**](https://github.com/mitmproxy/mitmproxy) | [**aiohttp**](https://github.com/aio-libs/aiohttp) | [**Chromium w. Playwright**](https://github.com/microsoft/playwright) |
 
+## PoC Validation
+
+|     PoC-Script Sandbox      |
+| :-------------------------: |
+| Deterministic oracle runner |
+
+The PoC sandbox runs agent-authored Python/bash exploit scripts inside the target network and returns a **deterministic oracle verdict** (pass/fail based on exit code or explicit markers). This is how MCPwner proves logic bugs, IDOR/BOLA, race conditions, and access-control bypasses that off-the-shelf DAST cannot express.
+
 </div>
-
-## Future Tools
-
-The following tools are planned for future releases.
-
-### Insecure Deserialization
-
-Gadget-chain and payload generators for weaponizing deserialization sinks identified during SAST. Mature gadget-chain ecosystems exist for Java, .NET, and PHP; Python is covered via malicious-pickle generation (Ruby/Node deserialization is payload-based and lives in the Payloads corpus below):
-
-- **ysoserial** - Java
-- **ysoserial.net** - .NET
-- **PHPGGC** - PHP
-- **marshalsec** - JVM marshallers/unmarshallers
-- **Fickling** - Python (pickle)
-
-### HTTP Request Smuggling
-
-- **smuggler** - HTTP/1.1 request smuggling / desync (CL.TE, TE.CL, TE.TE)
-- **h2csmuggler** - HTTP/2 cleartext (h2c) upgrade smuggling (distinct from HTTP/2 desync)
-- **http2smugl** - HTTP/2 request smuggling / desync
-
-### Payloads
-
-Curated payload and wordlist corpora to back the tools above:
-
-- **SecLists** - aggregate of fuzzing payloads, credentials, and injection lists
-- **PayloadsAllTheThings** - attack payloads and bypasses organized by vulnerability class
-- **FuzzDB** - fault-injection primitives and predictable resource patterns
-
-## Usage Examples
-
-### Automated Enumeration Pipeline
-
-```
-"Enumerate and scan example.com"
-→ MCPwner chains: Subfinder + Amass → Masscan + Nmap → httpx → Katana + gau → ffuf + Arjun
-```
-
-### Scan a GitHub Repository for Secrets
-
-```
-"Scan https://github.com/example/repo for secrets"
-→ MCPwner runs Gitleaks, TruffleHog, detect-secrets and correlates findings
-```
-
-### Security Audit
-
-```
-"Run a security audit on my Python project"
-→ MCPwner runs Bandit (SAST), OSV-Scanner (SCA), and secrets scanning
-```
-
-### Attack Path Analysis
-
-```
-"Find vulnerabilities in the authentication module"
-→ MCPwner runs CodeQL queries, cross-references with secrets and SCA results
-```
-
-### Live Target Exploitation
-
-```
-"Test for SQLi and XSS on http://localhost:8080"
-→ MCPwner chains: sqlmap + Dalfox and verifies findings
-```
 
 ## Installation
 
@@ -195,37 +164,26 @@ Curated payload and wordlist corpora to back the tools above:
 2. **Configure the server**:
 
    ```bash
+   cp .env.example .env
    cp config/config.yaml.example config/config.yaml
-   # Edit config/config.yaml as needed
    ```
 
 3. **Start the services**:
 
    ```bash
-   docker-compose up -d --build
+   docker compose up -d --build
    ```
 
 4. **Verify services are running**:
    ```bash
-   docker-compose ps
+   docker compose ps
    ```
 
 ### Connect Your IDE
 
-Once Docker containers are running, add MCPwner to your MCP client:
+Once Docker containers are running, add MCPwner to your MCP client.
 
-**Important: Dynamic Tool Registration**
-MCPwner uses a modular, opt-in architecture. Security tools are governed by Docker Compose `profiles`.
-
-1. The `.env` file (`COMPOSE_PROFILES=sast,secrets,reconnaissance,dast,etc`) dictates which containers are brought online. Alternatively, you can override this and launch specific profiles via the CLI: `docker compose --profile sast --profile dast up -d`.
-2. The MCP server dynamically probes the running containers at startup and registers _only_ the healthy tools with your LLM.
-3. If you want to omit specific tools (e.g., `semgrep`), omit its category (`sast`) from `.env` and manually list the other tools you want (`bandit,gosec,codeql`).
-4. **Note:** Tools in the `utilities` category (e.g., Linguist, WireMock, Chromium) are treated as permanent core dependencies. They run unconditionally on `docker compose up -d` to ensure critical cross-tool dependencies (like language detection) always function.
-
-**Configuration File Locations:**
-
-- Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
-- Cursor/Kiro: `mcp.json` in your project or settings directory
+**Dynamic Tool Registration:** MCPwner uses Docker Compose `profiles` for opt-in tool categories. The `.env` file's `COMPOSE_PROFILES` variable controls which containers start. The MCP server probes running containers at startup and registers only healthy tools - if a container is down, its tools simply don't appear. Tools in the `utilities` category run unconditionally.
 
 **One-Click Install (requires Docker running):**
 
@@ -237,7 +195,7 @@ MCPwner uses a modular, opt-in architecture. Security tools are governed by Dock
 
 **Manual Configuration:**
 
-Add the following to your MCP configuration file:
+Add to your MCP configuration file (`claude_desktop_config.json`, `mcp.json`, etc.):
 
 ```json
 {
@@ -255,7 +213,7 @@ Restart your MCP client to load the new server configuration.
 
 ### Scanning Local Projects
 
-To scan projects from your host machine, mount them into the container by adding a volume in `docker-compose.yaml`:
+Mount your projects into the container by adding a volume in `docker-compose.yaml`:
 
 ```yaml
 services:
@@ -264,47 +222,9 @@ services:
       - /path/to/your/projects:/mnt/projects:ro
 ```
 
-Then use the `create_workspace` tool with:
-
-- `source_type="local"`
-- `source="/mnt/projects/my-project"`
-
-## Data Persistence
-
-MCPwner automatically persists workspace and CodeQL database metadata across container restarts using file-based storage in the shared Docker volume (`/workspaces/.metadata/`). No configuration required - the system loads existing data on startup and saves after every operation using atomic writes to prevent corruption.
-
-**Workspace Cleanup Control:**
-
-The `cleanup_workspace` tool provides granular control:
-
-- `delete_files=True, delete_metadata=False` - Free disk space but preserve workspace history (recommended)
-- `delete_files=True, delete_metadata=True` - Complete removal of workspace and metadata
-- `delete_files=False, delete_metadata=True` - Remove from list but keep files on disk
-
-**Backup:**
-
-```bash
-# Backup entire workspaces volume
-docker run --rm -v mcpwner_workspaces:/data -v $(pwd):/backup \
-  alpine tar czf /backup/workspaces-backup.tar.gz /data
-
-# Restore volume
-docker run --rm -v mcpwner_workspaces:/data -v $(pwd):/backup \
-  alpine tar xzf /backup/workspaces-backup.tar.gz -C /
-```
+Then use `create_workspace` with `source_type="local"` and `source="/mnt/projects/my-project"`.
 
 ## Architecture
-
-MCPwner uses HTTP-based communication between containers to support future remote deployments. While currently optimized for local usage, the architecture can be adapted for remote server deployments with minimal modifications.
-
-**Design Principles:**
-
-- Container isolation for security tool execution
-- Standardized output formats for LLM consumption (SARIF/JSON)
-- Extensible plugin architecture for new tools
-- Stateless API (memories are managed by user)
-
-**Architecture Overview:**
 
 ```mermaid
 graph LR
@@ -326,6 +246,7 @@ graph LR
     IaC[IaC Security]
     Fuzzing[Source Fuzzing]
     DAST[DAST Tools]
+    PoC[PoC Sandbox]
 
     Client -->|JSON-RPC 2.0| Server
     Server -->|HTTP| SAST
@@ -338,6 +259,7 @@ graph LR
     Server -->|HTTP| IaC
     Server -->|HTTP| Fuzzing
     Server -->|HTTP| DAST
+    Server -->|HTTP| PoC
 
     style LLM fill:#7C3AED,stroke:#5B21B6,stroke-width:3px,color:#fff
     style Client fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
@@ -352,91 +274,40 @@ graph LR
     style IaC fill:#059669,stroke:#047857,stroke-width:2px,color:#fff
     style Fuzzing fill:#B91C1C,stroke:#7F1D1D,stroke-width:2px,color:#fff
     style DAST fill:#D35400,stroke:#A04000,stroke-width:2px,color:#fff
+    style PoC fill:#DC2626,stroke:#991B1B,stroke-width:2px,color:#fff
     style IDE fill:none,stroke:#ddd,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
-## Available MCP Tools
+**Design Principles:**
 
-MCPwner exposes the following tools through the MCP interface:
+- Container isolation for security tool execution
+- Standardized output (SARIF/JSON) for LLM consumption
+- Dynamic tool registration - only healthy containers appear as tools
+- Persistent findings ledger with deep-merge semantics across research phases
+- Deterministic oracles for PoC validation (exit code, markers, OOB callbacks, XSS execution)
 
-**Workspace Management:**
+### Agent Workflow
 
-- `create_workspace` - Initialize scanning workspace from local path, Git URL, or GitHub repo
-- `list_workspaces` - List all available workspaces
-- `cleanup_workspace` - Remove workspace and associated data
+MCPwner is tool infrastructure. A **single agent session** - model-agnostic (Claude, Cursor, Kiro, Gemini, or any MCP-capable coding agent) - drives the whole engagement, running each phase itself (recon → API mapping → environment → code audit → vulnerability research → PoC → review) and recording progress in the findings ledger. There is no separate orchestration service or configuration file: MCPwner exposes tools, the agent supplies the workflow.
 
-**Findings Ledger:**
+For a long, isolated sub-task - canonically, standing up and driving a live target environment in a container - the agent may optionally offload to a helper session if its host supports one, but the flow never depends on it.
 
-Workspace-scoped, persisted to disk (`<workspace>/findings/<id>.json`), and always available — no container or health gate required. This is the source of truth for the multi-agent deep-research pipeline: every hypothesis, PoC result, and review verdict is a finding entry rather than prose.
+## Data Persistence
 
-- `upsert_finding` - Create or update a finding. Deep-merges into an existing entry by default, so one agent can write its own sub-object (e.g. `poc`) without clobbering another agent's fields (e.g. `review`)
-- `list_findings` - List all findings in a workspace, optionally filtered by `status` (e.g. `poc-confirmed`, `review-approved`)
-- `get_finding` - Retrieve a single finding by id
+MCPwner persists workspace metadata, CodeQL databases, and findings across container restarts using file-based storage in the shared Docker volume (`/workspaces/.metadata/`). The findings ledger is always available (no container health gate) - it's how the agent tracks findings across phases and recovers state after a context reset.
 
-**SAST (Static Analysis):**
+**Workspace Cleanup:**
 
-- `run_sast_scan` - Run static analysis tools (Semgrep, Bandit, Gosec, Brakeman, PMD, Psalm, NodeJsScan, Joern, YASA)
-- `get_sast_report` - Retrieve SAST scan results
-- `sast_list_tools` - List available SAST tools
-
-**Secrets Detection:**
-
-- `run_secrets_scan` - Run secrets scanning tools (Gitleaks, TruffleHog, Whispers, detect-secrets, Hawk-Eye)
-- `get_secrets_report` - Retrieve secrets scan results
-- `secrets_list_tools` - List available secrets scanning tools
-
-**SCA (Software Composition Analysis):**
-
-- `run_sca_scan` - Analyze dependencies for vulnerabilities (Grype, Syft, OSV-Scanner, Retire.js)
-- `get_sca_report` - Retrieve SCA scan results
-- `sca_list_tools` - List available SCA tools
-
-**Reconnaissance:**
-
-- `run_reconnaissance_scan` - Run a single reconnaissance tool (Subfinder, Amass, Nmap, Masscan, httpx, Katana, ffuf, bbot, gau, Arjun, wafw00f, Kiterunner)
-- `run_reconnaissance_chain` - Chain multiple reconnaissance tools sequentially
-- `get_reconnaissance_report` - Retrieve reconnaissance scan results
-- `reconnaissance_list_tools` - List available reconnaissance tools
-
-**CodeQL:**
-
-- `detect_languages` - Detect languages in codebase via Linguist
-- `create_codeql_database` - Create CodeQL database for analysis
-- `list_databases` - List available CodeQL databases
-- `list_query_packs` - List available query packs
-- `execute_query` - Run specific CodeQL queries
-
-**Infrastructure & IaC Security:**
-
-- `run_iac_scan` - Scan infrastructure-as-code for misconfigurations (Checkov, KICS, Terrascan, TFSec, Hadolint)
-- `get_iac_report` - Retrieve IaC scan results
-- `iac_list_tools` - List available IaC scanning tools
-
-**Source Fuzzing:**
-
-- `run_fuzzing_scan` - Run a white-box, coverage-guided fuzzing campaign against a per-target harness (Atheris, Jazzer, Jazzer.js, PHP-Fuzzer)
-- `get_fuzzing_report` - Retrieve fuzzing crash results (crashing input + stack trace)
-- `fuzzing_list_tools` - List available fuzzing engines, filtered by detected language
-
-**DAST (Dynamic Application Security Testing):**
-
-- `run_dast_scan` - Run dynamic application security testing tools (sqlmap, NoSQLMap, Commix, Dalfox, SSTImap, SSRFmap, jwt_tool, interactsh)
-- `get_dast_report` - Retrieve DAST scan results
-- `dast_list_tools` - List available DAST tools
-
-**Utilities:**
-
-- `run_utilities_scan` - Run a utility tool against a live target (Linguist, WireMock, Mitmproxy, aiohttp, Headless Chromium)
-- `get_utilities_report` - Retrieve utility scan results
-- `utilities_list_tools` - List available utility tools and their config options
-
-**Health & Monitoring:**
-
-- `health_check` - Check server and tool availability
-- `list_tools` - List all available tools and their status
+- `delete_files=True, delete_metadata=False` - Free disk space, preserve history
+- `delete_files=True, delete_metadata=True` - Complete removal
+- `delete_files=False, delete_metadata=True` - Remove from list, keep files
 
 ## Security Considerations
 
-MCPwner executes security tools that may perform intrusive operations. Only use on systems and codebases you own or have explicit permission to test - unauthorized access is illegal. Restrict MCP server access to authorized users and consider network isolation for production deployments. Review tool configurations before running scans as some tools can generate significant network traffic or system load. Log tool execution and results, keeping in mind that security scans can trigger alerts in monitoring systems. Follow responsible disclosure practices when reporting vulnerabilities discovered using MCPwner. Keep Docker images updated and scan containers for vulnerabilities regularly. Never commit API keys, tokens, or credentials to configuration files - use environment variables or secret management systems instead.
+MCPwner executes security tools that perform intrusive operations. Only use on systems you own or have explicit permission to test. The PoC sandbox runs arbitrary agent-authored code inside a resource-capped, unprivileged container - but it is connected to the target network by design.
 
-Also, you should be responsible for your own security when running these tools and accessing 3rd party libraries, it's suggested to run everything sandboxed and with no special auth (minimized and hardened where feasible)
+Restrict MCP server access to authorized users. Review tool configurations before running scans. Follow responsible disclosure practices. Never commit credentials to configuration files - use environment variables.
+
+## License
+
+[Apache 2.0](LICENSE.txt)
