@@ -141,7 +141,7 @@ def get_report(category: str, tool: str, workspace_id: str) -> Dict[str, Any]:
 
 def create_scan_tool(category: str):
     """Factory to create a scan tool function for FastMCP."""
-    if category in ("dast", "utilities", "reconnaissance"):
+    if category in ("dast", "utilities", "reconnaissance", "poc"):
 
         def scan_tool(
             tool: str,
@@ -170,7 +170,7 @@ def create_scan_tool(category: str):
                 target = config["target"]
             elif is_chained:
                 pass
-            elif not (category == "dast" and tool == "interactsh-client"):
+            elif not (category == "dast" and tool == "interactsh-client") and category != "poc":
                 expected_format = (
                     "example.com" if category == "reconnaissance" else "https://example.com/page"
                 )
