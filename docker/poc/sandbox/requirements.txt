@@ -1,0 +1,8 @@
+fastapi==0.115.6
+uvicorn==0.34.0
+pydantic==2.10.4
+# Common libraries an agent-authored exploit script is likely to need.
+requests==2.32.3
+httpx==0.28.1
+PyJWT==2.10.1
+websocket-client==1.8.0

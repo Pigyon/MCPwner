@@ -186,3 +186,8 @@ dast:
     service_url: "http://jwt-tool:8166"
   interactsh_client:
     service_url: "http://interactsh-client:8167"
+
+# Proof-of-Concept validation service (deterministic exploit oracle)
+poc:
+  poc_sandbox:
+    service_url: "http://poc-sandbox:8134"

@@ -30,6 +30,7 @@ class ToolCategory(str, Enum):
     IAC = "iac"
     FUZZING = "fuzzing"
     DAST = "dast"
+    POC = "poc"
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,7 @@ _UTIL = ToolCategory.UTILITIES
 _IAC = ToolCategory.IAC
 _FUZZING = ToolCategory.FUZZING
 _DAST = ToolCategory.DAST
+_POC = ToolCategory.POC
 
 _SPECS: Tuple[ToolSpec, ...] = (
     _spec("semgrep", _SAST, ("semgrep",), "http://semgrep:8082"),
@@ -109,6 +111,7 @@ _SPECS: Tuple[ToolSpec, ...] = (
     _spec("ssrfmap", _DAST, ("dast", "ssrfmap"), "http://ssrfmap:8165"),
     _spec("jwt_tool", _DAST, ("dast", "jwt_tool"), "http://jwt-tool:8166"),
     _spec("interactsh-client", _DAST, ("dast", "interactsh_client"), "http://interactsh-client:8167"),
+    _spec("poc-sandbox", _POC, ("poc", "poc_sandbox"), "http://poc-sandbox:8134"),
 )
 
 TOOL_REGISTRY: Dict[str, ToolSpec] = {spec.name: spec for spec in _SPECS}

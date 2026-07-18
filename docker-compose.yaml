@@ -199,6 +199,9 @@ services:
       interactsh-client:
         condition: service_healthy
         required: false
+      poc-sandbox:
+        condition: service_healthy
+        required: false
   codeql:
     # Using digest for reproducibility (equivalent to latest as of 2026-01-23)
     # To update: docker pull mcr.microsoft.com/cstsectools/codeql-container:latest
@@ -1887,6 +1890,36 @@ services:
     profiles:
       - interactsh-client
       - dast
+  poc-sandbox:
+
+    build:
+      context: .
+      dockerfile: docker/poc/sandbox/Dockerfile
+    container_name: poc-sandbox
+    env_file:
+      - docker/common/python.env
+    read_only: false
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - workspaces:/workspaces
+    tmpfs:
+      - /tmp:size=512m
+    networks:
+      - mcpwner-recon
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen(\"http://localhost:8134/health\")"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    profiles:
+      - poc-sandbox
+      - poc
 volumes:
   workspaces:
     driver: local
