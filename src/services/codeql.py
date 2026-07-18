@@ -107,6 +107,7 @@ class CodeQLService:
         database_id: str,
         query_pack: str,
         output_path: str = None,
+        custom_query: str = None,
     ) -> Dict[str, Any]:
         """Execute CodeQL query."""
         database = self.repository.find_database(workspace_id, database_id)
@@ -115,6 +116,15 @@ class CodeQLService:
 
         if not output_path:
             output_path = f"/tmp/{workspace_id}_{database_id}_results.sarif"
+
+        # A custom query carries its own logic; the pack alias is irrelevant.
+        if custom_query:
+            return self.codeql_client.execute_query(
+                database_path=database.path,
+                query_pack=query_pack,
+                output_path=output_path,
+                custom_query=custom_query,
+            )
 
         resolved_pack = query_pack
         if query_pack in ["security-extended", "security-and-quality", "code-scanning"]:

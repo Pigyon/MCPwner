@@ -1,27 +1,17 @@
-"""
-CodeQL HTTP Service - Infrastructure Component
-
-This FastAPI service runs INSIDE the codeql-executor container as a separate microservice.
-It provides a REST API for CodeQL operations (database creation, query execution).
-
-Architecture:
-- Location: docker/codeql/main.py (infrastructure, not business logic)
-- Container: codeql-executor (separate from mcpwner-server)
-- Communication: HTTP API on port 8080
-- Called by: src/clients/codeql.py (CodeQLClient)
-
-This is NOT part of the MCP server's service layer (src/services/).
-It's a standalone HTTP service that wraps CodeQL CLI operations.
-"""
+"""CodeQL HTTP Service - wraps the CodeQL CLI as a REST API (port 8080)."""
 
 import json
 import logging
 import os
+import re
+import shutil
 import subprocess
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+import yaml
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -42,6 +32,7 @@ class ExecuteQueryRequest(BaseModel):
     query_pack: str
     output_path: str
     query_name: Optional[str] = None
+    custom_query: Optional[str] = None
 
 
 class HealthResponse(BaseModel):
@@ -57,13 +48,11 @@ class VersionResponse(BaseModel):
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
-    """Health check endpoint."""
     return {"status": "healthy"}
 
 
 @app.get("/version", response_model=VersionResponse)
 def get_version():
-    """Get CodeQL version."""
     try:
         result = subprocess.run(
             ["codeql", "version", "--format=json"],
@@ -86,7 +75,6 @@ def get_version():
 
 @app.post("/database/create")
 def create_database(request: CreateDatabaseRequest):
-    """Create a CodeQL database."""
     try:
         if not Path(request.source_path).exists():
             raise HTTPException(status_code=400, detail=f"Source path not found: {request.source_path}")
@@ -154,7 +142,6 @@ def create_database(request: CreateDatabaseRequest):
 
 @app.get("/query/packs")
 def list_query_packs():
-    """List available CodeQL query packs."""
     try:
         result = subprocess.run(
             ["codeql", "resolve", "queries", "--format=json"],
@@ -175,14 +162,72 @@ def list_query_packs():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _detect_db_language(database_path: str) -> Optional[str]:
+    meta = Path(database_path) / "codeql-database.yml"
+    if not meta.exists():
+        return None
+    try:
+        data = yaml.safe_load(meta.read_text())
+        return data.get("primaryLanguage") or data.get("languages", [None])[0]
+    except Exception as e:
+        logger.warning(f"Could not read database language: {e}")
+        return None
+
+
+def _build_adhoc_qlpack(custom_query: str, language: str) -> str:
+    """Write the custom query into a temp qlpack that depends on the language's
+    standard library so its imports resolve. Returns the pack dir (caller cleans up)."""
+    # `database analyze` only emits SARIF for queries carrying result-set metadata;
+    # fail fast with a clear message instead of a mysterious empty 0-finding run.
+    if not re.search(r"@kind\s+(problem|path-problem)", custom_query) or "@id" not in custom_query:
+        raise HTTPException(
+            status_code=400,
+            detail="Custom query must include '@kind problem' (or 'path-problem') and an '@id' "
+            "metadata comment so CodeQL can emit SARIF.",
+        )
+
+    pack_dir = tempfile.mkdtemp(prefix="mcpwner_adhoc_", dir="/tmp")
+    try:
+        qlpack = {
+            "name": "mcpwner/adhoc-query",
+            "version": "0.0.1",
+            "dependencies": {f"codeql/{language}-all": "*"},
+        }
+        (Path(pack_dir) / "qlpack.yml").write_text(yaml.safe_dump(qlpack))
+        (Path(pack_dir) / "custom.ql").write_text(custom_query)
+
+        install = subprocess.run(
+            ["codeql", "pack", "install", pack_dir],
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        if install.returncode != 0:
+            logger.warning(f"codeql pack install non-zero (continuing): {install.stderr[:300]}")
+        return pack_dir
+    except Exception:
+        shutil.rmtree(pack_dir, ignore_errors=True)
+        raise
+
+
 @app.post("/query/execute")
 def execute_query(request: ExecuteQueryRequest):
-    """Execute a CodeQL query."""
+    adhoc_pack_dir: Optional[str] = None
     try:
         if not Path(request.database_path).exists():
             raise HTTPException(status_code=400, detail=f"Database not found: {request.database_path}")
 
-        if request.query_pack.endswith(".qls"):
+        if request.custom_query:
+            language = _detect_db_language(request.database_path)
+            if not language:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not determine database language for custom query.",
+                )
+            logger.info(f"Building ad-hoc qlpack for custom {language} query")
+            adhoc_pack_dir = _build_adhoc_qlpack(request.custom_query, language)
+            query_spec = str(Path(adhoc_pack_dir) / "custom.ql")
+        elif request.query_pack.endswith(".qls"):
             query_spec = request.query_pack
         else:
             query_spec = f"codeql/{request.query_pack}"
@@ -237,6 +282,10 @@ def execute_query(request: ExecuteQueryRequest):
     except Exception as e:
         logger.error(f"Query execution error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        # Ad-hoc qlpacks accumulate one dir per custom query on the /tmp tmpfs.
+        if adhoc_pack_dir:
+            shutil.rmtree(adhoc_pack_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

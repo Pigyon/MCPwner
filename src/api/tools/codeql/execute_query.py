@@ -30,127 +30,124 @@ def execute_query(
     """
     Execute CodeQL query on database.
 
+    Builtin mode runs a curated query pack. Custom mode runs an agent-authored
+    .ql query for variant analysis / targeted hypotheses - the query must carry
+    ``@kind problem`` (or ``path-problem``) and an ``@id`` so CodeQL can emit
+    SARIF. Its imports resolve against the database language's standard library.
+
     Args:
         workspace_id: UUID of the workspace
         database_id: ID of the CodeQL database
-        query_pack: Query pack name (default: "security-extended")
+        query_pack: Query pack name (default: "security-extended"); ignored when query_type="custom"
         query_type: Type of query - "builtin" or "custom" (default: "builtin")
-        custom_query: Custom CodeQL query code (required if query_type="custom")
+        custom_query: Custom CodeQL query source (required if query_type="custom")
 
     Returns:
         Dictionary with query results and findings
     """
-    try:
-        codeql_service = get_codeql_service()
+    codeql_service = get_codeql_service()
 
-        if custom_query:
-            logger.debug(f"Custom query provided (length: {len(custom_query)})")
+    if query_type not in ("builtin", "custom"):
+        return {
+            "status": "error",
+            "error": f"query_type must be 'builtin' or 'custom', got '{query_type}'.",
+        }
 
-        if query_type == "custom":
+    if query_type == "custom":
+        if not custom_query or not custom_query.strip():
             return {
                 "status": "error",
-                "error": "Custom queries are not currently supported in this environment configuration.",
+                "error": "query_type='custom' requires a non-empty custom_query (a CodeQL .ql query "
+                "with @kind problem|path-problem and @id metadata so it can emit SARIF).",
             }
+        logger.info(f"Custom CodeQL query provided (length: {len(custom_query)})")
+    else:
+        custom_query = None
 
-        sarif_filename = f"{workspace_id}_{database_id}_{int(time.time())}.sarif"
-        repo = get_workspace_repository()
-        ws = repo.find_by_id(workspace_id)
-        ws_path = ws.path if ws else None
-        reports_base = ws.get_reports_base_dir() if ws else f"/workspaces/{workspace_id}"
-        sarif_output = f"{reports_base}/{sarif_filename}"
+    sarif_filename = f"{workspace_id}_{database_id}_{int(time.time())}.sarif"
+    repo = get_workspace_repository()
+    ws = repo.find_by_id(workspace_id)
+    ws_path = ws.path if ws else None
+    reports_base = ws.get_reports_base_dir() if ws else f"/workspaces/{workspace_id}"
+    sarif_output = f"{reports_base}/{sarif_filename}"
 
-        try:
-            start_time = time.time()
+    try:
+        start_time = time.time()
 
-            logger.info(f"Executing query pack {query_pack} via CodeQL service")
+        logger.info(f"Executing query pack {query_pack} via CodeQL service")
 
-            exec_result = codeql_service.execute_query(
-                workspace_id=workspace_id,
-                database_id=database_id,
-                query_pack=query_pack,
-                output_path=sarif_output,
+        exec_result = codeql_service.execute_query(
+            workspace_id=workspace_id,
+            database_id=database_id,
+            query_pack=query_pack,
+            output_path=sarif_output,
+            custom_query=custom_query,
+        )
+
+        if not Path(sarif_output).exists():
+            backgrounded = isinstance(exec_result, dict) and exec_result.get("status") == "backgrounded"
+            wait_timeout = QUERY_BACKGROUND_WAIT_SECONDS if backgrounded else 30
+            logger.info(
+                f"SARIF not yet present; polling up to {wait_timeout}s (backgrounded={backgrounded})"
             )
-
-            if not Path(sarif_output).exists():
-                backgrounded = (
-                    isinstance(exec_result, dict) and exec_result.get("status") == "backgrounded"
-                )
-                wait_timeout = QUERY_BACKGROUND_WAIT_SECONDS if backgrounded else 30
-                logger.info(
-                    f"SARIF not yet present; polling up to {wait_timeout}s (backgrounded={backgrounded})"
-                )
-                deadline = time.time() + wait_timeout
-                while time.time() < deadline:
-                    if Path(sarif_output).exists():
-                        break
-                    time.sleep(QUERY_POLL_INTERVAL_SECONDS)
-
-            duration = time.time() - start_time
-
-            if not Path(sarif_output).exists():
-                return {
-                    "status": "error",
-                    "error": (
-                        f"SARIF output file was not created at {sarif_output}. "
-                        f"The query may still be running after {round(duration)}s."
-                    ),
-                    "duration_seconds": round(duration, 2),
-                }
-
-            # Retry briefly: backgrounded queries may land mid-write.
-            sarif_data = None
-            for attempt in range(5):
-                try:
-                    with open(sarif_output, "r", encoding="utf-8") as f:
-                        sarif_data = json.load(f)
+            deadline = time.time() + wait_timeout
+            while time.time() < deadline:
+                if Path(sarif_output).exists():
                     break
-                except json.JSONDecodeError:
-                    if attempt == 4:
-                        raise
-                    time.sleep(2)
+                time.sleep(QUERY_POLL_INTERVAL_SECONDS)
 
-            findings = parse_sarif(sarif_data, workspace_id, ws_path)
+        duration = time.time() - start_time
 
-            result_json = json.dumps(findings)
-            if len(result_json) > MAX_RESULT_BYTES:
-                return {
-                    "status": "error",
-                    "error": "Results exceed 10MB size limit",
-                    "finding_count": len(findings),
-                    "duration_seconds": round(duration, 2),
-                }
-
+        if not Path(sarif_output).exists():
             return {
-                "status": "success",
-                "workspace_id": workspace_id,
-                "database_id": database_id,
-                "query_pack": query_pack,
-                "finding_count": len(findings),
-                "findings": findings,
+                "status": "error",
+                "error": (
+                    f"SARIF output file was not created at {sarif_output}. "
+                    f"The query may still be running after {round(duration)}s."
+                ),
                 "duration_seconds": round(duration, 2),
             }
 
-        finally:
-            Path(sarif_output).unlink(missing_ok=True)
+        sarif_data = None
+        for attempt in range(5):
+            try:
+                with open(sarif_output, "r", encoding="utf-8") as f:
+                    sarif_data = json.load(f)
+                break
+            except json.JSONDecodeError:
+                if attempt == 4:
+                    raise
+                time.sleep(2)
 
-    except Exception:
-        raise
+        findings = parse_sarif(sarif_data, workspace_id, ws_path)
+
+        result_json = json.dumps(findings)
+        if len(result_json) > MAX_RESULT_BYTES:
+            return {
+                "status": "error",
+                "error": "Results exceed 10MB size limit",
+                "finding_count": len(findings),
+                "duration_seconds": round(duration, 2),
+            }
+
+        return {
+            "status": "success",
+            "workspace_id": workspace_id,
+            "database_id": database_id,
+            "query_type": query_type,
+            "query_pack": "custom" if custom_query else query_pack,
+            "finding_count": len(findings),
+            "findings": findings,
+            "duration_seconds": round(duration, 2),
+        }
+
+    finally:
+        Path(sarif_output).unlink(missing_ok=True)
 
 
 def parse_sarif(
     sarif_data: Dict[str, Any], workspace_id: str, ws_path: Optional[str] = None
 ) -> List[Dict[str, Any]]:
-    """
-    Parse SARIF output into structured findings.
-
-    Args:
-        sarif_data: SARIF JSON data
-        workspace_id: Workspace ID for path sanitization
-        ws_path: Optional workspace local path for sanitization
-
-    Returns:
-        List of finding dictionaries
-    """
     findings = []
 
     for run in sarif_data.get("runs", []):
@@ -191,17 +188,6 @@ def parse_sarif(
 
 
 def sanitize_path(path: str, workspace_id: str, ws_path: Optional[str] = None) -> str:
-    """
-    Sanitize file path by removing workspace prefix.
-
-    Args:
-        path: Original file path
-        workspace_id: Workspace ID
-        ws_path: Optional workspace local path
-
-    Returns:
-        Sanitized relative path
-    """
     if ws_path and path.startswith(ws_path):
         relative = path[len(ws_path) :]
         return relative.lstrip("/")

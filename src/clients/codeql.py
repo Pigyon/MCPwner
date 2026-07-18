@@ -43,6 +43,7 @@ class CodeQLClient(BaseClient):
         query_pack: str,
         output_path: str,
         query_name: str = None,
+        custom_query: str = None,
     ) -> Dict[str, Any]:
         """Execute CodeQL query via HTTP."""
         logger.info(f"Executing query {query_name or query_pack} on {database_path}")
@@ -53,6 +54,8 @@ class CodeQLClient(BaseClient):
         }
         if query_name:
             payload["query_name"] = query_name
+        if custom_query:
+            payload["custom_query"] = custom_query
 
         return self._post_with_background_timeout(
             "/query/execute",
