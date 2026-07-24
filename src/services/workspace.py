@@ -4,7 +4,7 @@ import logging
 import os
 import shutil
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -188,17 +188,6 @@ class WorkspaceService:
         workspaces = self.repository.find_all()
         return [ws.model_dump() for ws in workspaces]
 
-    def get_workspace(self, workspace_id: str) -> Dict[str, Any]:
-        """Get workspace by ID."""
-        workspace = self.repository.find_by_id(workspace_id)
-        if not workspace:
-            raise ValueError(f"Workspace not found: {workspace_id}")
-        return workspace.model_dump()
-
-    def delete_workspace(self, workspace_id: str) -> bool:
-        """Delete workspace."""
-        return self.repository.delete(workspace_id)
-
     def _safe_rmtree(self, path: Path, result: Dict[str, Any], success_detail: str) -> None:
         """Remove a directory, recording the outcome on ``result``.
 
@@ -288,40 +277,3 @@ class WorkspaceService:
             result["details"].append("Workspace metadata preserved for future reference")
 
         return result
-
-    def cleanup_old_workspaces(
-        self, base_path: str = "/workspaces", max_age_hours: int = 24
-    ) -> Dict[str, Any]:
-        """Cleanup old GitHub cloned workspaces."""
-        now = datetime.now(timezone.utc)
-        cutoff_time = now - timedelta(hours=max_age_hours)
-
-        cleaned = []
-        skipped = []
-
-        for workspace in self.repository.find_all():
-            if workspace.is_local_mount() or workspace.is_local_path():
-                skipped.append(workspace.workspace_id)
-                continue
-
-            if workspace.created_at < cutoff_time:
-                try:
-                    result = self.cleanup_workspace(
-                        workspace.workspace_id,
-                        delete_files=True,
-                        delete_metadata=True,
-                        base_path=base_path,
-                    )
-                    if result["status"] == "success":
-                        cleaned.append(workspace.workspace_id)
-                    else:
-                        skipped.append(workspace.workspace_id)
-                except Exception:
-                    skipped.append(workspace.workspace_id)
-
-        return {
-            "cleaned": cleaned,
-            "skipped": skipped,
-            "total_cleaned": len(cleaned),
-            "total_skipped": len(skipped),
-        }

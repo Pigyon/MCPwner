@@ -24,10 +24,6 @@ class Workspace(PydanticBaseModel):
     mount_path: Optional[str] = None
     workspace_base_dir: Optional[str] = None
 
-    def is_github_clone(self) -> bool:
-        """Check if workspace is a GitHub clone."""
-        return self.source_type == "github"
-
     def is_local_mount(self) -> bool:
         """Check if workspace is a local mount."""
         return self.source_type == "local"

@@ -91,29 +91,8 @@ def _validate_config(config: Dict[str, Any]) -> None:
     Raises:
         ConfigError: If configuration is invalid
     """
-    required_sections = [
-        "server",
-        "workspace",
-        "resources",
-        "logging",
-    ]
-
-    for section in required_sections:
-        if section not in config:
-            raise ConfigError(f"Missing required configuration section: {section}")
-
-    server = config["server"]
-    _validate_int(server, "port", "server", 1)
-    _validate_string(server, "host", "server")
-
-    workspace = config["workspace"]
-    _validate_int(workspace, "max_workspaces", "workspace", 1)
-    _validate_int(workspace, "auto_cleanup_seconds", "workspace", 0)
-
-    resources = config["resources"]
-    _validate_int(resources, "max_disk_mb", "resources", 1)
-    _validate_int(resources, "max_memory_mb", "resources", 1)
-    _validate_int(resources, "max_cpu_cores", "resources", 1)
+    if "logging" not in config:
+        raise ConfigError("Missing required configuration section: logging")
 
     logging = config["logging"]
     _validate_string(logging, "level", "logging")
@@ -122,16 +101,6 @@ def _validate_config(config: Dict[str, Any]) -> None:
     valid_log_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     if logging["level"] not in valid_log_levels:
         raise ConfigError(f"Invalid log level: {logging['level']}. Must be one of {valid_log_levels}")
-
-
-def _validate_int(section: Dict[str, Any], key: str, section_name: str, min_val: int) -> None:
-    """Validate that a value is an integer >= min_val."""
-    if key not in section:
-        raise ConfigError(f"Missing required key '{key}' in section '{section_name}'")
-
-    value = section[key]
-    if not isinstance(value, int) or value < min_val:
-        raise ConfigError(f"'{section_name}.{key}' must be an integer >= {min_val}, got: {value}")
 
 
 def _validate_string(section: Dict[str, Any], key: str, section_name: str) -> None:

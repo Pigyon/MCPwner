@@ -94,22 +94,6 @@ syft:
 retirejs:
   service_url: "http://retirejs:8104"
 
-# Workspace settings
-workspace:
-  # Maximum number of concurrent workspaces
-  max_workspaces: 10
-  # Auto-cleanup workspaces after this many seconds (0 = disabled)
-  auto_cleanup_seconds: 3600
-
-# Resource limits
-resources:
-  # Maximum disk space per workspace in MB
-  max_disk_mb: 5000
-  # Maximum memory for CodeQL operations in MB
-  max_memory_mb: 4096
-  # Maximum CPU cores for CodeQL operations
-  max_cpu_cores: 2
-
 # Logging
 logging:
   # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL

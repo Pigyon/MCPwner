@@ -48,27 +48,6 @@ class LinguistService:
         except Exception as e:
             raise RuntimeError(f"Language detection failed: {e}")
 
-    def detect_languages_detailed(self, workspace_id: str) -> Dict[str, Any]:
-        """
-        Detect languages with detailed statistics.
-
-        Args:
-            workspace_id: UUID of the workspace
-
-        Returns:
-            Dictionary with languages, statistics, and raw output
-        """
-        workspace_path = self.repository.get_valid_workspace_path(workspace_id)
-
-        workspace_dir = Path(workspace_path)
-        if not workspace_dir.exists():
-            return {"languages": [], "statistics": {}, "raw_output": {}}
-
-        try:
-            return self.linguist_client.detect_languages(str(workspace_dir))
-        except Exception as e:
-            raise RuntimeError(f"Language detection failed: {e}")
-
     def _facts_path(self, workspace_id: str) -> Path:
         """Index lives under the workspace's reports base (stable across all source
         types), never `source/../reports` which breaks virtual/local_path layouts."""
