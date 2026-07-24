@@ -29,6 +29,7 @@ config/config.yaml
 # Documentation
 *.md
 !README.md
+!SECURITY.md
 !tests/llm/*.md
 
 .claude

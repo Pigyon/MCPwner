@@ -29,7 +29,6 @@
 - [Installation](#installation)
 - [Architecture](#architecture)
 - [Data Persistence](#data-persistence)
-- [Security Considerations](#security-considerations)
 - [License](#license)
 
 ## Overview
@@ -301,12 +300,6 @@ MCPwner persists workspace metadata, CodeQL databases, and findings across conta
 - `delete_files=True, delete_metadata=False` - Free disk space, preserve history
 - `delete_files=True, delete_metadata=True` - Complete removal
 - `delete_files=False, delete_metadata=True` - Remove from list, keep files
-
-## Security Considerations
-
-MCPwner executes security tools that perform intrusive operations. Only use on systems you own or have explicit permission to test. The PoC sandbox runs arbitrary agent-authored code inside a resource-capped, unprivileged container - but it is connected to the target network by design.
-
-Restrict MCP server access to authorized users. Review tool configurations before running scans. Follow responsible disclosure practices. Never commit credentials to configuration files - use environment variables.
 
 ## License
 
