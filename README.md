@@ -27,6 +27,7 @@
 - [Workflow](#workflow)
 - [Integrated Tools](#integrated-tools)
 - [Installation](#installation)
+- [Documentation](#documentation)
 - [Architecture](#architecture)
 - [Data Persistence](#data-persistence)
 - [License](#license)
@@ -182,7 +183,7 @@ The PoC sandbox runs agent-authored Python/bash exploit scripts inside the targe
 
 Once Docker containers are running, add MCPwner to your MCP client.
 
-**Dynamic Tool Registration:** MCPwner uses Docker Compose `profiles` for opt-in tool categories. The `.env` file's `COMPOSE_PROFILES` variable controls which containers start. The MCP server probes running containers at startup and registers only healthy tools - if a container is down, its tools simply don't appear. Tools in the `utilities` category run unconditionally.
+**Dynamic Tool Registration:** MCPwner uses Docker Compose `profiles` for opt-in tool categories. The `.env` file's `COMPOSE_PROFILES` variable controls which containers start. The MCP server probes running containers at startup and registers only healthy tools - if a container is down, its tools simply don't appear. Linguist (language detection / code-facts index) runs unconditionally; the dynamic-testing utilities (Chromium, WireMock, mitmproxy, fuzzer) are opt-in and come up with the `dast` and `poc` profiles.
 
 **One-Click Install (requires Docker running):**
 
@@ -222,6 +223,17 @@ services:
 ```
 
 Then use `create_workspace` with `source_type="local"` and `source="/mnt/projects/my-project"`.
+
+## Documentation
+
+Additional guides live in [`docs/`](docs/):
+
+- [Quickstart](docs/quickstart.md) - start the tool fleet with `COMPOSE_PROFILES` and wire the MCP server into your client.
+- [Configuration](docs/configuration.md) - `.env` / `COMPOSE_PROFILES`, `config.yaml`, and the tool port map.
+- [Troubleshooting](docs/troubleshooting.md) - missing tools, unhealthy containers, and image-build failures.
+- [Adding a tool](docs/adding-a-tool.md) - wire a new scanner container into the fleet and the tool registry.
+
+Contributing? See [CONTRIBUTING.md](CONTRIBUTING.md) for code style, pre-commit hooks, and tests.
 
 ## Architecture
 
