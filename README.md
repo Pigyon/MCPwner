@@ -226,12 +226,12 @@ Then use `create_workspace` with `source_type="local"` and `source="/mnt/project
 
 ## Documentation
 
-Additional guides live in [`docs/`](docs/):
+Additional guides live in the [project wiki](https://github.com/nedlir/MCPwner/wiki):
 
-- [Quickstart](docs/quickstart.md) - start the tool fleet with `COMPOSE_PROFILES` and wire the MCP server into your client.
-- [Configuration](docs/configuration.md) - `.env` / `COMPOSE_PROFILES`, `config.yaml`, and the tool port map.
-- [Troubleshooting](docs/troubleshooting.md) - missing tools, unhealthy containers, and image-build failures.
-- [Adding a tool](docs/adding-a-tool.md) - wire a new scanner container into the fleet and the tool registry.
+- [Quickstart](https://github.com/nedlir/MCPwner/wiki/Quickstart) - start the tool fleet with `COMPOSE_PROFILES` and wire the MCP server into your client.
+- [Configuration](https://github.com/nedlir/MCPwner/wiki/Configuration) - `.env` / `COMPOSE_PROFILES`, `config.yaml`, and the tool port map.
+- [Troubleshooting](https://github.com/nedlir/MCPwner/wiki/Troubleshooting) - missing tools, unhealthy containers, and image-build failures.
+- [Adding a tool](https://github.com/nedlir/MCPwner/wiki/Adding-a-Tool) - wire a new scanner container into the fleet and the tool registry.
 
 Contributing? See [CONTRIBUTING.md](CONTRIBUTING.md) for code style, pre-commit hooks, and tests.
 
