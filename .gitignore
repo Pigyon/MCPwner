@@ -30,6 +30,11 @@ config/config.yaml
 *.md
 !README.md
 !SECURITY.md
+!CONTRIBUTING.md
 !tests/llm/*.md
+!docs/
+!docs/*.md
+!.github/*.md
+!.github/**/*.md
 
 .claude
