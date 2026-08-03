@@ -50,6 +50,7 @@ services:
         required: false
       linguist:
         condition: service_healthy
+        required: false
       bandit:
         condition: service_healthy
         required: false
@@ -142,12 +143,16 @@ services:
         required: false
       wiremock:
         condition: service_healthy
+        required: false
       mitmproxy:
         condition: service_healthy
+        required: false
       fuzzer:
         condition: service_healthy
+        required: false
       chromium:
         condition: service_healthy
+        required: false
       checkov:
         condition: service_healthy
         required: false
@@ -1282,6 +1287,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 25s
+    profiles:
+      - wiremock
+      - dast
+      - poc
 
   mitmproxy:
 
@@ -1309,6 +1318,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    profiles:
+      - mitmproxy
+      - dast
+      - poc
 
   fuzzer:
 
@@ -1336,6 +1349,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    profiles:
+      - fuzzer
+      - dast
+      - poc
 
   chromium:
 
@@ -1373,6 +1390,10 @@ services:
       timeout: 15s
       retries: 3
       start_period: 30s
+    profiles:
+      - chromium
+      - dast
+      - poc
 
   # --- Infrastructure & IaC Security ---
   # IaC scanners analyze static infrastructure definitions, so they run on the
